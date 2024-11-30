@@ -1,5 +1,6 @@
 ## Setting up the programming environment
 
+
 For the development I will be using JetBrains Intelli IDEA Community Edition.
 If you've had some experience programming in Java, chances are you're already somewhat familiar with either Intellij or Eclipse.
 
