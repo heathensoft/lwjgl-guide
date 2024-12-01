@@ -2,4 +2,4 @@
 
 ## Guide
 
-* [CHAPTER 00 - Introduction & Initial Setup](guide/chapter00.md) 
+* [CHAPTER 00 - Initial setup](guide/chapter00.md) 

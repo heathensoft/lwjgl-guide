@@ -1,17 +1,11 @@
-
-## Prerequisite Experience
-
-* Basic knowledge of Java
-
-
 ## Programming Environment
 
-Most of you will probably already be familiar creating a new Java project.
+Most of you will probably already be familiar with creating a new Java project.
 But for the sake of getting everyone on the same page I'll briefly get into how to set things up.
 For the development I will be using JetBrains Intelli IDEA Community Edition.
 If you've had some experience programming in Java, chances are you're already somewhat familiar with either Intellij or Eclipse.
 An IDE can make project management easier.
-Build tools and Version Control are usually neatly integrated with the IDE,
+Build tools and version control are usually neatly integrated with the IDE,
 and you can execute buildscripts and git commands from a UI instead of using a terminal.
 
 *I won't spend much time on installation, as I suspect most of you have some form of a setup already.*
@@ -124,24 +118,24 @@ But we do need the ones that provides OpenGL functionality, the ability to creat
 So head on over to [LWJGL-Customize](https://www.lwjgl.org/customize) and we'll select the ones we need.
 The customizer will even auto-generate our build script for us. Select:
 
-* Preset: Custom
-* Mode: Gradle
-* Language: Kotlin
-* Version: Latest (3.3.4)
+* **Preset**: Custom
+* **Mode**: Gradle
+* **Language**: Kotlin
+* **Version**: Latest (3.3.4)
 
-For Natives, you can just select the appropriate one for your machine. If you're not
+For **Natives**, you can just select the appropriate one for your machine. If you're not
 sure about the suffixes, select all of them (I.e. all the linux ones if you're on linux).
 Either way, the build script will detect your machines OS and switch to the correct natives.
 (Don't think in terms of target platforms yet, we'll come back to this in a later chapter.)
 
-For Content, we'll need:
+For **Content**, we'll need:
 
 * LWJGL core (Required)
 * [OpenGL](https://www.opengl.org/) - Bindings for OpenGL
 * [GLFW](https://www.glfw.org/) - API for creating windows and receiving input and events.
 * [stb](https://github.com/nothings/stb) - Library for images and fonts
 
-And for Addons:
+And for **Addons**:
 
 * [JOML](https://github.com/JOML-CI/JOML) - Math library for OpenGL rendering calculations
 
