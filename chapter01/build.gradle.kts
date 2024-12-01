@@ -11,6 +11,7 @@ version = "SNAPSHOT"
 
 val lwjglVersion = "3.3.4"
 val jomlVersion = "1.10.7"
+val tinyLogVersion = "2.7.0"
 
 val lwjglNatives = Pair(
     System.getProperty("os.name")!!,
@@ -39,15 +40,17 @@ repositories {
 
 dependencies {
     implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    implementation("org.tinylog:tinylog-api:$tinyLogVersion")
+    implementation("org.tinylog:tinylog-impl:$tinyLogVersion")
     implementation("org.lwjgl", "lwjgl")
     implementation("org.lwjgl", "lwjgl-glfw")
     implementation("org.lwjgl", "lwjgl-opengl")
     implementation("org.lwjgl", "lwjgl-stb")
+    implementation("org.joml", "joml", jomlVersion)
     runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-stb", classifier = lwjglNatives)
-    implementation("org.joml", "joml", jomlVersion)
 }
 
 // application {  mainClass = "io.github.heathensoft.guide.Main" }
