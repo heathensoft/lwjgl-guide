@@ -1,7 +1,8 @@
 import org.gradle.internal.os.OperatingSystem
 
 plugins {
-    id("java")
+    java
+    //application
 }
 
 group = "io.github.heathensoft"
@@ -48,3 +49,5 @@ dependencies {
     runtimeOnly("org.lwjgl", "lwjgl-stb", classifier = lwjglNatives)
     implementation("org.joml", "joml", jomlVersion)
 }
+
+// application {  mainClass = "io.github.heathensoft.guide.Main" }
