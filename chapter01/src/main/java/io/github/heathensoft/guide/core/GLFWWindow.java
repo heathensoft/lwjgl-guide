@@ -29,21 +29,19 @@ public class GLFWWindow {
     private Resolution game_resolution; // The game resolution
     private boolean game_resolution_changed; // found a better supported resolution for the game
 
-    private long window;                // glfw window handle
+    private long window;                // glfw window pointer
     private int target_fps;             // requested target FPS without vsync and fps limit
     private int target_ups;             // game logic updates per second
     private int framebuffer_w;          // width of the window framebuffer in pixels
     private int framebuffer_h;          // height of the window framebuffer in pixels
-    private int viewport_w;             // width of the viewport
-    private int viewport_h;             // height of the viewport
     private int viewport_x;             // viewport x position relative to the framebuffer in pixels
     private int viewport_y;             // viewport y position relative to the framebuffer in pixels
+    private int viewport_w;             // width of the viewport
+    private int viewport_h;             // height of the viewport
     private boolean minimized;          // whether the window is minimized
     private boolean vsync_enabled;      // limits fps to the display frame rate
 
-
-    public boolean isMinimized() { return minimized; }
-    public boolean isVsyncEnabled() { return vsync_enabled; }
+    public long handle() { return window; }
     public int targetFps() { return target_fps; }
     public int targetUps() { return target_ups; }
     public int framebufferW() { return framebuffer_w; }
@@ -52,6 +50,8 @@ public class GLFWWindow {
     public int viewportY() { return viewport_y; }
     public int viewportW() { return viewport_w; }
     public int viewportH() { return viewport_h; }
+    public boolean isMinimized() { return minimized; }
+    public boolean isVsyncEnabled() { return vsync_enabled; }
 
 
     public void initialize(BootConfiguration config) throws Exception {
@@ -193,6 +193,9 @@ public class GLFWWindow {
         GL.createCapabilities();
     }
 
+    public void toggleMonitors() {
+        // todo: switch to the next available connected monitor
+    }
 
     public void windowedMode(Resolution resolution) {
         try (MemoryStack stack = MemoryStack.stackPush()){
@@ -212,9 +215,21 @@ public class GLFWWindow {
         }
     }
 
+    /**
+     * If windowed: Set the window to fullscreen on the primary monitor
+     */
     public void fullScreen() {
-
-
+        long monitor = glfwGetWindowMonitor(window);
+        if (monitor == 0L) { // windowed
+            monitor = glfwGetPrimaryMonitor();
+            if (monitor != 0L) {
+                GLFWVidMode display = glfwGetVideoMode(monitor);
+                if (display != null) {
+                    glfwSetWindowMonitor(window,monitor,0,0,
+                    display.width(),display.height(),display.refreshRate());
+                }
+            }
+        }
     }
 
 
@@ -295,12 +310,21 @@ public class GLFWWindow {
         glfwFocusWindow(window);
     }
 
+    public void maximize() {
+        glfwMaximizeWindow(window);
+    }
+
+    public void minimize() {
+        glfwIconifyWindow(window);
+    }
+
     public void restore() {
         glfwRestoreWindow(window);
     }
 
-
-
+    public void toggleVsync(boolean enable) {
+        vsync_enabled = enable;
+    }
 
 
     public void terminate() {
