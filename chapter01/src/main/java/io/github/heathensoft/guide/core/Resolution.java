@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * * Most common desktop screen resolutions:
+ * Most common desktop screen resolutions:
  * <a href="https://gs.statcounter.com/screen-resolution-stats/desktop/worldwide">statcounter</a>
  * Frederik Dahl 12/1/2024
  */
@@ -38,14 +38,17 @@ public record Resolution(int width, int height) implements Comparable<Resolution
         return (float) width / height;
     }
 
+    public Resolution copy() {
+        return new Resolution(width,height);
+    }
+
     @Override
     public int compareTo(Resolution o) {
         if (this.height == o.height) {
             if (this.width > o.width) return -1;
             else if (this.width < o.width) return 1;
             return 0;
-        }
-        if (this.height > o.height) return -1;
+        } if (this.height > o.height) return -1;
         else return 1;
     }
 
