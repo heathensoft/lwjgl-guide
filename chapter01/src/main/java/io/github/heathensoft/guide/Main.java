@@ -18,14 +18,14 @@ public class Main {
 
         try {
             BootConfiguration configuration = new BootConfiguration();
-            configuration.window_title = "lwjgl guide";
+            configuration.window_title = "lwjgl-guide";
             configuration.supported_resolutions.add(Resolution.R_1280x720);
             configuration.supported_resolutions.add(Resolution.R_1920x1080);
             configuration.windowed_mode = true;
             configuration.resizable_window = true;
             configuration.vsync_enabled = true;
-            configuration.logger("writer","console");
-            configuration.logger("writer.format","{date: HH:mm:ss.SS} {level}: {message}");
+            org.tinylog.configuration.Configuration.set("writer","console");
+            org.tinylog.configuration.Configuration.set("writer.format","{date: HH:mm:ss.SS} {level}: {message}");
             window.initialize(configuration);
         } catch (Exception e) {
             Logger.error(e);
@@ -39,16 +39,16 @@ public class Main {
                 glViewport(
                         window.viewportX(),
                         window.viewportY(),
-                        window.viewportWidth(),
-                        window.viewportHeight()
+                        window.viewportW(),
+                        window.viewportH()
                 );
                 glClear(GL_COLOR_BUFFER_BIT); // clear the framebuffer
 
                 // --> DRAW OPERATIONS HERE <--
 
-                window.swapBuffers();
-                window.pollEvents();
-            }
+                window.swapRenderBuffers();
+
+            } window.processUserEvents();
         }
 
         window.terminate();

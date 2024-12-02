@@ -54,10 +54,7 @@ public record Resolution(int width, int height) implements Comparable<Resolution
 
     @Override
     public String toString() {
-        return "Resolution{" +
-                "width=" + width +
-                ", height=" + height +
-                '}';
+        return width +":"+ height;
     }
 
     /**
