@@ -326,7 +326,6 @@ public class GLFWWindow {
         vsync_enabled = enable;
     }
 
-
     public void terminate() {
         Logger.debug("clearing opengl capabilities");
         GL.setCapabilities(null); // this IS nullable
@@ -339,7 +338,6 @@ public class GLFWWindow {
         Logger.debug("freeing glfw error callback");
         freeGLFWErrorCallback();
     }
-
 
     private void framebufferResizeEvent(int framebuffer_w, int framebuffer_h) {
         Resolution framebuffer_resolution = new Resolution(framebuffer_w, framebuffer_h);
