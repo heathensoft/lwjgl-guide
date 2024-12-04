@@ -25,12 +25,11 @@ public class GLFWWindow {
     public static final int FPS_MAX = 1000;
     public static final int UPS_MAX = 1000;
 
-    private List<Resolution> supported_resolutions;
-    private Resolution game_resolution; // The game resolution
+    private List<Resolution> supported_resolutions; // resolutions supported by our game
+    private Resolution game_resolution; // The current resolution
     private boolean game_resolution_changed; // found a better supported resolution for the game
-
     private long window;                // glfw window pointer
-    private int target_fps;             // requested target FPS without vsync and fps limit
+    private int target_fps;             // requested target FPS without vsync
     private int target_ups;             // game logic updates per second
     private int framebuffer_w;          // width of the window framebuffer in pixels
     private int framebuffer_h;          // height of the window framebuffer in pixels
@@ -162,9 +161,6 @@ public class GLFWWindow {
                     window_x,window_y,window_w,window_h);
             Logger.debug("framebuffer resolution: {}:{}",
                     framebuffer_w, framebuffer_h);
-            DoubleBuffer mx = stack.mallocDouble(1);
-            DoubleBuffer my = stack.mallocDouble(1);
-            glfwGetCursorPos(window,mx,my);
 
         }
 

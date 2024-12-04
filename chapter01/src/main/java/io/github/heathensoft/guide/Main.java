@@ -57,7 +57,7 @@ public class Main {
                 // Define the render area
                 glViewport(window.viewportX(),window.viewportY(),window.viewportW(),window.viewportH());
                 // clear the windows back buffer to RED
-                glClear(GL_COLOR_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 // ---> DRAW OPERATIONS HERE <---
 
