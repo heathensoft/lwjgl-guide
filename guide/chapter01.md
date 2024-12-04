@@ -200,7 +200,7 @@ public int target_fps = 60;
 Do we want a fullscreen window or a windowed one? 
 What resolutions does the game support? 
 Do we want vsync to be enabled by default? etc.
-(Later on we could add more fields if we figure out we want some more)
+(Later on we could add more fields if we need to)
 
 ### Resolution Class
 
@@ -402,15 +402,12 @@ if (config.windowed_mode) {
     window = glfwCreateWindow(
             config.windowed_mode_width,
             config.windowed_mode_height,
-            config.window_title,0L,0L
-    );
-} else {
-    window = glfwCreateWindow(
+            config.window_title,0L,0L);
+} else window = glfwCreateWindow(
             display.width(),
             display.height(),
             config.window_title,
             monitor,0L);
-}
 ```
 #### Querying the actual dimensions
 
@@ -450,9 +447,41 @@ glfwMakeContextCurrent(window); // make the opengl context current in the callin
 glfwShowWindow(window);         // make the window visible
 GL.createCapabilities();        // makes the opengL bindings available for use.
 ```
-## The Viewport and Game Resolution
+## Game Resolution and The Viewport
 
+```
+glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
+    public void invoke(long window, int width, int height) {
+        framebufferResizeEvent(width,height);
+    }
+});
+```
+```
+private void framebufferResizeEvent(int framebuffer_w, int framebuffer_h) {
+    this.framebuffer_w = framebuffer_w; 
+    this.framebuffer_h = framebuffer_h;
+    Resolution framebuffer_resolution = new Resolution(framebuffer_w,framebuffer_h);
+    Resolution.sortByClosest(framebuffer_resolution, supported_resolutions);
+    Resolution closest_resolution = supported_resolutions.getFirst();
+    if (!closest_resolution.equals(game_resolution)) {
+        game_resolution = closest_resolution;
+        game_resolution_changed = true;
+    } fitViewport(framebuffer_w,framebuffer_h);
+}
+```
 
+```
+private void fitViewport(int framebuffer_w, int framebuffer_h) {
+    float game_aspect_ratio = game_resolution.aspectRatio();
+    viewport_w = framebuffer_w;
+    viewport_h = Math.round(viewport_w / game_aspect_ratio);
+    if (viewport_h > framebuffer_h) {
+        viewport_h = framebuffer_h;
+        viewport_w = Math.round(viewport_h * game_aspect_ratio);
+    } viewport_x = Math.round((framebuffer_w / 2f) - (viewport_w / 2f));
+    viewport_y = Math.round((framebuffer_h / 2f) - (viewport_h / 2f));
+}
+```
 
 
 

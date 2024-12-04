@@ -9,8 +9,7 @@ import java.util.List;
  * Frederik Dahl 12/1/2024
  */
 public class BootConfiguration {
-
-    public List<Resolution> supported_resolutions = new ArrayList<>();
+    public final List<Resolution> supported_resolutions = new ArrayList<>();
     public String window_title = "";
     public boolean resizable_window = false;
     public boolean vsync_enabled = true;
