@@ -265,11 +265,11 @@ Each frame, while the window is not signalled to close and the window is not min
 we clear the windows framebuffer to RED and swap the front and back buffer
 (We still check for user events even if the window is minimized, as restoring the window is a user event)
 
-We also provide OpenGL with a "viewport", which is the area of the window to draw to.
+We also provide OpenGL with a "viewport", which is the area of the window to draw to...
 ```
 glViewport(window.viewportX(),window.viewportY(),window.viewportW(),window.viewportH());
 ```
-As the actual resolution of the windows framebuffer might not equal the desired resolution of our game.
+...as the actual resolution of the windows framebuffer might not equal the desired resolution of our game.
 I.e. The game supports a resolution of 1280x720px. That's an aspect ratio of:
 ```
 1280 / 720 = 1.77...
@@ -449,6 +449,26 @@ GL.createCapabilities();        // makes the opengL bindings available for use.
 ```
 ## Game Resolution and The Viewport
 
+Most games are made with some specific resolution(s) in mind. 
+Imagine playing a competitive multiplayer game where players with high
+resolution screens could see more of the world than players with lower resolution screens.
+Then there is also the UI. Like, what happens to the UI elements when the
+window get resized, etc.
+
+There are a few ways to deal with this. I prefer these two solutions:
+
+1. Either you don't really care and
+let the player see as much of the world as his screen allows. And for the UI elements,
+you could just lock them to the window corners or something.
+2. Use a viewport that keep the same target aspect ratio, no matter what the actual width and height of our window is. 
+We just treat the viewport like it had the target resolution (lets say 1280x720) when we render our world.
+(more on this in a later chapter)
+
+We'll be using a viewport. And we will also allow for more than one target resolution (If we need to).
+This can be nice if game is made with multiple screen resolutions in mind. (and automatically detect the best option)
+
+### Window Resize Events
+When the window is resized we invoke a method to handle the event:
 ```
 glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
     public void invoke(long window, int width, int height) {
@@ -456,6 +476,11 @@ glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
     }
 });
 ```
+The *framebufferResizeEvent()* method updates the framebuffer size fields, 
+then checks the list of provided game resolutions for the resolution that most closely matches
+the new framebuffer size. Then, if the current game resolution no longer is the closest,
+we update the game resolution.
+
 ```
 private void framebufferResizeEvent(int framebuffer_w, int framebuffer_h) {
     this.framebuffer_w = framebuffer_w; 
@@ -469,7 +494,7 @@ private void framebufferResizeEvent(int framebuffer_w, int framebuffer_h) {
     } fitViewport(framebuffer_w,framebuffer_h);
 }
 ```
-
+And recalculate the viewport:
 ```
 private void fitViewport(int framebuffer_w, int framebuffer_h) {
     float game_aspect_ratio = game_resolution.aspectRatio();
