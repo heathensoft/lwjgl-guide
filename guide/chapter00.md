@@ -8,7 +8,7 @@ An IDE can make project management easier.
 Build tools and version control are usually neatly integrated with the IDE,
 and you can execute buildscripts and git commands from a UI instead of using a terminal.
 
-*I won't spend much time on installation, as I suspect most of you have some form of a setup already.*
+*I won't spend much time on installation, as I suspect most of you already have some form of setup.*
 
 ### Installation
 
@@ -100,10 +100,10 @@ repositories {
 }
 ```
 Now that we have a "clean" project, we're ready to import LWJGL packages (Lightweight Java Game Library) to start
-programming an OpenGL application in Java.
+developing an OpenGL application in Java.
 
-*This guide is not about learning build tools. If you're not sure about what the build script does it's not
-important atp. Just know it helps us import and organize external dependencies.*
+*This guide is not about learning build tools. If you're not sure about what the build script does,
+it's not important atp. Just know it helps us build, import and organize external dependencies.*
 
 ## Dependencies
 
