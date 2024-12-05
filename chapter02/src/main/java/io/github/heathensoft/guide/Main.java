@@ -15,11 +15,8 @@ import static org.lwjgl.opengl.GL11.*;
 public class Main {
 
     public void run() {
-
         // Initialize our GLFWWindow
         GLFWWindow window = new GLFWWindow();
-
-
         try { BootConfiguration configuration = new BootConfiguration();
             configuration.window_title = "lwjgl-guide";
             configuration.supported_resolutions.add(Resolution.R_1280x720);
@@ -36,43 +33,38 @@ public class Main {
         }
         // We have not yet configured callbacks for user input events
         // We'll cover user input in future chapters
-        int escape_key_prev = GLFW_RELEASE; // escape key state from the previous frame
-        int toggle_key_prev = GLFW_RELEASE; // toggle key state from the previous frame (F1)
+        int escape_key_prev = GLFW_RELEASE; // ESCAPE key state from the previous frame
+        int f1_key_prev = GLFW_RELEASE;     // F1 key state from the previous frame
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // set clear color to SOLID BLACK
-
-
-        RendererTest firstRenderer = null;
-        try { firstRenderer = new RendererTest();
+        RendererTest renderer = null;
+        try { renderer = new RendererTest();
         } catch (Exception e) {
             Logger.error(e);
             window.terminate();
             System.exit(0);
         }
-
         // Loop until the window closes:
         while (!window.shouldClose()) {
             if (!window.isMinimized()) {
-
-                // ESCAPE exits the program and F1 toggles between fullscreen and windowed mode
                 int escape_key_state = glfwGetKey(window.handle(),GLFW_KEY_ESCAPE);
-                int toggle_key_state = glfwGetKey(window.handle(),GLFW_KEY_F1);
+                int f1_key_state = glfwGetKey(window.handle(),GLFW_KEY_F1);
+                // Exit program
                 if (escape_key_state == GLFW_PRESS && escape_key_prev == GLFW_RELEASE) {
                     window.signalToClose();
-                }  else if (toggle_key_state == GLFW_PRESS && toggle_key_prev == GLFW_RELEASE) {
+                } // Toggle fullscreen mode
+                else if (f1_key_state == GLFW_PRESS && f1_key_prev == GLFW_RELEASE) {
                     if (window.isWindowedMode()) window.fullScreen();
                     else window.windowedMode(Resolution.R_1280x720);
-                } escape_key_prev = escape_key_state;
-                toggle_key_prev = toggle_key_state;
-
-
+                }
+                escape_key_prev = escape_key_state;
+                f1_key_prev = f1_key_state;
                 // Define the render area
                 glViewport(window.viewportX(),window.viewportY(),window.viewportW(),window.viewportH());
-                // clear the windows back buffer to RED
+                // clear the windows back buffer to SOLID BLACK
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                firstRenderer.draw();
-                // ---> DRAW OPERATIONS HERE <---
+                renderer.draw(); // render the scene (two triangles)
 
                 //When the entire frame has been rendered,
                 //it is time to swap the back and the front buffers in order to
@@ -80,8 +72,7 @@ public class Main {
                 //(Swapping the windows' front and back buffers)
                 window.swapRenderBuffers();
             } window.processUserEvents();
-        }
-        Disposable.dispose(firstRenderer);
+        } Disposable.dispose(renderer);
         window.terminate();
     }
 

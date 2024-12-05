@@ -13,6 +13,7 @@ import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
+import static org.lwjgl.opengl.GL11.glViewport;
 
 /**
  * Frederik Dahl 12/1/2024
@@ -252,6 +253,7 @@ public final class GLFWWindow {
     public void minimize() { glfwIconifyWindow(window); }
     public void restore() { glfwRestoreWindow(window); }
     public void toggleVsync(boolean enable) { vsync_enabled = enable; }
+    public void useWindowViewport() { glViewport(viewport_x,viewport_y,viewport_w,viewport_h); }
 
     public void terminate() {
         Logger.debug("clearing opengl capabilities");

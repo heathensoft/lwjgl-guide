@@ -100,13 +100,15 @@ public class RendererTest implements Disposable {
         // ***********************************************************************************************
 
         float[] vertices = new float[] {
-                /*{ V0 }*/-1.0f, 1.0f, 0.0f,/*position (xyz)*/0.3f, 0.7f, 0.6f,/*color (rgb)*/
-                /*{ V1 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.3f, 0.7f, 0.6f,/*color (rgb)*/
-                /*{ V2 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.3f, 0.7f, 0.6f,/*color (rgb)*/
 
-                /*{ V3 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.5f, 0.3f, 0.4f,/*color (rgb)*/
-                /*{ V4 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.5f, 0.3f, 0.4f,/*color (rgb)*/
-                /*{ V5 }*/ 1.0f,-1.0f, 0.0f,/*position (xyz)*/0.5f, 0.3f, 0.4f,/*color (rgb)*/
+                /*{ V0 }*/-1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
+                /*{ V1 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
+                /*{ V2 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
+
+                /*{ V3 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+                /*{ V4 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+                /*{ V5 }*/ 1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+
         };
         vertex_attrib_array = glGenVertexArrays();
         vertex_buffer_object = glGenBuffers();
