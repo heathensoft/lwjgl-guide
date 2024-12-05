@@ -3,6 +3,7 @@ package io.github.heathensoft.guide;
 import io.github.heathensoft.guide.core.BootConfiguration;
 import io.github.heathensoft.guide.core.GLFWWindow;
 import io.github.heathensoft.guide.core.Resolution;
+import io.github.heathensoft.guide.utils.Disposable;
 import org.tinylog.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -17,6 +18,8 @@ public class Main {
 
         // Initialize our GLFWWindow
         GLFWWindow window = new GLFWWindow();
+
+
         try { BootConfiguration configuration = new BootConfiguration();
             configuration.window_title = "lwjgl-guide";
             configuration.supported_resolutions.add(Resolution.R_1280x720);
@@ -36,7 +39,16 @@ public class Main {
         int escape_key_prev = GLFW_RELEASE; // escape key state from the previous frame
         int toggle_key_prev = GLFW_RELEASE; // toggle key state from the previous frame (F1)
 
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f); // set clear color to RED
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // set clear color to SOLID BLACK
+
+
+        RendererTest firstRenderer = null;
+        try { firstRenderer = new RendererTest();
+        } catch (Exception e) {
+            Logger.error(e);
+            window.terminate();
+            System.exit(0);
+        }
 
         // Loop until the window closes:
         while (!window.shouldClose()) {
@@ -59,6 +71,7 @@ public class Main {
                 // clear the windows back buffer to RED
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+                firstRenderer.draw();
                 // ---> DRAW OPERATIONS HERE <---
 
                 //When the entire frame has been rendered,
@@ -67,7 +80,9 @@ public class Main {
                 //(Swapping the windows' front and back buffers)
                 window.swapRenderBuffers();
             } window.processUserEvents();
-        } window.terminate();
+        }
+        Disposable.dispose(firstRenderer);
+        window.terminate();
     }
 
     public static void main(String[] args) {
