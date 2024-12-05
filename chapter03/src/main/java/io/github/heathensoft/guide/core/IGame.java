@@ -11,7 +11,9 @@ public interface IGame {
 
     void resize(Resolution resolution);
 
-    void update();
+    void update(float delta_time);
 
     void render();
+
+    void exit();
 }
