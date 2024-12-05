@@ -2,9 +2,9 @@
 ## The Source Code as a Guide
 
 The textual part of the guide will cover changes from one chapter to the next, explain key concepts and point to helpful external resources.
-But it won't be covering *everything*. By browsing the source code you'll find the state of the program
+Not everything will be covered in text -> by browsing the source code you'll find the state of the program
 between each chapter. (I'll try not to cover more than a few topics each chapter,
-making it easier to keep up with changes in the source code from one chapter to the next.)
+making it easier to keep up with changes to the program from one chapter to the next.)
 
 ## Documentation
 
