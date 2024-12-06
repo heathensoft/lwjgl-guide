@@ -15,6 +15,7 @@ import static org.lwjgl.opengl.GL31.GL_MAX_UNIFORM_BLOCK_SIZE;
 import static org.lwjgl.opengl.GL31.GL_MAX_UNIFORM_BUFFER_BINDINGS;
 
 /**
+ * Helper class
  * Frederik Dahl 12/5/2024
  */
 public class GLInfo {
@@ -47,14 +48,14 @@ public class GLInfo {
             max_vertex_attributes = buffer.get(0);
             core_profile = glfwGetWindowAttrib(window,GLFW_OPENGL_PROFILE) == GLFW_OPENGL_CORE_PROFILE;
         }
-        Logger.info("opengl version: {}.{}",version_major,version_minor);
-        Logger.info("opengl core profile: {}",core_profile);
-        Logger.info("opengl client limitations:");
-        Logger.info("opengl max texture units: {}", max_texture_units);
-        Logger.info("opengl max shader output draw buffers: {}", max_draw_buffers);
-        Logger.info("opengl max uniform buffer bindings: {}", max_uniform_buffer_bindings);
-        Logger.info("opengl max uniform buffer block size: {} Bytes", max_uniform_block_size);
-        Logger.info("opengl max vertex attributes: {}", max_vertex_attributes);
+        Logger.debug("opengl client limitations:");
+        Logger.debug("opengl version: {}.{}",version_major,version_minor);
+        Logger.debug("opengl core profile: {}",core_profile);
+        Logger.debug("opengl max texture units: {}", max_texture_units);
+        Logger.debug("opengl max shader output draw buffers: {}", max_draw_buffers);
+        Logger.debug("opengl max uniform buffer bindings: {}", max_uniform_buffer_bindings);
+        Logger.debug("opengl max uniform buffer block size: {} Bytes", max_uniform_block_size);
+        Logger.debug("opengl max vertex attributes: {}", max_vertex_attributes);
     }
 
     public String shaderVersionString() {
@@ -76,7 +77,7 @@ public class GLInfo {
                 case GL_INVALID_FRAMEBUFFER_OPERATION   -> "INVALID_FRAMEBUFFER_OPERATION";
                 default                                 -> "ERROR CODE: " + code;
             };
-            Logger.error("GL_ERROR: {}",error);
+            Logger.warn("GL_ERROR: {}",error);
         }
     }
 }

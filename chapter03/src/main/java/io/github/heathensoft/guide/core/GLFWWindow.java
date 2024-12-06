@@ -21,15 +21,12 @@ import static org.lwjgl.opengl.GL11.glViewport;
 public final class GLFWWindow {
 
     public static final int UPS_MIN = 30;
-    public static final int FPS_MIN = 30;
-    public static final int FPS_MAX = 1000;
     public static final int UPS_MAX = 1000;
 
     private List<Resolution> supported_resolutions; // resolutions supported by our game
     private Resolution game_resolution; // The current resolution
     private boolean game_resolution_changed; // found a better supported resolution for the game
     private long window;                // glfw window pointer
-    private int target_fps;             // requested target FPS without vsync
     private int target_ups;             // game logic updates per second
     private int framebuffer_w;          // width of the window framebuffer in pixels
     private int framebuffer_h;          // height of the window framebuffer in pixels
@@ -41,7 +38,6 @@ public final class GLFWWindow {
     private boolean vsync_enabled;      // limits fps to the display frame rate
 
     public long handle() { return window; }
-    public int targetFps() { return target_fps; }
     public int targetUps() { return target_ups; }
     public int framebufferW() { return framebuffer_w; }
     public int framebufferH() { return framebuffer_h; }
@@ -53,7 +49,7 @@ public final class GLFWWindow {
     public boolean isVsyncEnabled() { return vsync_enabled; }
 
 
-    public void initialize(BootConfiguration config) throws Exception {
+    void initialize(BootConfiguration config) throws Exception {
         if (config.supported_resolutions.isEmpty()) throw new Exception("the application failed provide resolution options");
         supported_resolutions = new ArrayList<>(config.supported_resolutions);
 
@@ -151,7 +147,6 @@ public final class GLFWWindow {
         glfwSetInputMode(window, GLFW_CURSOR, config.cursor_enabled ? GLFW_CURSOR_NORMAL: GLFW_CURSOR_DISABLED);
         vsync_enabled = config.vsync_enabled;
         glfwSwapInterval(vsync_enabled ? 1 : 0);
-        setTargetFPS(config.target_fps);
         setTargetUPS(config.target_ups);
         glfwShowWindow(window);
         // This line is critical for LWJGL's interoperation with GLFW's
@@ -204,7 +199,7 @@ public final class GLFWWindow {
      * Query input / display events.
      * Processing events will cause the window and input callbacks associated with those events to be called.
      */
-    public void processUserEvents() {
+    void processUserEvents() {
         glfwPollEvents();
         // todo: controller
     }
@@ -216,7 +211,7 @@ public final class GLFWWindow {
      * When the entire frame has been rendered, it is time to swap the back and the front buffers
      * in order to display what has been rendered and begin rendering a new frame.
      */
-    public void swapRenderBuffers() { glfwSwapBuffers(window); }
+    void swapRenderBuffers() { glfwSwapBuffers(window); }
 
     public boolean isWindowedMode() { return glfwGetWindowMonitor(window) == 0L; }
 
@@ -235,7 +230,7 @@ public final class GLFWWindow {
      * Note: Will reset the game_resolution_changed flag
      * @return true if the window has found a better suited resolution for the game
      */
-    public boolean shouldChangeGameResolution() {
+    boolean shouldChangeGameResolution() {
         if (game_resolution_changed) {
             game_resolution_changed = false;
             return true;
@@ -243,9 +238,10 @@ public final class GLFWWindow {
     }
 
     public void setTargetUPS(int target_ups) { this.target_ups = Math.clamp(target_ups,UPS_MIN,UPS_MAX); }
-    public void setTargetFPS(int target_fps) { this.target_fps = Math.clamp(target_fps,FPS_MIN,FPS_MAX); }
 
-    public void signalToClose() { glfwSetWindowShouldClose(window,true); }
+    void signalToClose() {
+        Logger.info("window signalled to close");
+        glfwSetWindowShouldClose(window,true); }
     public void show() { glfwShowWindow(window); }
     public void hide() { glfwHideWindow(window); }
     public void focus() { glfwFocusWindow(window); }
@@ -255,7 +251,7 @@ public final class GLFWWindow {
     public void toggleVsync(boolean enable) { vsync_enabled = enable; }
     public void useWindowViewport() { glViewport(viewport_x,viewport_y,viewport_w,viewport_h); }
 
-    public void terminate() {
+    void terminate() {
         Logger.debug("clearing opengl capabilities");
         GL.setCapabilities(null); // this IS nullable
         Logger.debug("freeing glfw display callbacks");

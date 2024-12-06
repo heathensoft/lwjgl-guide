@@ -1,4 +1,4 @@
-package io.github.heathensoft.guide;
+package io.github.heathensoft.guide.game;
 
 import io.github.heathensoft.guide.utils.Disposable;
 
@@ -100,15 +100,12 @@ public class RendererTest implements Disposable {
         // ***********************************************************************************************
 
         float[] vertices = new float[] {
-
                 /*{ V0 }*/-1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
                 /*{ V1 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
                 /*{ V2 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-
                 /*{ V3 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
                 /*{ V4 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
                 /*{ V5 }*/ 1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
-
         };
         vertex_attrib_array = glGenVertexArrays();
         vertex_buffer_object = glGenBuffers();

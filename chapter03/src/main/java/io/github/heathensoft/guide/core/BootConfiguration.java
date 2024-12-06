@@ -18,5 +18,4 @@ public class BootConfiguration {
     public int windowed_mode_width = 1280;
     public int windowed_mode_height = 720;
     public int target_ups = 60;
-    public int target_fps = 60;
 }
