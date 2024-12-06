@@ -1,11 +1,90 @@
 
-## What is a shader?
 
+## Introduction
 
+In this chapter we will set up a test renderer and ease into the OpenGL rendering API.
+We'll set up a shader program and transfer some vertex data to the GPU. Then we're going to tell opengl
+to draw them as triangles.
 
 ![screenshot](img/02/screenshot-chapter-2.png)
 
+*You won't need to understand every opengl function call used in this chapter. It takes time to learn opengl,
+so don't about getting everything straight away. Pick up a piece here and another piece there as we go. 
+Cross-referencing other tutorials and guides is usually very helpful.*
+
+
+## Short intro to Shaders
+
+
+A shader is a program running on the GPU.
+The GPU being incredibly efficient at parallel computing is capable
+on running thousands of small processes at the same time.
+
+### The Graphics Pipeline
+
+![shader-pipeline](img/02/shader-pipeline.png)
+Image Source: [LearnOpenGL](https://learnopengl.com/).
+
+The pipeline is a series of stages converting vertex data into pixels on the display. Three of them
+are programmable.
+
+* **Vertex Shader** - shader running per. vertex (Often transforming positions from world to screen space)
+* **Geometry Shader** - shader capable of adding additional geometry (optional stage)
+* **Fragment Shader** - shader running color calculations for every fragment (think of them as a pixels)
+
+Let's say the monitor has a resolution of 3840 x 2160.
+```
+3840 * 2160 = 8,294,400
+```
+That's ~8 million executions of the fragment shader.
+
+### Shaders used in this chapter
+
+*Shaders are written in their own language [GLSL](https://www.khronos.org/opengl/wiki/OpenGL_Shading_Language)(OpenGL Shading Language)*
+
+In RendererTest.java we create two very simple shaders.
+
+#### Vertex Shader
+
+Our vertex shader takes in a position [x,y,z] and a color [r,g,b] element per. vertex (point).
+the main() {} function is the shaders entry point. All we do in this simple shader is to
+take the incoming color and position and pass it on to the next stage.
+gl_Position is a vec4. That's because it's using homogeneous coordinate.
+We'll come back to that in a later chapter when we get into matrix transformations.
+Right now that value doesn't matter.
+
+```
+ #version 440
+ layout (location = 0) in vec3 a_pos;
+ layout (location = 1) in vec3 a_color;
+ out vec3 color;
+ void main() {
+     color = a_color;
+     gl_Position = vec4(a_pos,1.0);
+ }
+```
+#### Fragment Shader
+
+The fragment shader is just as simple. It takes in a color and outputs it directly to the
+framebuffer.
+
+```
+#version 440
+layout (location=0) out vec4 f_color;
+in vec3 color;
+void main() {
+    f_color = vec4(color,1.0);
+}
+```
+
+Let's see how we get the vertices and how we transfer them from our java program (client side) to the GPU.
+
 ## Uploading Geometry to the GPU
+
+### (Code from RenderTest.java)
+
+We create an array of floats representing the vertices, then we use the OpenGL
+api to transfer them to the GPU.
 
 ```
 [1]
@@ -34,7 +113,7 @@ glEnableVertexAttribArray(0);
 glEnableVertexAttribArray(1);
 glBindVertexArray(0);
 ```
-1. We define our geometry. In this case, 6 vertices with position (3 float) and color (3 float).
+1. We define our data. In this case, 6 vertices with position (3 float) and color (3 float).
 2. We create a [vertex array object](https://www.khronos.org/opengl/wiki/vertex_Specification#Vertex_Array_Object) (VAO)
 to store the format of the vertex data as well as references to the actual data buffers.
 Describing the layout of the geometry. See [7.]
@@ -132,12 +211,14 @@ float[] vertices = new float[] {
 
 ![first rectangle](img/02/first-rectangle.png)
 
-We uploaded 6 vertices to the GPU and in the render loop,
-we instruct the GPU to draw them as triangles with the following command:
+We transferred 6 vertices to the GPU. Inside the render loop,
+we instruct opengl to draw them as triangles with the following command:
 
 ```
 glDrawArrays(GL_TRIANGLES,0,6);
 ```
 
-The GPU will know that every 3 (in order of upload) vertices should be considered as a triangle.
-The 6 vertices form 2 triangles that forms a rectangle covering our screen.
+OpenGL will know that every 3 (in the order of upload) vertices should be considered as a triangle.
+The 2 triangles form a rectangle covering the viewport.
+
+
