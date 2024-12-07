@@ -3,7 +3,7 @@
 ## Introduction
 
 In this chapter we will set up a test renderer and ease into the OpenGL rendering API.
-We'll set up a shader program and transfer some vertex data to the GPU. Then we're going to tell opengl
+We'll set up a shader program and transfer some vertex data to the GPU and tell opengl
 to draw them as triangles.
 
 ![screenshot](img/02/screenshot-chapter-2.png)
@@ -66,7 +66,7 @@ Right now that value doesn't matter.
 #### Fragment Shader
 
 The fragment shader is just as simple. It takes in a color and outputs it directly to the
-framebuffer.
+framebuffer. (the 4th color component is alpha)
 
 ```
 #version 440
@@ -77,14 +77,14 @@ void main() {
 }
 ```
 
-Let's see how we get the vertices and how we transfer them from our java program (client side) to the GPU.
+Let's see how we set up the vertices and transfer them from our java program (client side) to the GPU.
 
 ## Uploading Geometry to the GPU
 
 ### (Code from RenderTest.java)
 
-We create an array of floats representing the vertices, then we use the OpenGL
-api to transfer them to the GPU.
+We create an array of floats representing the vertex data, then we use the OpenGL
+API to transfer them to the GPU.
 
 ```
 [1]

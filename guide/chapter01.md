@@ -16,7 +16,7 @@ Often with links to the documentation / reference pages online.
 And if not, an option should pop up to download the source files.*
 
 * [GLFW Documentation](https://www.glfw.org/docs/latest/) 
-* [OpenGL Reference Pages](https://registry.khronos.org/OpenGL-Refpages/gl4/)
+* [OpenGL Documentation](https://docs.gl/)
 
 
 ## Previously
