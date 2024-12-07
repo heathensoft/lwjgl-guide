@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Wrapper class for files
  * Frederik Dahl 12/7/2024
  */
 public class ExternalFile {

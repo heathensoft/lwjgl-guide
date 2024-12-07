@@ -16,14 +16,17 @@ public class Game implements IGame {
         Engine.get().run(new Game(),args);
     }
 
+    public static final int game_res_w = 1200;
+    public static final int game_res_h = 800;
     private RendererTest renderer;
     private int escape_key_prev = GLFW_RELEASE; // ESCAPE key state from the previous frame
     private int f1_key_prev = GLFW_RELEASE;     // F1 key state from the previous frame
 
     public void configure(BootConfiguration boot_config, String[] args) {
         boot_config.window_title = "lwjgl-guide";
-        boot_config.supported_resolutions.add(Resolution.R_1280x720);
-        boot_config.supported_resolutions.add(Resolution.R_1920x1080);
+        boot_config.supported_resolutions.add(new Resolution(game_res_w,game_res_h));
+        boot_config.windowed_mode_height = game_res_h;
+        boot_config.windowed_mode_width = game_res_w;
         boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
         boot_config.vsync_enabled = true;
@@ -45,7 +48,7 @@ public class Game implements IGame {
             Engine.get().exitMainLoop();
         } else if (f1_key_state == GLFW_PRESS && f1_key_prev == GLFW_RELEASE) {
             if (window.isWindowedMode()) window.fullScreen();
-            else window.windowedMode(Resolution.R_1280x720);
+            else window.windowedMode(game_res_w,game_res_h);
         } escape_key_prev = escape_key_state;
         f1_key_prev = f1_key_state;
     }

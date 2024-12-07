@@ -161,22 +161,24 @@ public final class GLFWWindow {
         // todo: switch to the next available connected monitor
     }
 
-    public void windowedMode(Resolution resolution) {
+    public void windowedMode(int width, int height) {
         try (MemoryStack stack = MemoryStack.stackPush()){
             IntBuffer w_buffer = stack.mallocInt(1);
             IntBuffer h_buffer = stack.mallocInt(1);
             glfwGetWindowSize(window,w_buffer,h_buffer);
-            int new_window_w = resolution.width();
-            int new_window_h = resolution.height();
             int current_window_w = w_buffer.get(0);
             int current_window_h = h_buffer.get(0);
-            int new_window_x = Math.round((current_window_w - new_window_w) / 2f);
-            int new_window_y = Math.round((current_window_h - new_window_h) / 2f);
+            int new_window_x = Math.round((current_window_w - width) / 2f);
+            int new_window_y = Math.round((current_window_h - height) / 2f);
             if (isWindowedMode()) { // centered
-                glfwSetWindowSize(window,new_window_w,new_window_h);
+                glfwSetWindowSize(window, width, height);
                 glfwSetWindowPos(window,new_window_x,new_window_y);
-            } else glfwSetWindowMonitor(window,0L,new_window_x,new_window_y,new_window_w,new_window_h,GLFW_DONT_CARE);
+            } else glfwSetWindowMonitor(window,0L,new_window_x,new_window_y, width, height,GLFW_DONT_CARE);
         }
+    }
+
+    public void windowedMode(Resolution resolution) {
+        windowedMode(resolution.width(),resolution.height());
     }
 
     /** If windowed: Set the window to fullscreen on the primary monitor */

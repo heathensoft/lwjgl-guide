@@ -22,10 +22,14 @@ public class RendererTest implements Disposable {
             #version 440
             layout (location = 0) in vec3 a_pos;
             layout (location = 1) in vec3 a_color;
+            const vec2 resolution = vec2(1200.0,800.0);
             out vec3 color;
             void main() {
                 color = a_color;
-                gl_Position = vec4(a_pos,1.0);
+                vec2 position_xy = vec2(a_pos.xy);
+                position_xy /= resolution;
+                position_xy = position_xy * 2.0 - 1.0;
+                gl_Position = vec4(position_xy, a_pos.z, 1.0);
             }""";
 
     private final static String fragment_shader_source = """
@@ -100,12 +104,23 @@ public class RendererTest implements Disposable {
         // ***********************************************************************************************
 
         float[] vertices = new float[] {
-                /*{ V0 }*/-1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-                /*{ V1 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-                /*{ V2 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-                /*{ V3 }*/ 1.0f, 1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
-                /*{ V4 }*/-1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
-                /*{ V5 }*/ 1.0f,-1.0f, 0.0f,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+
+                /*{ V0 }*/0   , 800, 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
+                /*{ V1 }*/0   ,0   , 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
+                /*{ V2 }*/1200, 800, 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
+
+                /*{ V3 }*/1200, 800, 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+                /*{ V4 }*/0   , 0  , 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+                /*{ V5 }*/1200, 0  , 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+
+                /*{ V0 }*/800 , 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+                /*{ V1 }*/800 , 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+                /*{ V2 }*/1000, 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+
+                /*{ V3 }*/1000, 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+                /*{ V4 }*/800 , 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+                /*{ V5 }*/1000, 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+
         };
         vertex_attrib_array = glGenVertexArrays();
         vertex_buffer_object = glGenBuffers();
@@ -122,7 +137,7 @@ public class RendererTest implements Disposable {
     public void draw() {
         glUseProgram(shader_program);
         glBindVertexArray(vertex_attrib_array);
-        glDrawArrays(GL_TRIANGLES,0,6);
+        glDrawArrays(GL_TRIANGLES,0,12);
         glBindVertexArray(0);
         glUseProgram(0);
     }
