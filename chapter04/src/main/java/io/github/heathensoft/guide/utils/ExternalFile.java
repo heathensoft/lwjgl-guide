@@ -25,7 +25,7 @@ public class ExternalFile {
     public ExternalFile(String first, String ...more) { this(Path.of(first, more)); }
     public ExternalFile(Path path) { this.path = path; }
 
-    /** Read file to direct buffer (read mode) */
+    /** read file to direct buffer */
     public ByteBuffer readToBuffer() throws IOException {
         if (!isFile()) throw new IOException("not a readable file: " + path.toString());
         try (InputStream inputStream = new FileInputStream(path.toFile())) {
