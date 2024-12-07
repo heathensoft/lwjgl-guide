@@ -253,6 +253,7 @@ public final class GLFWWindow {
     public void toggleVsync(boolean enable) { vsync_enabled = enable; }
     public void useWindowViewport() { glViewport(viewport_x,viewport_y,viewport_w,viewport_h); }
 
+    @SuppressWarnings("all")
     void terminate() {
         Logger.debug("clearing opengl capabilities");
         GL.setCapabilities(null); // this IS nullable
@@ -328,6 +329,7 @@ public final class GLFWWindow {
         for (Callback c : list) if (c != null) c.free();
     }
 
+    @SuppressWarnings("resource")
     private void freeGLFWErrorCallback() {
         GLFWErrorCallback errorCallback = glfwSetErrorCallback(null);
         if (errorCallback != null) errorCallback.free();
