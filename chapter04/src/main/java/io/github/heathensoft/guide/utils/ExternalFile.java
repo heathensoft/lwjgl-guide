@@ -8,10 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -24,14 +21,11 @@ import java.util.stream.Stream;
 public class ExternalFile {
 
     private final Path path;
+    public ExternalFile(String path) { this(Path.of(path)); }
+    public ExternalFile(String first, String ...more) { this(Path.of(first, more)); }
+    public ExternalFile(Path path) { this.path = path; }
 
-    public ExternalFile(String path) throws InvalidPathException { this(Path.of(path)); }
-    public ExternalFile(Path path) {
-        if (path == null) throw new IllegalStateException("path arg cannot be null");
-        this.path = path;
-    }
-
-    /** Read file to direct buffer */
+    /** Read file to direct buffer (read mode) */
     public ByteBuffer readToBuffer() throws IOException {
         if (!isFile()) throw new IOException("not a readable file: " + path.toString());
         try (InputStream inputStream = new FileInputStream(path.toFile())) {
@@ -144,9 +138,32 @@ public class ExternalFile {
         }
     }
 
-    public void createFile(boolean replace) {
-        if (exist()) {
+    /**
+     * create dir structure if not already exist
+     * @throws IOException if the path exist as a file
+     */
+    public void createAsDir() throws IOException {
+        if (isFile()) throw new FileAlreadyExistsException("dir exist as a file: " + path);
+        if (!exist()) {
+            Files.createDirectories(path);
+        }
+    }
 
+    /**
+     * create file
+     * @param replace replace existing file
+     * @throws IOException if the path exist as a dir
+     */
+    public void createAsFile(boolean replace) throws IOException {
+        if (isFolder()) throw new FileAlreadyExistsException("file exist as a dir: " + path);
+        if (!exist()) {
+            Path parent_dir = path.getParent();
+            if (parent_dir != null) {
+                Files.createDirectories(parent_dir);
+            } Files.createFile(path);
+        } else if (replace) {
+            Files.delete(path);
+            Files.createFile(path);
         }
     }
 
@@ -175,6 +192,22 @@ public class ExternalFile {
         }
     }
 
+    /** copy this into dst */
+    public ExternalFile copyTo(ExternalFile dst, boolean replace) throws IOException {
+        if (!exist()) throw new IOException("nothing to copy");
+        dst.createAsDir();
+        ExternalFile copy = dst.resolve(name());
+        if (isFolder()) { copy.createAsDir();
+            assureStructure(path,copy.path);
+            copyContent(path,copy.path,replace);
+        } else if (copy.exist()) {
+            if (copy.isFolder()) {
+                throw new FileAlreadyExistsException("file exist as a dir: " + path);
+            } if (replace) { copy.delete();
+                Files.copy(path,copy.path); }
+        } else Files.copy(path,copy.path);
+        return copy;
+    }
 
 
     public ExternalFile resolve(String other) throws InvalidPathException {
@@ -205,5 +238,42 @@ public class ExternalFile {
         return path.toString();
     }
 
+    private void assureStructure(final Path source, final Path target) throws IOException {
+        final String tar_str = target.toString();
+        final String src_str = source.toString();
+        try (Stream<Path> stream = Files.walk(source)){
+            stream.forEach(src_path -> {
+                if (Files.isDirectory(src_path)) {
+                    String sub_str = src_path.toString().substring(src_str.length());
+                    Path new_dir = Path.of(tar_str,sub_str);
+                    if (!Files.exists(new_dir)) {
+                        try { Files.createDirectory(new_dir);
+                        } catch (IOException _) { /* */ }
+                    }
+                }
+            });
+        }
+    }
+
+    private void copyContent(final Path source, final Path target, boolean replace) throws IOException {
+        final String tar_str = target.toString();
+        final String src_str = source.toString();
+        try (Stream<Path> stream = Files.walk(source)){
+            stream.forEach(src_path -> {
+                if (Files.isRegularFile(src_path)) {
+                    String sub_str = src_path.toString().substring(src_str.length());
+                    Path new_dir = Path.of(tar_str,sub_str);
+                    if (!Files.exists(new_dir)) {
+                        try { Files.copy(src_path,new_dir);
+                        } catch (IOException _) { /* */ }
+                    } else if (replace) {
+                        try { Files.copy(src_path,new_dir,
+                                StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException _) { /* */ }
+                    }
+                }
+            });
+        }
+    }
 
 }
