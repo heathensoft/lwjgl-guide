@@ -36,15 +36,15 @@ public class Shader implements Disposable {
         }
     }
 
+
     public String sourceCode() { return glGetShaderSource(handle); }
     public Type type() { return type; }
     public int handle() { return handle; }
-    public boolean isDisposed() { return disposed; }
-
-    public void dispose() {
-        if (!disposed) {
-            glDeleteShader(handle);
-            disposed = true;
-        }
+    public void dispose() { glDeleteShader(handle); }
+    public boolean isDisposed() {
+        int delete_status = glGetShaderi(handle,GL_DELETE_STATUS);
+        return delete_status == GL_TRUE;
     }
+
+
 }

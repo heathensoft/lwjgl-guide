@@ -2,10 +2,12 @@ package io.github.heathensoft.guide.core;
 
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
+import org.tinylog.Logger;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.GL_TRUE;
@@ -18,6 +20,7 @@ import static org.lwjgl.opengl.GL43.*;
  */
 public class ShaderProgram {
 
+    private static final Map<Integer,ShaderProgram> programs_by_id = new HashMap<>();
     private static ShaderProgram current_program;
 
     private final int handle;
@@ -49,6 +52,7 @@ public class ShaderProgram {
             this.frag_shader = frag_shader;
             this.geom_shader = geom_shader;
             this.uniforms = createUniformLocationMap(handle);
+            programs_by_id.putIfAbsent(handle,this);
         }  else {
             if (vert_shader != null) glDetachShader(handle,vert_shader.handle());
             if (frag_shader != null) glDetachShader(handle,frag_shader.handle());
@@ -69,6 +73,84 @@ public class ShaderProgram {
 
     public ShaderProgram(Shader vert_shader, Shader frag_shader) throws Exception {
         this(null, vert_shader,frag_shader,null);
+    }
+
+    /**
+     *
+     * @param shader
+     * @param info_log
+     * @return the previously attached shader if the new program compiled (success)
+     * or null if no change occurred (check the info_log)
+     * @throws Exception
+     */
+    public Shader trySwap(Shader shader, List<String> info_log) throws Exception {
+
+        // Never tried this before, so I'm just logging everywhere.
+
+        if (shader == null) throw new RuntimeException("cannot attach null shader");
+        if (shader.isDisposed()) {
+            info_log.add("shader to attach is flagged for deletion");
+            return null;
+        }
+
+        // if the current program shader of type != null,
+        // then the shader of type is still attached to the program.
+
+        switch (shader.type()) {
+            case VERT_SHADER -> {
+                if (vert_shader == null) {
+                    info_log.add("no vertex shader attached to shader program");
+                    return null;
+                } if (vert_shader == shader) {
+                    info_log.add("vertex shader already attached");
+                    return null;
+                } boolean current = isUsed(); // currently used
+                if (current) useProgram(GL_NONE);
+                info_log.add("detaching vertex shader");
+                glDetachShader(handle, vert_shader.handle());
+                info_log.add("attaching new vertex shader");
+                glAttachShader(handle, shader.handle());
+                info_log.add("recompiling program");
+                glLinkProgram(handle);
+                int status = glGetProgrami(handle,GL_LINK_STATUS);
+                if (status == GL_TRUE) {
+                    info_log.add("program compiled successfully");
+                    Shader tmp = vert_shader;
+                    vert_shader = shader;
+                    if (current) useProgram(handle);
+                    return tmp;
+                } else {
+                    info_log.add(glGetProgramInfoLog(handle));
+                    info_log.add("program failed to compile, attempting to revert");
+                    info_log.add("detaching vertex shader");
+                    glDetachShader(handle,shader.handle());
+                    info_log.add("attaching previous vertex shader");
+                    glAttachShader(handle,vert_shader.handle());
+                    info_log.add("recompiling program");
+                    glLinkProgram(handle);
+                    status = glGetProgrami(handle,GL_LINK_STATUS);
+                    if (status == GL_TRUE) {
+                        info_log.add("program compiled successfully");
+                        if (current) useProgram(handle);
+                    } else {
+                        info_log.add("program failed to compile, throwing exception");
+
+                        // the revert should not fail
+
+                    }
+                }
+
+            }
+            case FRAG_SHADER -> {
+
+            }
+            case GEOM_SHADER -> {
+
+            }
+        }
+
+
+        return null;
     }
 
     public void detachShaders(boolean delete) {
@@ -99,6 +181,68 @@ public class ShaderProgram {
         return name;
     }
 
+    public int handle() {
+        return handle;
+    }
+
+    public boolean isUsed() {
+        return this == current_program;
+    }
+
+    public static ShaderProgram currentProgram() {
+        return current_program;
+    }
+
+    public static List<ShaderProgram> allPrograms() {
+        return programs_by_id.values().stream().toList();
+    }
+
+    public static void useProgram(ShaderProgram program) {
+        if (program == null) useProgram(GL_NONE);
+        else useProgram(program.handle);
+    }
+
+    public static void useProgram(int gl_handle) {
+        if (gl_handle == GL_NONE) {
+            if (current_program != null) {
+                glUseProgram(GL_NONE);
+                current_program = null; }
+        } else if (current_program == null) {
+            ShaderProgram program = programs_by_id.get(gl_handle);
+            if (program == null) throw new RuntimeException("no such shader program");
+            glUseProgram(program.handle);
+            current_program = program;
+        } else if (current_program.handle != gl_handle) {
+            ShaderProgram program = programs_by_id.get(gl_handle);
+            if (program == null) throw new RuntimeException("no such shader program");
+            glUseProgram(program.handle);
+            current_program = program;
+        }
+    }
+
+    public static void deleteCurrentProgram() {
+        deleteProgram(current_program);
+    }
+
+    private static void deleteProgram(ShaderProgram program) {
+        if (program != null) {
+            int program_handle = program.handle;
+            programs_by_id.remove(program_handle,program);
+            if (program == current_program) {
+                current_program = null;
+                glUseProgram(GL_NONE);
+            } String name = program.name;
+            Logger.debug("deleting shader program: \"{}\"",name);
+            program.detachShaders(true);
+            glDeleteProgram(program_handle);
+        }
+    }
+
+    private static void deleteAllPrograms() {
+        for (var entry : programs_by_id.entrySet()) {
+            deleteProgram(entry.getValue());
+        }
+    }
 
     public static void setUniform(String name, int i) {
         int uniform_location = getUniformLocation(name);
