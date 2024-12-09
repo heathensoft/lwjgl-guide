@@ -74,7 +74,6 @@ public class RendererTest implements Disposable {
         glBindVertexArray(vertex_attrib_array);
         glDrawArrays(GL_TRIANGLES,0,12);
         glBindVertexArray(0);
-
     }
 
     public void dispose() {
