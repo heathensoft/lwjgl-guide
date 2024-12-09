@@ -62,5 +62,6 @@ public class Game implements IGame {
 
     public void exit() {
         Disposable.dispose(renderer);
+        ShaderProgram.deleteAllPrograms();
     }
 }

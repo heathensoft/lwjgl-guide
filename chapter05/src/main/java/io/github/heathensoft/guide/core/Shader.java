@@ -20,10 +20,9 @@ public class Shader implements Disposable {
 
     private final Type type;    // shader type (vert, frag, geom)
     private final int handle;   // opengl shader handle
-    private boolean disposed;   // shader has been deleted
 
     /** will compile the shader -> throws exception if compilation failed */
-    protected Shader(String source, Type type) throws Exception {
+    public Shader(String source, Type type) throws Exception {
         if (type == null) throw new RuntimeException("null arg shader type");
         this.handle = glCreateShader(type.gl_enum);
         this.type = type;
@@ -32,10 +31,10 @@ public class Shader implements Disposable {
         int compile_status = glGetShaderi(handle,GL_COMPILE_STATUS);
         if (compile_status == GL_FALSE) {
             String error_log = glGetShaderInfoLog(handle);
+            glDeleteShader(handle);
             throw new Exception(error_log);
         }
     }
-
 
     public String sourceCode() { return glGetShaderSource(handle); }
     public Type type() { return type; }

@@ -45,6 +45,7 @@ public class ShaderProgram {
         if (vert_shader != null) glAttachShader(handle,vert_shader.handle());
         if (frag_shader != null) glAttachShader(handle,frag_shader.handle());
         if (geom_shader != null) glAttachShader(handle,geom_shader.handle());
+        Logger.debug("creating shader program: \"{}\"",this.name);
         glLinkProgram(handle);
         int status = glGetProgrami(handle,GL_LINK_STATUS);
         if (status == GL_TRUE) {
@@ -75,83 +76,7 @@ public class ShaderProgram {
         this(null, vert_shader,frag_shader,null);
     }
 
-    /**
-     *
-     * @param shader
-     * @param info_log
-     * @return the previously attached shader if the new program compiled (success)
-     * or null if no change occurred (check the info_log)
-     * @throws Exception
-     */
-    public Shader trySwap(Shader shader, List<String> info_log) throws Exception {
 
-        // Never tried this before, so I'm just logging everywhere.
-
-        if (shader == null) throw new RuntimeException("cannot attach null shader");
-        if (shader.isDisposed()) {
-            info_log.add("shader to attach is flagged for deletion");
-            return null;
-        }
-
-        // if the current program shader of type != null,
-        // then the shader of type is still attached to the program.
-
-        switch (shader.type()) {
-            case VERT_SHADER -> {
-                if (vert_shader == null) {
-                    info_log.add("no vertex shader attached to shader program");
-                    return null;
-                } if (vert_shader == shader) {
-                    info_log.add("vertex shader already attached");
-                    return null;
-                } boolean current = isUsed(); // currently used
-                if (current) useProgram(GL_NONE);
-                info_log.add("detaching vertex shader");
-                glDetachShader(handle, vert_shader.handle());
-                info_log.add("attaching new vertex shader");
-                glAttachShader(handle, shader.handle());
-                info_log.add("recompiling program");
-                glLinkProgram(handle);
-                int status = glGetProgrami(handle,GL_LINK_STATUS);
-                if (status == GL_TRUE) {
-                    info_log.add("program compiled successfully");
-                    Shader tmp = vert_shader;
-                    vert_shader = shader;
-                    if (current) useProgram(handle);
-                    return tmp;
-                } else {
-                    info_log.add(glGetProgramInfoLog(handle));
-                    info_log.add("program failed to compile, attempting to revert");
-                    info_log.add("detaching vertex shader");
-                    glDetachShader(handle,shader.handle());
-                    info_log.add("attaching previous vertex shader");
-                    glAttachShader(handle,vert_shader.handle());
-                    info_log.add("recompiling program");
-                    glLinkProgram(handle);
-                    status = glGetProgrami(handle,GL_LINK_STATUS);
-                    if (status == GL_TRUE) {
-                        info_log.add("program compiled successfully");
-                        if (current) useProgram(handle);
-                    } else {
-                        info_log.add("program failed to compile, throwing exception");
-
-                        // the revert should not fail
-
-                    }
-                }
-
-            }
-            case FRAG_SHADER -> {
-
-            }
-            case GEOM_SHADER -> {
-
-            }
-        }
-
-
-        return null;
-    }
 
     public void detachShaders(boolean delete) {
         if (vert_shader != null) {
@@ -238,7 +163,7 @@ public class ShaderProgram {
         }
     }
 
-    private static void deleteAllPrograms() {
+    public static void deleteAllPrograms() {
         for (var entry : programs_by_id.entrySet()) {
             deleteProgram(entry.getValue());
         }

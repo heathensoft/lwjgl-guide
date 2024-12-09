@@ -1,6 +1,10 @@
 package io.github.heathensoft.guide.game;
 
+import io.github.heathensoft.guide.core.Engine;
+import io.github.heathensoft.guide.core.Shader;
+import io.github.heathensoft.guide.core.ShaderProgram;
 import io.github.heathensoft.guide.utils.Disposable;
+import io.github.heathensoft.guide.utils.Resources;
 
 import static org.lwjgl.opengl.GL11.GL_NONE;
 import static org.lwjgl.opengl.GL15.glDeleteBuffers;
@@ -16,90 +20,21 @@ public class RendererTest implements Disposable {
 
     private final int vertex_attrib_array;
     private final int vertex_buffer_object;
-    private final int shader_program;
+    private final ShaderProgram shader_program;
 
-    private final static String vertex_shader_source = """
-            #version 440
-            layout (location = 0) in vec3 a_pos;
-            layout (location = 1) in vec3 a_color;
-            const vec2 resolution = vec2(1200.0,800.0);
-            out vec3 color;
-            void main() {
-                color = a_color;
-                vec2 position_xy = vec2(a_pos.xy);
-                position_xy /= resolution;
-                position_xy = position_xy * 2.0 - 1.0;
-                gl_Position = vec4(position_xy, a_pos.z, 1.0);
-            }""";
-
-    private final static String fragment_shader_source = """
-            #version 440
-            layout (location=0) out vec4 f_color;
-            in vec3 color;
-            void main() {
-                f_color = vec4(color,1.0);
-            }""";
 
     public RendererTest() throws Exception {
 
-        // create an empty shader program
-        shader_program = glCreateProgram();
-        // create vertex shader object
-        int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        // copy the shader source characters into the shader object
-        glShaderSource(vertex_shader,vertex_shader_source);
-        // compile the vertex shader
-        glCompileShader(vertex_shader);
-        int compile_status = glGetShaderi(vertex_shader,GL_COMPILE_STATUS);
-        if (compile_status == GL_FALSE) {
-            String error_message = glGetShaderInfoLog(vertex_shader);
-            glDeleteShader(vertex_shader);
-            glDeleteProgram(shader_program);
-            throw new Exception(error_message);
-        } // attach the vertex shader to the program
-        glAttachShader(shader_program,vertex_shader);
+        // Loading shader source code files from the project "resources folder"
+        String vert_shader_source = Resources.asString("render-test.vert");
+        String frag_shader_source = Resources.asString("render-test.frag");
 
-        // create fragment shader object
-        int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        // copy the shader source characters into the shader object
-        glShaderSource(fragment_shader,fragment_shader_source);
-        // compile the fragment shader
-        glCompileShader(fragment_shader);
-        compile_status = glGetShaderi(fragment_shader,GL_COMPILE_STATUS);
-        if (compile_status == GL_FALSE) {
-            String error_message = glGetShaderInfoLog(fragment_shader);
-            glDeleteShader(vertex_shader);
-            glDeleteShader(fragment_shader);
-            glDeleteProgram(shader_program);
-            throw new Exception(error_message);
-        } // attach the fragment shader to the program
-        glAttachShader(shader_program,fragment_shader);
-
-        // link the program
-        // each attached shaders will be used to create an executable
-        // that will run for that stage in the graphics pipeline
-        glLinkProgram(shader_program);
-
-        // Once the shaders have been linked, there is no need to keep them around
-        glDetachShader(shader_program,vertex_shader);
-        glDetachShader(shader_program,fragment_shader);
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
-        int link_status = glGetProgrami(shader_program,GL_LINK_STATUS);
-        if (link_status == GL_FALSE) {
-            String error_message = glGetProgramInfoLog(shader_program);
-            glDeleteProgram(shader_program);
-            throw new Exception(error_message);
-        }
-        // checks to see whether the executables contained in
-        // program can execute given the current OpenGL state
-        glValidateProgram(shader_program);
-        int validate_status = glGetProgrami(shader_program,GL_VALIDATE_STATUS);
-        if (validate_status == GL_FALSE) {
-            String error_message = glGetProgramInfoLog(shader_program);
-            glDeleteProgram(shader_program);
-            throw new Exception(error_message);
-        }
+        // Uploading the source code strings to the gpu then compile the code
+        // Each shader is compiled separately.
+        Shader vert_shader = new Shader(vert_shader_source, Shader.Type.VERT_SHADER);
+        Shader frag_shader = new Shader(frag_shader_source, Shader.Type.FRAG_SHADER);
+        shader_program = new ShaderProgram(vert_shader,frag_shader);
+        shader_program.detachShaders(true);
 
         // ***********************************************************************************************
 
@@ -108,7 +43,6 @@ public class RendererTest implements Disposable {
                 /*{ V0 }*/0   , 800, 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
                 /*{ V1 }*/0   ,0   , 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
                 /*{ V2 }*/1200, 800, 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-
                 /*{ V3 }*/1200, 800, 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
                 /*{ V4 }*/0   , 0  , 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
                 /*{ V5 }*/1200, 0  , 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
@@ -116,7 +50,6 @@ public class RendererTest implements Disposable {
                 /*{ V0 }*/800 , 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
                 /*{ V1 }*/800 , 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
                 /*{ V2 }*/1000, 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
-
                 /*{ V3 }*/1000, 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
                 /*{ V4 }*/800 , 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
                 /*{ V5 }*/1000, 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
@@ -135,18 +68,18 @@ public class RendererTest implements Disposable {
     }
 
     public void draw() {
-        glUseProgram(shader_program);
+        ShaderProgram.useProgram(shader_program);
+        ShaderProgram.setUniform("u_time",
+                (float)Engine.get().time().runTimeSeconds());
         glBindVertexArray(vertex_attrib_array);
         glDrawArrays(GL_TRIANGLES,0,12);
         glBindVertexArray(0);
-        glUseProgram(0);
+
     }
 
     public void dispose() {
         glDeleteVertexArrays(vertex_attrib_array);
         glDeleteBuffers(vertex_buffer_object);
-        glUseProgram(GL_NONE);
-        glDeleteProgram(shader_program);
     }
 
 
