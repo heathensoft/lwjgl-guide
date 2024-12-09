@@ -7,4 +7,5 @@ include("chapter02")
 include("chapter03")
 include("chapter04")
 include("chapter05")
+include("chapter06")
 
