@@ -3,13 +3,11 @@ package io.github.heathensoft.guide.game;
 import io.github.heathensoft.guide.core.Engine;
 import io.github.heathensoft.guide.core.Shader;
 import io.github.heathensoft.guide.core.ShaderProgram;
-import io.github.heathensoft.guide.utils.Disposable;
+import io.github.heathensoft.guide.core.Disposable;
 import io.github.heathensoft.guide.utils.Resources;
 
-import static org.lwjgl.opengl.GL11.GL_NONE;
 import static org.lwjgl.opengl.GL15.glDeleteBuffers;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL20.glDeleteShader;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 

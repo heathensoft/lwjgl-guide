@@ -1,7 +1,5 @@
 package io.github.heathensoft.guide.core;
 
-import io.github.heathensoft.guide.utils.Disposable;
-
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 

@@ -1,4 +1,4 @@
-package io.github.heathensoft.guide.utils;
+package io.github.heathensoft.guide.core;
 
 /**
  * Disposable is meant for resources allocated outside the Java heap.

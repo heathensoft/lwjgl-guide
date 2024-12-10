@@ -1,7 +1,7 @@
 package io.github.heathensoft.guide.game;
 
 import io.github.heathensoft.guide.core.*;
-import io.github.heathensoft.guide.utils.Disposable;
+import io.github.heathensoft.guide.core.Disposable;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
