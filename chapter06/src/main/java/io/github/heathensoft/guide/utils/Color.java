@@ -6,9 +6,15 @@ import org.joml.Vector4f;
 import static java.lang.Math.min;
 
 /**
+ *
+ * Utility class for converting between color spaces:
+ * <a href="https://www.easyrgb.com/en/math.php">...</a>
+ *
+ * IntColor:
  * -------------------------
  * MSB | a | b | g | r | LSB
  * -------------------------
+ *
  * Frederik Dahl 12/9/2024
  */
 public class Color {
@@ -18,7 +24,6 @@ public class Color {
     public static final int ERROR_BITS = 0xFF5E2ADC;
     public static final int WHITE_BITS = 0xFFFFFFFF;
     public static final int BLACK_BITS = 0xFF000000;
-    private static final Vector4f tmpV4 = new Vector4f();
 
     public static int rgbToIntColor(Vector4f value) {
         int r = (int)(value.x * 255) & 0xFF;
@@ -26,6 +31,14 @@ public class Color {
         int b = (int)(value.z * 255) & 0xFF;
         int a = (int)(value.w * 255) & 0xFF;
         return r | (g << 8) | (b << 16) | (a << 24);
+    }
+
+    public static int rgbToIntColor(int r, int g, int b, int a) {
+        int color = a & 0xFF;
+        color = (color << 8) | (b & 0xFF);
+        color = (color << 8) | (g & 0xFF);
+        color = (color << 8) | (r & 0xFF);
+        return color;
     }
 
     public static Vector4f rgbToHsv(Vector4f value) {
@@ -169,7 +182,7 @@ public class Color {
     }
 
     public static String hsvToHex(Vector4f value) {
-        return rgbToHex(hsvToRgb(tmpV4.set(value)));
+        return rgbToHex(hsvToRgb(new Vector4f(value)));
     }
 
     public static Vector4f hslToHsv(Vector4f value) {
@@ -181,7 +194,7 @@ public class Color {
     }
 
     public static String hslToHex(Vector4f value) {
-        return rgbToHex(hslToRgb(tmpV4.set(value)));
+        return rgbToHex(hslToRgb(new Vector4f(value)));
     }
 
     public static Vector4f hslToRgb(Vector4f value) {

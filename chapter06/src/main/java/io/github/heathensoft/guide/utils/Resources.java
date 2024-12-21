@@ -1,5 +1,6 @@
 package io.github.heathensoft.guide.utils;
 
+import io.github.heathensoft.guide.core.Bitmap;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
@@ -26,19 +27,23 @@ import java.util.stream.Stream;
 public class Resources {
 
 
+    public static Bitmap image(String resource, int approximate_size, boolean vFlip) throws Exception {
+        return new Bitmap(readToBuffer(resource,approximate_size),vFlip);
+    }
+
     /** read file to direct buffer (big endian) */
-    public static ByteBuffer readToBuffer(String resource, int size) throws IOException {
+    public static ByteBuffer readToBuffer(String resource, int approximate_size) throws IOException {
         ByteBuffer result;
         try (InputStream is = resourceStream(resource)){
             try (ReadableByteChannel byteChannel = Channels.newChannel(is)){
-                result = ByteBuffer.allocateDirect(Math.max(128,size));
+                result = ByteBuffer.allocateDirect(Math.max(1024,approximate_size));
                 result.order(ByteOrder.BIG_ENDIAN);
                 while (true) {
                     int bytes = byteChannel.read(result);
                     if (bytes == -1) break;
                     if (result.remaining() == 0) {
-                        size = result.capacity() * 2;
-                        ByteBuffer b = BufferUtils.createByteBuffer(size);
+                        approximate_size = result.capacity() * 2;
+                        ByteBuffer b = BufferUtils.createByteBuffer(approximate_size);
                         b.order(ByteOrder.BIG_ENDIAN);
                         result = b.put(result.flip());
                     }
@@ -80,6 +85,7 @@ public class Resources {
         throw new IOException("resource: " + resource + "not found");
     }
 
+    // Todo: Url might not work for Jars
     private static URL getURL(String resource) throws IOException {
         List<ClassLoader> classLoaders = classLoaders();
         for (ClassLoader classLoader : classLoaders) {

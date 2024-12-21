@@ -1,27 +1,32 @@
 package io.github.heathensoft.guide.game;
 
-import io.github.heathensoft.guide.core.Engine;
-import io.github.heathensoft.guide.core.Shader;
-import io.github.heathensoft.guide.core.ShaderProgram;
-import io.github.heathensoft.guide.core.Disposable;
+import io.github.heathensoft.guide.core.*;
 import io.github.heathensoft.guide.utils.Resources;
+
+import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL15.glDeleteBuffers;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL42.glTexStorage2D;
 
 /**
  * Frederik Dahl 12/5/2024
  */
 public class RendererTest implements Disposable {
 
+    private int texture;
     private final int vertex_attrib_array;
     private final int vertex_buffer_object;
     private final ShaderProgram shader_program;
 
 
     public RendererTest() throws Exception {
+
+        // ***********************************************************************************************
+
+        // SHADER
 
         // Loading shader source code files from the project "resources folder"
         String vert_shader_source = Resources.asString("render-test.vert");
@@ -34,23 +39,43 @@ public class RendererTest implements Disposable {
         shader_program = new ShaderProgram(vert_shader,frag_shader);
         shader_program.detachShaders(true);
 
+
+
         // ***********************************************************************************************
 
-        float[] vertices = new float[] {
+        // TEXTURE
 
-                /*{ V0 }*/0   , 800, 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-                /*{ V1 }*/0   ,0   , 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-                /*{ V2 }*/1200, 800, 0,/*position (xyz)*/0.2f, 0.1f, 0.4f,/*color (rgb)*/
-                /*{ V3 }*/1200, 800, 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
-                /*{ V4 }*/0   , 0  , 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
-                /*{ V5 }*/1200, 0  , 0,/*position (xyz)*/0.2f, 0.2f, 0.4f,/*color (rgb)*/
+        ByteBuffer png = Resources.readToBuffer("texture-test.png",512);
+        Bitmap bitmap = new Bitmap(png,false);
+        texture = glGenTextures();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,texture);
+        glTexStorage2D(GL_TEXTURE_2D,1,GL_RGBA8,bitmap.width(),bitmap.height());
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,bitmap.width(),bitmap.height(),GL_RGBA,GL_UNSIGNED_BYTE,bitmap.pixels());
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+        bitmap.dispose();
 
-                /*{ V0 }*/800 , 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
-                /*{ V1 }*/800 , 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
-                /*{ V2 }*/1000, 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
-                /*{ V3 }*/1000, 600, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
-                /*{ V4 }*/800 , 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
-                /*{ V5 }*/1000, 400, 0,/*position (xyz)*/(193 / 255f), (112 / 255f), (31 / 255f),/*color (rgb)*/
+
+        // ***********************************************************************************************
+
+        // VERTICES
+
+        Resolution app_res = Engine.get().window().gameResolution();
+        final float x1 = app_res.width() / 2f - bitmap.width() / 2f;
+        final float y1 = app_res.height() / 2f - bitmap.height() / 2f;
+        final float x2 = x1 + bitmap.width();
+        final float y2 = y1 + bitmap.height();
+        final float[] vertices = new float[] {
+
+                /*{ V0 }*/x1, y2, 0,/*position (xyz)*/0.0f, 0.0f,/*texture coordinate (uv)*/
+                /*{ V1 }*/x1, y1, 0,/*position (xyz)*/0.0f, 1.0f,/*texture coordinate (uv)*/
+                /*{ V2 }*/x2, y2, 0,/*position (xyz)*/1.0f, 0.0f,/*texture coordinate (uv)*/
+                /*{ V3 }*/x2, y2, 0,/*position (xyz)*/1.0f, 0.0f,/*texture coordinate (uv)*/
+                /*{ V4 }*/x1, y1, 0,/*position (xyz)*/0.0f, 1.0f,/*texture coordinate (uv)*/
+                /*{ V5 }*/x2, y1, 0,/*position (xyz)*/1.0f, 1.0f,/*texture coordinate (uv)*/
 
         };
         vertex_attrib_array = glGenVertexArrays();
@@ -58,8 +83,8 @@ public class RendererTest implements Disposable {
         glBindVertexArray(vertex_attrib_array);
         glBindBuffer(GL_ARRAY_BUFFER,vertex_buffer_object);
         glBufferData(GL_ARRAY_BUFFER,vertices,GL_STATIC_DRAW);
-        glVertexAttribPointer(0,3,GL_FLOAT,false,6 * Float.BYTES,0);
-        glVertexAttribPointer(1,3,GL_FLOAT,false,6 * Float.BYTES,3 * Float.BYTES);
+        glVertexAttribPointer(0,3,GL_FLOAT,false,5 * Float.BYTES,0);
+        glVertexAttribPointer(1,2,GL_FLOAT,false,5 * Float.BYTES,3 * Float.BYTES);
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         glBindVertexArray(0);
@@ -67,16 +92,17 @@ public class RendererTest implements Disposable {
 
     public void draw() {
         ShaderProgram.useProgram(shader_program);
-        ShaderProgram.setUniform("u_time",
-                (float)Engine.get().time().runTimeSeconds());
+        ShaderProgram.setUniform("u_texture",0);
+        glBindTexture(GL_TEXTURE_2D,texture);
         glBindVertexArray(vertex_attrib_array);
-        glDrawArrays(GL_TRIANGLES,0,12);
+        glDrawArrays(GL_TRIANGLES,0,6);
         glBindVertexArray(0);
     }
 
     public void dispose() {
         glDeleteVertexArrays(vertex_attrib_array);
         glDeleteBuffers(vertex_buffer_object);
+        glDeleteTextures(texture);
     }
 
 
