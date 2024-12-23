@@ -93,9 +93,11 @@ We touched upon this in the previous chapter. When we allocate, upload, copy or 
 need to know how it should interpret the continuous array of bytes (texture data). 
 How many color channels are there, what's the size of each component, should the values be normalized
 in the shader, should they even be interpreted as colors at all? Etc.
+I encourage you to read about [image formats](https://www.khronos.org/opengl/wiki/Image_Format).
 
-I encourage you to read about the [image formats](https://www.khronos.org/opengl/wiki/Image_Format).
 The TextureFormat class (enum) is a collection of common image formats and related values.
+
+
 
 #### Texture Target
 
@@ -113,7 +115,33 @@ The [Texture Target](https://www.khronos.org/opengl/wiki/texture#Theory) is one 
 >* **GL_TEXTURE_2D_MULTISAMPLE:** The image in this texture (only one image. No mipmapping) is 2-dimensional. Each pixel in these images contains multiple samples instead of just one value.
 >* **GL_TEXTURE_2D_MULTISAMPLE_ARRAY:** Combines 2D array and 2D multisample types. No mipmapping.
 
-We will mostly be dealing with 2D and 2D Array textures.
+*We will mostly be dealing with 2D and 2D Array textures.*
+
+When we bind the texture to a texture slot,
+we bind the texture to the texture target:
+
+```
+glActiveTexture(slot);
+glBindTexture(target,id);
+```
+This means that multiple textures can be bound to the same slot, but only
+one for each target.
+
+*Once a texture target has been set, the target cannot change for the lifetime of that texture.*
+
+The Texture class have convenience methods for binding:
+
+```
+public void bindToSlot(int slot) { bindToSlot(slot,target, id); }
+public void bindToActiveSlot() { bindToActiveSlot(target, id); }
+public int bindTooAnySlot() { return bindToAny(target, id); }
+```
+Now atp. this might start to seem complicated. Just know that binding a texture to a slot (or texture unit) makes that texture
+accessible to be sampled from in the shader.
+
+If you want to know how glActiveTexture and glBindTexture actually works and how they relate to each other, a
+question and the accepted answer on [stackoverflow](https://stackoverflow.com/questions/8866904/differences-and-relationship-between-glactivetexture-and-glbindtexture)
+was very helpful to my understanding.
 
 #### Mip maps
 
@@ -126,6 +154,77 @@ avoid aliasing artifacts.
 > based on the viewing angle, size of texture, and various other factors.
 
 ![mipmap](img/07/mipmap.png)
+
+### Generating Textures
+
+To generate a texture we can call one of these factory methods.
+They will generate a texture and set the texture target (final / cannot be changed)
+
+```
+public static Texture generate1D(int width);
+public static Texture generate1DArray(int width, int layers);
+public static Texture generate2D(int width, int height);
+public static Texture generate2D(int size);
+public static Texture generate2DArray(int width, int height, int layers);
+public static Texture generate2DArray(int size, int layers);
+public static Texture generate3D(int width, int height, int depth);
+```
+### Allocation
+
+Once the texture has been generated (target is set as well as the texture dimensions),
+we can allocate space for the texture on the GPU.
+
+```
+public void allocate(TextureFormat format, boolean mipmap) {
+    if (hasBeenDisposed()) throw new IllegalStateException("cannot allocate storage for disposed textures");
+    if (hasBeenAllocated()) throw new IllegalStateException("texture storage already allocated");
+    int i_format = format.sized_format;
+    this.mip_levels = mipmap ? calculateMipmapLevels() : 1;
+    this.format = format;
+    this.allocated = true;
+    switch (target) {
+        case GL_TEXTURE_1D -> glTexStorage1D(target,mip_levels,i_format,width);
+        case GL_TEXTURE_2D, GL_TEXTURE_1D_ARRAY -> glTexStorage2D(target,mip_levels,i_format,width,height);
+        case GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY -> glTexStorage3D(target,mip_levels,i_format,width,height,depth);
+        default -> throw new IllegalStateException("Unexpected value: " + target);
+    }
+}
+```
+Passing in a TextureFormat and a boolean for whether we want to allocate space to generate mip maps.
+With this final information (in addition to dimensions) we know exactly how much memory is needed to
+store the texture.
+
+
+### Uploading the Pixels
+
+Now we can upload the Bitmap pixels (ByteBuffer).
+How we tell opengl to interpret the data depends on the texture target and format.
+You can read the documentation for [glTexSubImage2D](https://docs.gl/gl4/glTexSubImage2D) for a better understanding.
+
+
+```
+public void uploadSubData(ByteBuffer data) { uploadSubData(data,0); }
+public void uploadSubData(ByteBuffer data, int level) { uploadSubData(data, level, width, 0); }
+public void uploadSubData(ByteBuffer data, int level, int width, int x_off) { uploadSubData(data, level, width, height, x_off, 0); }
+public void uploadSubData(ByteBuffer data, int level, int width, int height, int x_off, int y_off) { uploadSubData(data, level, width, height, depth, x_off, y_off,0); }
+public void uploadSubData(ByteBuffer data, int level, int width, int height, int depth, int x_off, int y_off, int z_off) {
+    if (hasBeenDisposed()) throw new IllegalStateException("cannot transfer data to disposed textures");
+    if (!hasBeenAllocated()) throw new IllegalStateException("texture storage not allocated");
+    glPixelStorei(GL_UNPACK_ALIGNMENT,format.pack_alignment);
+    int transfer_format = format.pixel_format;
+    int data_type = format.pixel_data_type;
+    switch (target) {
+        case GL_TEXTURE_1D -> glTexSubImage1D(target,level,x_off,width,transfer_format,data_type,data);
+        case GL_TEXTURE_2D, GL_TEXTURE_1D_ARRAY -> glTexSubImage2D(target,level,x_off,y_off,width,height,transfer_format,data_type,data);
+        case GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY -> glTexSubImage3D(target,level,x_off,y_off,z_off,width,height,depth,transfer_format,data_type,data);
+        default -> throw new IllegalStateException("Unexpected value: " + target);
+    }
+}
+```
+
+## Texture Filtering / Wrap
+
+
 
 ```
 // VERTICES
