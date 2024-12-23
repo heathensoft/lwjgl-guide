@@ -1,9 +1,7 @@
 #version 440
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_uv;
-
 const vec2 resolution = vec2(1200.0,800.0);
-
 out vec2 uv;
 
 void main() {
