@@ -1,6 +1,7 @@
 package io.github.heathensoft.guide.game;
 
 import io.github.heathensoft.guide.core.*;
+import io.github.heathensoft.guide.core.gfx.*;
 import io.github.heathensoft.guide.utils.Resources;
 
 import java.nio.ByteBuffer;
@@ -16,10 +17,10 @@ import static org.lwjgl.opengl.GL42.glTexStorage2D;
  */
 public class RendererTest implements Disposable {
 
-    private final int texture;
     private final int vertex_attrib_array;
     private final int vertex_buffer_object;
     private final ShaderProgram shader_program;
+    private final Texture tex;
 
 
     public RendererTest() throws Exception {
@@ -43,8 +44,6 @@ public class RendererTest implements Disposable {
         ShaderProgram.useProgram(shader_program);
         ShaderProgram.setUniform("u_texture",0);
 
-
-
         // ***********************************************************************************************
 
         // TEXTURE
@@ -52,23 +51,10 @@ public class RendererTest implements Disposable {
         // Load a png file from the resources folder
         ByteBuffer png = Resources.readToBuffer("texture-test.png",512);
         Bitmap bitmap = new Bitmap(png,false); // decode the png to a bitmap
-        texture = glGenTextures(); // generate a texture (reference used for future operations)
-        glActiveTexture(GL_TEXTURE0); // activate texture slot 0 (future operations apply to texture slot 0)
-        glBindTexture(GL_TEXTURE_2D,texture); // and bind the texture to slot 0 (texture is now the active texture)
-        // specify format and allocate memory on the gpu (GL_RGBA8 tells opengl that the size of a pixel is 4 * 8 = 32bit)
-        glTexStorage2D(GL_TEXTURE_2D,1,GL_RGBA8,bitmap.width(),bitmap.height());
-        // transfer the actual pixel data to gpu storage,
-        // telling opengl how to interpret the data (we have 4 channels rgba of type unsigned byte)
-        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,bitmap.width(),bitmap.height(),GL_RGBA,GL_UNSIGNED_BYTE,bitmap.pixels());
-        // Note: You could also allocate and transfer the pixels in one operation.
-        // telling opengl how the texture should be sampled
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-        // we no longer need the bitmap stored on the cpu
-        // we free the bitmap to avoid memory leak
-        bitmap.dispose();
+        tex = bitmap.asTexture(); // create texture from bitmap
+        tex.filterNearest(); // sample nearest pixel (as opposed to linear filtering)
+        tex.textureRepeat(); // UV repeats
+        bitmap.dispose(); // free the bitmap
 
 
         // ***********************************************************************************************
@@ -100,8 +86,6 @@ public class RendererTest implements Disposable {
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         glBindVertexArray(0);
-
-
     }
 
     public void draw() {
@@ -114,7 +98,7 @@ public class RendererTest implements Disposable {
     public void dispose() {
         glDeleteVertexArrays(vertex_attrib_array);
         glDeleteBuffers(vertex_buffer_object);
-        glDeleteTextures(texture);
+        Disposable.dispose(tex);
     }
 
 

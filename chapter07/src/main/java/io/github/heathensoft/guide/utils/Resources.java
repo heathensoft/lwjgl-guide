@@ -1,6 +1,6 @@
 package io.github.heathensoft.guide.utils;
 
-import io.github.heathensoft.guide.core.Bitmap;
+import io.github.heathensoft.guide.core.gfx.Bitmap;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 

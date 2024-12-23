@@ -1,5 +1,6 @@
-package io.github.heathensoft.guide.core;
+package io.github.heathensoft.guide.core.gfx;
 
+import io.github.heathensoft.guide.core.Disposable;
 import io.github.heathensoft.guide.utils.Color;
 import org.joml.Math;
 import org.joml.Vector3f;
@@ -322,6 +323,25 @@ public class Bitmap implements Disposable {
                 } return new Bitmap(dst,b0.width,b0.height,channels);
             } else throw new Exception("Combining bitmaps != dimensions");
         } else throw new Exception("Combining bitmaps with sum channels > 4");
+    }
+
+    public Texture asTexture() { return asTexture(false); }
+
+    public Texture asTexture(boolean allocate_mipmap) { return asTexture(allocate_mipmap,false); }
+
+    public Texture asTexture(boolean allocate_mipmap, boolean srgb) {
+        Texture texture = Texture.generate2D(width,height);
+        TextureFormat format;
+        switch (channels) {
+            case 1  -> format = TextureFormat.R8_UNSIGNED_NORMALIZED;
+            case 2  -> format = TextureFormat.RG8_UNSIGNED_NORMALIZED;
+            case 3  -> format = srgb ? TextureFormat.SRGB8_UNSIGNED_NORMALIZED : TextureFormat.RGB8_UNSIGNED_NORMALIZED;
+            case 4  -> format = srgb ? TextureFormat.SRGBA8_UNSIGNED_NORMALIZED : TextureFormat.RGBA8_UNSIGNED_NORMALIZED;
+            default -> format = TextureFormat.INVALID;
+        } texture.bindToActiveSlot();
+        texture.allocate(format,allocate_mipmap);
+        texture.uploadSubData(pixels);
+        return texture;
     }
 
     public ByteBuffer pixels() { return pixels; }

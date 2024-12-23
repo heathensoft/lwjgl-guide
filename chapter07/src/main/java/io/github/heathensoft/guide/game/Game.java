@@ -2,6 +2,7 @@ package io.github.heathensoft.guide.game;
 
 import io.github.heathensoft.guide.core.*;
 import io.github.heathensoft.guide.core.Disposable;
+import io.github.heathensoft.guide.core.gfx.ShaderProgram;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;

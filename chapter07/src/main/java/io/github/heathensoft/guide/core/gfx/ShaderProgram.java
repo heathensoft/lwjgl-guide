@@ -1,4 +1,4 @@
-package io.github.heathensoft.guide.core;
+package io.github.heathensoft.guide.core.gfx;
 
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;

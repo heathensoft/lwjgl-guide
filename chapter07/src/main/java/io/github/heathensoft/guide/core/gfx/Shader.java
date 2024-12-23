@@ -1,4 +1,6 @@
-package io.github.heathensoft.guide.core;
+package io.github.heathensoft.guide.core.gfx;
+
+import io.github.heathensoft.guide.core.Disposable;
 
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
