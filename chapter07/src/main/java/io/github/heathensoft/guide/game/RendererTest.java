@@ -10,7 +10,6 @@ import static org.lwjgl.opengl.GL15.glDeleteBuffers;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
-import static org.lwjgl.opengl.GL42.glTexStorage2D;
 
 /**
  * Frederik Dahl 12/5/2024
@@ -20,13 +19,11 @@ public class RendererTest implements Disposable {
     private final int vertex_attrib_array;
     private final int vertex_buffer_object;
     private final ShaderProgram shader_program;
-    private final Texture tex;
+    private final Texture texture;
 
 
     public RendererTest() throws Exception {
-
         // ***********************************************************************************************
-
         // SHADER
 
         // Loading shader source code files from the project "resources folder"
@@ -45,35 +42,37 @@ public class RendererTest implements Disposable {
         ShaderProgram.setUniform("u_texture",0);
 
         // ***********************************************************************************************
-
         // TEXTURE
 
-        // Load a png file from the resources folder
         ByteBuffer png = Resources.readToBuffer("texture-test.png",512);
         Bitmap bitmap = new Bitmap(png,false); // decode the png to a bitmap
-        tex = bitmap.asTexture(); // create texture from bitmap
-        tex.filterNearest(); // sample nearest pixel (as opposed to linear filtering)
-        tex.textureRepeat(); // UV repeats
+        texture = bitmap.asTexture(); // create texture from bitmap
+        texture.bindToSlot(0);  // bind to texture slot 0
+        texture.filterNearest(); // sample nearest pixel (as opposed to linear filtering)
+        texture.textureRepeat(); // UV repeats
         bitmap.dispose(); // free the bitmap
 
 
         // ***********************************************************************************************
-
         // VERTICES
 
         Resolution app_res = Engine.get().window().gameResolution();
-        final float x1 = app_res.width() / 2f - bitmap.width() / 2f;
-        final float y1 = app_res.height() / 2f - bitmap.height() / 2f;
-        final float x2 = x1 + bitmap.width();
-        final float y2 = y1 + bitmap.height();
+        final float x1 = 0.0f;
+        final float y1 = 0.0f;
+        final float x2 = app_res.width();
+        final float y2 = app_res.height();
+        final float u1 = 0.0f;
+        final float v1 = 0.0f;
+        final float u2 = (float) app_res.width() / texture.width();     // U2 > 1.0f (repeats)
+        final float v2 = (float) app_res.height() / texture.height();   // V2 > 1.0f (repeats)
         final float[] vertices = new float[] {
 
-                /*{ V0 }*/x1, y2, 0,/*position (xyz)*/0.0f, 0.0f,/*texture coordinate (uv)*/
-                /*{ V1 }*/x1, y1, 0,/*position (xyz)*/0.0f, 1.0f,/*texture coordinate (uv)*/
-                /*{ V2 }*/x2, y2, 0,/*position (xyz)*/1.0f, 0.0f,/*texture coordinate (uv)*/
-                /*{ V3 }*/x2, y2, 0,/*position (xyz)*/1.0f, 0.0f,/*texture coordinate (uv)*/
-                /*{ V4 }*/x1, y1, 0,/*position (xyz)*/0.0f, 1.0f,/*texture coordinate (uv)*/
-                /*{ V5 }*/x2, y1, 0,/*position (xyz)*/1.0f, 1.0f,/*texture coordinate (uv)*/
+                /*{ V0 }*/x1, y2, 0,/*position (xyz)*/u1, v1,/*texture coordinate (uv)*/
+                /*{ V1 }*/x1, y1, 0,/*position (xyz)*/u1, v2,/*texture coordinate (uv)*/
+                /*{ V2 }*/x2, y2, 0,/*position (xyz)*/u2, v1,/*texture coordinate (uv)*/
+                /*{ V3 }*/x2, y2, 0,/*position (xyz)*/u2, v1,/*texture coordinate (uv)*/
+                /*{ V4 }*/x1, y1, 0,/*position (xyz)*/u1, v2,/*texture coordinate (uv)*/
+                /*{ V5 }*/x2, y1, 0,/*position (xyz)*/u2, v2,/*texture coordinate (uv)*/
 
         };
         vertex_attrib_array = glGenVertexArrays();
@@ -98,7 +97,7 @@ public class RendererTest implements Disposable {
     public void dispose() {
         glDeleteVertexArrays(vertex_attrib_array);
         glDeleteBuffers(vertex_buffer_object);
-        Disposable.dispose(tex);
+        Disposable.dispose(texture);
     }
 
 

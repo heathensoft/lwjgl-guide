@@ -49,14 +49,14 @@ import static org.lwjgl.opengl.GL43.glTextureView;
  */
 public class Texture implements Disposable {
 
-    private TextureFormat format;
-    private int id;
-    private int mip_levels;
-    private final int target;
-    private final int width;
-    private final int height;
-    private final int depth;
-    private boolean allocated;
+    private TextureFormat format;   // texture format
+    private int id;                 // opengl texture reference
+    private int mip_levels;         // mipmap levels
+    private final int target;       // texture target
+    private final int width;        // width of texture
+    private final int height;       // height of texture (1D Array / 2D)
+    private final int depth;        // depth of texture (2D Array / 3D)
+    private boolean allocated;      // texture has been allocated
 
     private Texture(int target, int width, int height, int depth) {
         this.id = glGenTextures();
