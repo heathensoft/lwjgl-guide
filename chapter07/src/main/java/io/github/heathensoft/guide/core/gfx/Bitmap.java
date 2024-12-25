@@ -201,8 +201,8 @@ public class Bitmap implements Disposable {
         int return_value = 0;
         float px = (u * width  - 0.5f); // half-pixel offset
         float py = (v * height - 0.5f); // half-pixel offset
-        int floor_x = (int)floor(px); float fract_x = px - floor_x;
-        int floor_y = (int)floor(py); float fract_y = py - floor_y;
+        int floor_x = floor(px); float fract_x = px - floor_x;
+        int floor_y = floor(py); float fract_y = py - floor_y;
         for (int i = 0; i < channels; i++) {
             int bl = getColorComponent(floor_x, floor_y,i);
             int br = getColorComponent(floor_x + 1,floor_y + 0,i);

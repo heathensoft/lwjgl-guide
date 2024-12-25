@@ -29,14 +29,12 @@ public class RendererTest implements Disposable {
         // Loading shader source code files from the project "resources folder"
         String vert_shader_source = Resources.asString("render-test.vert");
         String frag_shader_source = Resources.asString("render-test.frag");
-
         // Uploading the source code strings to the gpu then compile the code
         // Each shader is compiled separately.
         Shader vert_shader = new Shader(vert_shader_source, Shader.Type.VERT_SHADER);
         Shader frag_shader = new Shader(frag_shader_source, Shader.Type.FRAG_SHADER);
         shader_program = new ShaderProgram(vert_shader,frag_shader);
         shader_program.detachShaders(true);
-
         // Upload the "u_texture" uniform (using texture slot 0) to the shader program.
         ShaderProgram.useProgram(shader_program);
         ShaderProgram.setUniform("u_texture",0);
@@ -52,7 +50,6 @@ public class RendererTest implements Disposable {
         texture.textureRepeat(); // UV repeats
         bitmap.dispose(); // free the bitmap
 
-
         // ***********************************************************************************************
         // VERTICES
 
@@ -63,17 +60,15 @@ public class RendererTest implements Disposable {
         final float y2 = app_res.height();
         final float u1 = 0.0f;
         final float v1 = 0.0f;
-        final float u2 = (float) app_res.width() / texture.width();     // U2 > 1.0f (repeats)
-        final float v2 = (float) app_res.height() / texture.height();   // V2 > 1.0f (repeats)
+        final float u2 = (x2 * 2f) / texture.width();    // U2 > 1.0f (repeats)
+        final float v2 = (y2 * 2f) / texture.height();   // V2 > 1.0f (repeats)
         final float[] vertices = new float[] {
-
-                /*{ V0 }*/x1, y2, 0,/*position (xyz)*/u1, v1,/*texture coordinate (uv)*/
-                /*{ V1 }*/x1, y1, 0,/*position (xyz)*/u1, v2,/*texture coordinate (uv)*/
-                /*{ V2 }*/x2, y2, 0,/*position (xyz)*/u2, v1,/*texture coordinate (uv)*/
-                /*{ V3 }*/x2, y2, 0,/*position (xyz)*/u2, v1,/*texture coordinate (uv)*/
-                /*{ V4 }*/x1, y1, 0,/*position (xyz)*/u1, v2,/*texture coordinate (uv)*/
-                /*{ V5 }*/x2, y1, 0,/*position (xyz)*/u2, v2,/*texture coordinate (uv)*/
-
+                /*{ V0 }*/x1, y2, 0,/*pos (xyz)*/u1, v1,/*tex coordinate (uv)*/
+                /*{ V1 }*/x1, y1, 0,/*pos (xyz)*/u1, v2,/*tex coordinate (uv)*/
+                /*{ V2 }*/x2, y2, 0,/*pos (xyz)*/u2, v1,/*tex coordinate (uv)*/
+                /*{ V3 }*/x2, y2, 0,/*pos (xyz)*/u2, v1,/*tex coordinate (uv)*/
+                /*{ V4 }*/x1, y1, 0,/*pos (xyz)*/u1, v2,/*tex coordinate (uv)*/
+                /*{ V5 }*/x2, y1, 0,/*pos (xyz)*/u2, v2,/*tex coordinate (uv)*/
         };
         vertex_attrib_array = glGenVertexArrays();
         vertex_buffer_object = glGenBuffers();

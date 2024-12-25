@@ -42,11 +42,9 @@ texture.filterNearest(); // sample nearest pixel (as opposed to linear filtering
 texture.textureRepeat(); // UV repeats
 bitmap.dispose(); // free the bitmap
 ```
-In this chapter we'll take a closer look at textures while making utility classes
-for opengl texture calls.
 
 ### OOP and Opengl (Sidenote)
-I encourage you NOT to force opengl objects to fit the Java OOP paradigm.
+I encourage you not to force opengl objects to fit the Java OOP paradigm.
 OpenGL works like a state machine. Calls like:
 
 ```
@@ -62,11 +60,11 @@ texture.alterSomething(new_value);
 ```
 would change the opengl object you intended to encapsulate, but forgot to bind the actual opengl texture object.
 So while thinking you are modifying the texture you're actually modifying another one.
-Things like this can make your program prone to bugs and be... very frustrating.
-So just be aware of this if you're coming from Java. I'd recommend getting comfortable using the
+Things like this can make your program prone to bugs and be very frustrating.
+Be aware of this if you're coming from Java. I'd recommend getting comfortable using the
 opengl calls directly before trying to wrap and hide opengl functionality in Java objects.   
 
-### That said...
+### That said
 
 I made a new class to encapsulate opengl textures.
 
@@ -83,14 +81,14 @@ public class Texture implements Disposable {
     private boolean allocated;      // texture has been allocated
 ```
 
-#### Texture Format (Image format)
+### Texture Format (Image format)
 
 > An [Image Format](https://www.khronos.org/opengl/wiki/Image_Format) describes the way that
 > the images in Textures and renderbuffers store their data. They define the meaning of the image's data.
 
 The format is used to tell opengl what kind of image format the texture is and how it should be interpreted.
 We touched upon this in the previous chapter. When we allocate, upload, copy or modify a texture, opengl
-need to know how it should interpret the continuous array of bytes (texture data). 
+need to know how it should interpret the continuous array of bytes (image data). 
 How many color channels are there, what's the size of each component, should the values be normalized
 in the shader, should they even be interpreted as colors at all? Etc.
 I encourage you to read about [image formats](https://www.khronos.org/opengl/wiki/Image_Format).
@@ -99,7 +97,7 @@ The TextureFormat class (enum) is a collection of common image formats and relat
 
 
 
-#### Texture Target
+### Texture Target
 
 The [Texture Target](https://www.khronos.org/opengl/wiki/texture#Theory) is one of:
 
@@ -115,7 +113,7 @@ The [Texture Target](https://www.khronos.org/opengl/wiki/texture#Theory) is one 
 >* **GL_TEXTURE_2D_MULTISAMPLE:** The image in this texture (only one image. No mipmapping) is 2-dimensional. Each pixel in these images contains multiple samples instead of just one value.
 >* **GL_TEXTURE_2D_MULTISAMPLE_ARRAY:** Combines 2D array and 2D multisample types. No mipmapping.
 
-*We will mostly be dealing with 2D and 2D Array textures.*
+*We will mostly be dealing with 2D textures.*
 
 When we bind the texture to a texture slot,
 we bind the texture to the texture target:
@@ -143,7 +141,7 @@ If you want to know how glActiveTexture and glBindTexture actually works and how
 question and the accepted answer on [stackoverflow](https://stackoverflow.com/questions/8866904/differences-and-relationship-between-glactivetexture-and-glbindtexture)
 was very helpful to my understanding.
 
-#### Mip maps
+### Mip maps
 
 [Mip maps](https://www.khronos.org/opengl/wiki/texture#Mip_maps) are pre-shrunk versions of the full-sized image.
 It's often helpful to sample from smaller versions of an image if the object is far from view (the camera) or the
@@ -158,7 +156,7 @@ avoid aliasing artifacts.
 ### Generating Textures
 
 To generate a texture we can call one of these factory methods.
-They will generate a texture and set the texture target (final / cannot be changed)
+They will generate a texture and set the texture target.
 
 ```
 public static Texture generate1D(int width);
@@ -222,9 +220,101 @@ public void uploadSubData(ByteBuffer data, int level, int width, int height, int
 }
 ```
 
-## Texture Filtering / Wrap
+## Sample Parameters
+
+You can tell opengl how you'd like to sample a bound texture though the [glTexParameter](https://docs.gl/gl4/glTexParameter)
+functions. This will affect the return value of the GLSL [texture sample functions](https://registry.khronos.org/OpenGL-Refpages/gl4/html/texture.xhtml) in the shader:
+
+```
+color = texture(u_texture,uv);
+```
 
 
+
+### Texture Filtering
+
+Texture filtering is useful when you need to visually smoothen the graphics.
+I.e. the camera gets close to a textured object in your game. This can take the edge of pixelated visuals
+common in games. For games with pixel art you probably want to keep the pixelated effect. 
+
+```
+glBindTexture(GL_TEXTURE_2D,texture); // bind the texture
+// no filtering when far away (minimized)
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+// bi-linear filtering when close (magnified)
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+```
+
+
+#### NEAREST
+
+Nearest filtering is no filtering and is the default value. 
+It doesn't matter if we sample dead center of a pixel or close to an edge.
+
+```
+// example code
+vec4 sample_nearest(vec2 uv_coordinate) {
+    vec2 pixel_coordinate = floor(uv_coordinate * texture_size);
+    return pixel_color(pixel_coordinate);
+}
+```
+*center vs. edge sample. (horizontal only)* 
+
+![filtering near](img/07/bilinear-filtering-nearest.png)
+ 
+
+#### LINEAR
+
+Linear filtering makes use of [bilinear interpolation](https://en.wikipedia.org/wiki/Bilinear_interpolation),
+mixing the colors of the 4 closest pixels of the sample coordinate.
+
+![filtering linear](img/07/bilinear-filtering-0.png)
+
+```
+// example code
+vec4 sample_linear(vec2 uv_coordinate) {
+    vec4 pixel_coordinate = uv_coordinate * texture_size;
+    pixel_coordinate -= - vec2(0.5,0.5); // half-pixel offset
+    vec4 bottom_left =  pixel_color(floor(pixel_coordinate));
+    vec4 bottom_right = pixel_color(floor(pixel_coordinate) + vec2(1.0,0.0));
+    vec4 top_left =     pixel_color(floor(pixel_coordinate) + vec2(0.0,1.0));
+    vec4 top_right =    pixel_color(floor(pixel_coordinate) + vec2(1.0,1.0));
+    float lerp_x =      pixel_coordinate.x - floor(pixel_coordinate.x);
+    float lerp_y =      pixel_coordinate.y - floor(pixel_coordinate.y);
+    vec4 top_horizontal = interpolate(top_left, top_right, lerp_x);
+    vec4 bottom_horizontal = interpolate(bottom_left, bottom_right, lerp_x);
+    return interpolate(bottom_horizontal, top_horizontal, lerp_y);
+}
+
+vec2 interpolate(vec4 color1, vec4 color2, float t) {
+    return (1 - t) * color1 + t * color2;
+}
+```
+
+
+*center vs. edge sample. (horizontal only)*
+
+![filtering linear](img/07/bilinear-filtering-linear.png)
+
+### UV Wrapping
+
+Wrapping defines the behaviour for sampling textures with uv-coordinates outside the [0-1] range.
+
+Wrap parameters are:
+
+* **GL_REPEAT** 
+* **GL_MIRRORED_REPEAT**
+* **GL_CLAMP_TO_BORDER**
+* **GL_CLAMP_TO_EDGE**
+
+
+
+```
+glBindTexture(GL_TEXTURE_2D,texture); // bind the texture
+// have uv-coordinates outside the [0-1] range wrap around.
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+```
 
 ```
 // VERTICES
