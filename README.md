@@ -10,4 +10,5 @@
 * [CHAPTER 04 - Coordinate Systems I](guide/chapter04.md)
 * [CHAPTER 05 - Shaders II](guide/chapter05.md)
 * [CHAPTER 06 - Textures I](guide/chapter06.md)
-* CHAPTER 07 - Keyboard and Mouse
+* [CHAPTER 07 - Textures II](guide/chapter07.md)
+* CHAPTER 08 - Keyboard and Mouse
