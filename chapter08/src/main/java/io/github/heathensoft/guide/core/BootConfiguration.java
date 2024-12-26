@@ -13,7 +13,6 @@ public class BootConfiguration {
     public String window_title = "";
     public boolean resizable_window = false;
     public boolean vsync_enabled = true;
-    public boolean cursor_enabled = true;
     public boolean windowed_mode = false;
     public int windowed_mode_width = 1280;
     public int windowed_mode_height = 720;

@@ -74,16 +74,20 @@ public class Engine {
                     fixed_time_step = 1.0 / window.targetUps();
                     time.tick();
                     time_accumulator += time.frameTimeSeconds();
+                    boolean process_input = true;
                     while (time_accumulator >= fixed_time_step) {
                         /*
                          *  Game update happens at a fixed interval of (window.targetUps()) / second
                          */
-                        // Todo: process input
-
+                        if (!window.isMinimized() && process_input) {
+                            window.input().process((float)fixed_time_step);
+                            process_input = false;
+                        }
                         game.update((float) fixed_time_step);
                         time.incrementUpsCounter();
                         time_accumulator -= fixed_time_step;
-                    } if (!window.isMinimized()) {
+                    }
+                    if (!window.isMinimized()) {
                         if (window.shouldChangeGameResolution()) {
                             /*
                              *  Window found a better suited Game resolution.
@@ -105,7 +109,7 @@ public class Engine {
                     /*
                      *  GLFW polls for any user events, triggering callbacks
                      */
-                    window.processUserEvents();
+                    window.pollUserEvents();
                     time.incrementFpsCounter();
                 }
             } catch (Exception e) {

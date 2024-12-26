@@ -1,12 +1,15 @@
 package io.github.heathensoft.guide.core;
 
 import io.github.heathensoft.guide.utils.OS;
+import org.joml.Vector2d;
+import org.joml.Vector2i;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
 import org.tinylog.Logger;
 
+import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ public final class GLFWWindow {
     public static final int UPS_MIN = 30;
     public static final int UPS_MAX = 1000;
 
+    private InputProcessor input_processor;
     private List<Resolution> supported_resolutions; // resolutions supported by our game
     private Resolution game_resolution; // The current resolution
     private boolean game_resolution_changed; // found a better supported resolution for the game
@@ -36,6 +40,8 @@ public final class GLFWWindow {
     private int viewport_h;             // height of the viewport
     private boolean minimized;          // whether the window is minimized
     private boolean vsync_enabled;      // limits fps to the display frame rate
+    private boolean cursor_visible;
+
 
     public long handle() { return window; }
     public int targetUps() { return target_ups; }
@@ -47,6 +53,9 @@ public final class GLFWWindow {
     public int viewportH() { return viewport_h; }
     public boolean isMinimized() { return minimized; }
     public boolean isVsyncEnabled() { return vsync_enabled; }
+    public boolean isCursorVisible() { return cursor_visible; }
+
+
 
 
     void initialize(BootConfiguration config) throws Exception {
@@ -141,10 +150,15 @@ public final class GLFWWindow {
         }
         framebufferResizeEvent(framebuffer_w,framebuffer_h);
         Logger.debug("window viewport: {},{},{}:{}", viewport_x, viewport_y, viewport_w, viewport_h);
-        initializeDisplayCallbacks();
+        setUpDisplayCallbacks();
+
+        input_processor = new InputProcessor(this);
+        cursor_visible = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        setUpInputCallbacks();
+
         glfwMakeContextCurrent(window);
         Logger.debug("opengl-context current in thread: {}", Thread.currentThread().getName());
-        glfwSetInputMode(window, GLFW_CURSOR, config.cursor_enabled ? GLFW_CURSOR_NORMAL: GLFW_CURSOR_DISABLED);
         vsync_enabled = config.vsync_enabled;
         glfwSwapInterval(vsync_enabled ? 1 : 0);
         setTargetUPS(config.target_ups);
@@ -155,6 +169,42 @@ public final class GLFWWindow {
         // creates the GLCapabilities instance and makes the OpenGL
         // bindings available for use.
         GL.createCapabilities();
+    }
+
+    /** Returns the position of the cursor, in screen coordinates,
+     * relative to the upper-left corner of the content area of the specified window */
+    public Vector2d cursorScreenPosition() {
+        Vector2d position = new Vector2d();
+        try (MemoryStack stack = MemoryStack.stackPush()){
+            DoubleBuffer cx = stack.mallocDouble(1);
+            DoubleBuffer cy = stack.mallocDouble(1);
+            glfwGetCursorPos(window,cx,cy);
+            position.set(cx.get(0),cy.get(0));
+        } return position;
+    }
+
+    /** retrieves the size, in screen coordinates,
+     * of the content area of the specified window */
+    public Vector2i windowScreenSize() {
+        Vector2i size = new Vector2i();
+        try (MemoryStack stack = MemoryStack.stackPush()){
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetWindowSize(window,w,h);
+            size.set(w.get(0),h.get(0));
+        } return size;
+    }
+
+    /** retrieves the position, in screen coordinates,
+     * of the upper-left corner of the content area of the specified window. */
+    public Vector2i windowScreenPosition() {
+        Vector2i position = new Vector2i();
+        try (MemoryStack stack = MemoryStack.stackPush()){
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetWindowPos(window,w,h);
+            position.set(w.get(0),h.get(0));
+        } return position;
     }
 
     public void toggleMonitors() {
@@ -201,9 +251,12 @@ public final class GLFWWindow {
      * Query input / display events.
      * Processing events will cause the window and input callbacks associated with those events to be called.
      */
-    void processUserEvents() {
+    void pollUserEvents() {
         glfwPollEvents();
-        // todo: controller
+    }
+
+    void processInput(float delta) {
+        input_processor.process(delta);
     }
 
     /**
@@ -227,6 +280,8 @@ public final class GLFWWindow {
      * @return current game resolution
      */
     public Resolution gameResolution() { return game_resolution; }
+
+    public InputProcessor input() { return input_processor; }
 
     /**
      * Note: Will reset the game_resolution_changed flag
@@ -252,11 +307,22 @@ public final class GLFWWindow {
     public void restore() { glfwRestoreWindow(window); }
     public void toggleVsync(boolean enable) { vsync_enabled = enable; }
     public void useWindowViewport() { glViewport(viewport_x,viewport_y,viewport_w,viewport_h); }
+    public void showCursor(boolean show) {
+        if (cursor_visible &! show) {
+            glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_HIDDEN);
+        } else if (show &! cursor_visible) {
+            glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+        } cursor_visible = show;
+    }
+
+
 
     @SuppressWarnings("all")
     void terminate() {
         Logger.debug("clearing opengl capabilities");
         GL.setCapabilities(null); // this IS nullable
+        Logger.debug("freeing glfw input callbacks");
+        freeInputCallbacks();
         Logger.debug("freeing glfw display callbacks");
         freeDisplayCallbacks();
         Logger.debug("destroying the glfw window");
@@ -291,7 +357,7 @@ public final class GLFWWindow {
     }
 
 
-    private void initializeDisplayCallbacks() {
+    private void setUpDisplayCallbacks() {
         glfwSetWindowIconifyCallback(window, new GLFWWindowIconifyCallback() {
             public void invoke(long window, boolean iconified) {
                 minimized = iconified;
@@ -326,6 +392,52 @@ public final class GLFWWindow {
         list.add(glfwSetWindowPosCallback(window,null));
         list.add(glfwSetWindowIconifyCallback(window,null));
         list.add(glfwSetFramebufferSizeCallback(window,null));
+        for (Callback c : list) if (c != null) c.free();
+    }
+
+    private void setUpInputCallbacks() {
+        glfwSetKeyCallback(window, new GLFWKeyCallback() {
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+                input_processor.onKeyEvent(key, mods, action);
+            }
+        });
+        glfwSetCharCallback(window, new GLFWCharCallback() {
+            public void invoke(long window, int codepoint) {
+                input_processor.onCharPress(codepoint);
+            }
+        });
+        glfwSetCursorEnterCallback(window, new GLFWCursorEnterCallback() {
+            public void invoke(long window, boolean entered) {
+                input_processor.onMouseEntered(entered);
+            }
+        });
+        glfwSetCursorPosCallback(window, new GLFWCursorPosCallback() {
+            public void invoke(long window, double xpos, double ypos) {
+                input_processor.onMouseHover(xpos,ypos);
+            }
+        });
+        glfwSetMouseButtonCallback(window, new GLFWMouseButtonCallback() {
+            public void invoke(long window, int button, int action, int mods) {
+                input_processor.onMousePress(button,action == GLFW_PRESS);
+            }
+        });
+        glfwSetScrollCallback(window, new GLFWScrollCallback() {
+            public void invoke(long window, double xoffset, double yoffset) {
+                input_processor.onMouseScroll(yoffset);
+            }
+        });
+    }
+
+    private void freeInputCallbacks() {
+        List<Callback> list = new ArrayList<>();
+        list.add(glfwSetDropCallback(window,null));
+        list.add(glfwSetKeyCallback(window,null));
+        list.add(glfwSetCharCallback(window,null));
+        list.add(glfwSetCursorEnterCallback(window,null));
+        list.add(glfwSetCursorPosCallback(window,null));
+        list.add(glfwSetMouseButtonCallback(window,null));
+        list.add(glfwSetScrollCallback(window,null));
+        list.add(glfwSetJoystickCallback(null));
         for (Callback c : list) if (c != null) c.free();
     }
 
