@@ -1,6 +1,8 @@
 package io.github.heathensoft.guide.core;
 
 /**
+ * Key stream listener.
+ * Can be implemented by text input fields, text editors and similar.
  * Frederik Dahl 12/26/2024
  */
 public interface TextProcessor {

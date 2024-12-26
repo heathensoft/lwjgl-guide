@@ -35,6 +35,7 @@ public class Game implements IGame {
 
     public void start(Resolution resolution) throws Exception {
         renderer = new RendererTest();
+
     }
 
     public void resize(Resolution resolution) { /* */ }
