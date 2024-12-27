@@ -80,7 +80,7 @@ public class Engine {
                          *  Game update happens at a fixed interval of (window.targetUps()) / second
                          */
                         if (!window.isMinimized() && process_input) {
-                            window.input().process((float)fixed_time_step);
+                            window.processInput((float)fixed_time_step);
                             process_input = false;
                         }
                         game.update((float) fixed_time_step);

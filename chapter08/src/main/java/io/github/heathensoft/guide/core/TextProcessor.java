@@ -14,15 +14,15 @@ public interface TextProcessor {
     default void charPress(byte character) { /* */ }
 
     default void activateTextProcessor() {
-        Engine.get().window().input().keys().addTextProcessor(this);
+        Engine.get().window().keys().addTextProcessor(this);
     }
 
     default void deactivateTextProcessor() {
-        Engine.get().window().input().keys().removeTextProcessor(this);
+        Engine.get().window().keys().removeTextProcessor(this);
     }
 
     default boolean isActiveTextProcessor() {
-        return Engine.get().window().input().keys().isTextProcessorActive(this);
+        return Engine.get().window().keys().isTextProcessorActive(this);
     }
 
 

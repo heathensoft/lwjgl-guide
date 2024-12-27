@@ -7,6 +7,7 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.windows.KEYBDINPUT;
 import org.tinylog.Logger;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +27,8 @@ public final class GLFWWindow {
     public static final int UPS_MIN = 30;
     public static final int UPS_MAX = 1000;
 
-    private InputProcessor input_processor;
+    private Mouse mouse;
+    private Keyboard keys;
     private List<Resolution> supported_resolutions; // resolutions supported by our game
     private Resolution game_resolution; // The current resolution
     private boolean game_resolution_changed; // found a better supported resolution for the game
@@ -152,7 +154,8 @@ public final class GLFWWindow {
         Logger.debug("window viewport: {},{},{}:{}", viewport_x, viewport_y, viewport_w, viewport_h);
         setUpDisplayCallbacks();
 
-        input_processor = new InputProcessor(this);
+        mouse = new Mouse();
+        keys = new Keyboard();
         cursor_visible = true;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         setUpInputCallbacks();
@@ -171,41 +174,40 @@ public final class GLFWWindow {
         GL.createCapabilities();
     }
 
+
     /** Returns the position of the cursor, in screen coordinates,
      * relative to the upper-left corner of the content area of the specified window */
-    public Vector2d cursorScreenPosition() {
-        Vector2d position = new Vector2d();
+    public void cursorScreenPosition(Vector2d dst) {
         try (MemoryStack stack = MemoryStack.stackPush()){
             DoubleBuffer cx = stack.mallocDouble(1);
             DoubleBuffer cy = stack.mallocDouble(1);
             glfwGetCursorPos(window,cx,cy);
-            position.set(cx.get(0),cy.get(0));
-        } return position;
+            dst.set(cx.get(0),cy.get(0));
+        }
     }
 
     /** retrieves the size, in screen coordinates,
      * of the content area of the specified window */
-    public Vector2i windowScreenSize() {
-        Vector2i size = new Vector2i();
+    public void windowScreenSize(Vector2i dst) {
         try (MemoryStack stack = MemoryStack.stackPush()){
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             glfwGetWindowSize(window,w,h);
-            size.set(w.get(0),h.get(0));
-        } return size;
+            dst.set(w.get(0),h.get(0));
+        }
     }
 
     /** retrieves the position, in screen coordinates,
      * of the upper-left corner of the content area of the specified window. */
-    public Vector2i windowScreenPosition() {
-        Vector2i position = new Vector2i();
+    public void windowScreenPosition(Vector2i dst) {
         try (MemoryStack stack = MemoryStack.stackPush()){
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             glfwGetWindowPos(window,w,h);
-            position.set(w.get(0),h.get(0));
-        } return position;
+            dst.set(w.get(0),h.get(0));
+        }
     }
+
 
     public void toggleMonitors() {
         // todo: switch to the next available connected monitor
@@ -256,7 +258,8 @@ public final class GLFWWindow {
     }
 
     void processInput(float delta) {
-        input_processor.process(delta);
+        keys.processInput();
+        mouse.processInput(delta);
     }
 
     /**
@@ -281,7 +284,9 @@ public final class GLFWWindow {
      */
     public Resolution gameResolution() { return game_resolution; }
 
-    public InputProcessor input() { return input_processor; }
+    public Keyboard keys() { return keys; }
+
+    public Mouse mouse() { return mouse; }
 
     /**
      * Note: Will reset the game_resolution_changed flag
@@ -398,32 +403,32 @@ public final class GLFWWindow {
     private void setUpInputCallbacks() {
         glfwSetKeyCallback(window, new GLFWKeyCallback() {
             public void invoke(long window, int key, int scancode, int action, int mods) {
-                input_processor.onKeyEvent(key, mods, action);
+                keys.onKeyEvent(key, mods, action);
             }
         });
         glfwSetCharCallback(window, new GLFWCharCallback() {
             public void invoke(long window, int codepoint) {
-                input_processor.onCharPress(codepoint);
+                keys.onCharPress(codepoint);
             }
         });
         glfwSetCursorEnterCallback(window, new GLFWCursorEnterCallback() {
             public void invoke(long window, boolean entered) {
-                input_processor.onMouseEntered(entered);
+                mouse.onCursorEntered(entered);
             }
         });
         glfwSetCursorPosCallback(window, new GLFWCursorPosCallback() {
             public void invoke(long window, double xpos, double ypos) {
-                input_processor.onMouseHover(xpos,ypos);
+                mouse.onCursorHover(xpos,ypos);
             }
         });
         glfwSetMouseButtonCallback(window, new GLFWMouseButtonCallback() {
             public void invoke(long window, int button, int action, int mods) {
-                input_processor.onMousePress(button,action == GLFW_PRESS);
+                mouse.onPress(button,action == GLFW_PRESS);
             }
         });
         glfwSetScrollCallback(window, new GLFWScrollCallback() {
             public void invoke(long window, double xoffset, double yoffset) {
-                input_processor.onMouseScroll(yoffset);
+                mouse.onScroll(yoffset);
             }
         });
     }

@@ -5,8 +5,8 @@ import io.github.heathensoft.guide.utils.IntQueue;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_LAST;
-import static org.lwjgl.glfw.GLFW.GLFW_REPEAT;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 
 /**
  * The keyboard object consumes glfw key and character callbacks.
@@ -70,19 +70,31 @@ public class Keyboard {
     }
 
     protected void onKeyEvent(int key, int mods, int action) {
-        if (queued_keys.size() == 48) {
-            queued_keys.dequeue();
-            queued_keys.dequeue();
-            queued_keys.dequeue();
-        } queued_keys.enqueue(key);
-        queued_keys.enqueue(mods);
-        queued_keys.enqueue(action);
+        if (key != GLFW_KEY_UNKNOWN && key < GLFW_KEY_LAST) {
+            key = action != GLFW_RELEASE ? key : -key;
+            if (queued_keys.size() == 48) {
+                queued_keys.dequeue();
+                queued_keys.dequeue();
+                queued_keys.dequeue();
+            }
+            queued_keys.enqueue(key);
+            queued_keys.enqueue(mods);
+            queued_keys.enqueue(action);
+        }
     }
 
     protected void onCharPress(int codepoint) {
-        if (queued_chars.size() == 16) {
-            queued_chars.dequeue();
-        } queued_chars.enqueue(codepoint);
+        switch (codepoint) {
+            // remapping norwegian letters
+            case 230: codepoint = 101; break; // æ -> e
+            case 248: codepoint = 111; break; // ø -> o
+            case 229: codepoint = 97 ; break; // å -> a
+        }   // filtering out characters outside ascii range
+        if ((codepoint & 0x7F) == codepoint) {
+            if (queued_chars.size() == 16) {
+                queued_chars.dequeue();
+            } queued_chars.enqueue(codepoint);
+        }
     }
 
     public boolean pressed(int key) {
