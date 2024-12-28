@@ -150,7 +150,89 @@ while(running) {
 
 ## Keyboard
 
+The keyboard class has callbacks for key and character press events.
+The callback events are queued for processing. 
 
+[Keys](https://www.glfw.org/docs/3.3/input_guide.html#input_key) are both printable and non-printable characters.
+GLFW have a [predefined set of token](https://www.glfw.org/docs/3.3/group__keys.html).
+We make sure the key is part of the set. "mod" can be an additional modifier key like "control" pr "shift".
+"action" is one of GLFW_PRESS, GLFW_REPEAT or GLFW_RELEASE.
 
+```
+protected void onKeyEvent(int key, int mods, int action) {
+    if (key != GLFW_KEY_UNKNOWN && key < GLFW_KEY_LAST) {
+        key = action != GLFW_RELEASE ? key : -key;
+        if (queued_keys.size() == 48) {
+            queued_keys.dequeue();
+            queued_keys.dequeue();
+            queued_keys.dequeue();
+        }
+        queued_keys.enqueue(key);
+        queued_keys.enqueue(mods);
+        queued_keys.enqueue(action);
+    }
+}
+```
+
+[Characters](https://www.glfw.org/docs/3.3/input_guide.html#input_char) from glfw callback are unicode-code-points.
+In our case we are only using the first 127 characters (ascii range).
+
+```
+protected void onCharPress(int codepoint) {
+    switch (codepoint) {
+        // remapping norwegian letters
+        case 230: codepoint = 101; break; // æ -> e
+        case 248: codepoint = 111; break; // ø -> o
+        case 229: codepoint = 97 ; break; // å -> a
+    }   // filtering out characters outside ascii range
+    if ((codepoint & 0x7F) == codepoint) {
+        if (queued_chars.size() == 16) {
+            queued_chars.dequeue();
+        } queued_chars.enqueue(codepoint);
+    }
+}
+```
+
+We keep track of the currently pressed and previously pressed keys.
+
+```
+private final boolean[] c_keys = new boolean[GLFW_KEY_LAST]; // currently pressed
+private final boolean[] p_keys = new boolean[GLFW_KEY_LAST]; // previously pressed
+```
+Before we process the input queues we copy the current array to the previous key array.
+Then we update the current array with any keys stored from the callbacks.
+
+```
+if (key_event) {
+    System.arraycopy(c_keys,0,
+    p_keys,0, GLFW_KEY_LAST);
+    key_event = false;
+}
+
+while (!queued_keys.isEmpty()) {
+    int key = queued_keys.dequeue();
+    if (key > 0) {
+        c_keys[key] = true;
+    } else {
+        key = Math.abs(key);
+        c_keys[key] = false;
+    }
+}
+```
+
+We keep track of the previous state so we can query whether a key was just pressed or released.
+For example:
+
+```
+public boolean justPressed(int key) {
+    return c_keys[key] && !p_keys[key];
+}
+
+public boolean justReleased(int key) {
+    return p_keys[key] && !c_keys[key];
+}
+```
+
+## Mouse
 
 
