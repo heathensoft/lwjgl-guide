@@ -79,6 +79,12 @@ public class Mouse {
         normalized_device.set(current_position).mul(2).sub(1,1);
         current_scroll = callback_scroll;
         callback_scroll = 0;
+
+        // This is just for dragging.
+        // we iterate each button and check if it's pressed.
+        // if pressed check if we're dragging etc.
+        // a drag has an origin and a drag vector
+
         for (int b = 0; b < NUM_BUTTONS; b++) {
             last_dragging[b] = current_dragging[b];
             last_button[b] = current_button[b];
