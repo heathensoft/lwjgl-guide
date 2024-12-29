@@ -11,6 +11,7 @@ version = "SNAPSHOT"
 val lwjglVersion = "3.3.4"
 val jomlVersion = "1.10.7"
 val tinyLogVersion = "2.7.0"
+val `joml-primitivesVersion` = "1.10.0"
 
 val lwjglNatives = Pair(
     System.getProperty("os.name")!!,
@@ -46,6 +47,7 @@ dependencies {
     implementation("org.lwjgl", "lwjgl-opengl")
     implementation("org.lwjgl", "lwjgl-stb")
     implementation("org.joml", "joml", jomlVersion)
+    implementation("org.joml", "joml-primitives", `joml-primitivesVersion`)
     runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)

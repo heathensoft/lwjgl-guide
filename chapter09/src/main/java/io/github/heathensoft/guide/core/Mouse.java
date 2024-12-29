@@ -1,6 +1,7 @@
 package io.github.heathensoft.guide.core;
 
 import org.joml.Vector2d;
+import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -19,7 +20,7 @@ public class Mouse {
     public static final int WHEEL = GLFW_MOUSE_BUTTON_MIDDLE;
 
     private static final float FRAME_TIME = 0.01666667f;
-    private static final float DRAG_TIME = 6 * FRAME_TIME;
+    private static final float DRAG_TIME = 5 * FRAME_TIME;
 
     private final float[] timer = new float[NUM_BUTTONS];
     private final boolean[] current_dragging = new boolean[NUM_BUTTONS];
@@ -29,24 +30,23 @@ public class Mouse {
     private final boolean[] callback_button = new boolean[NUM_BUTTONS];
 
     private final Vector2i window_size = new Vector2i();
-    private final Vector2d delta_vector = new Vector2d();
-    private final Vector2d last_position = new Vector2d();
-    private final Vector2d current_position = new Vector2d();
-    private final Vector2d callback_position = new Vector2d();
-    private final Vector2d normalized_device = new Vector2d();
+    private final Vector2f delta_vector = new Vector2f();
+    private final Vector2f last_position = new Vector2f();
+    private final Vector2f current_position = new Vector2f();
+    private final Vector2f callback_position = new Vector2f();
 
-    private final Vector2d[] drag_origin = new Vector2d[NUM_BUTTONS];
-    private final Vector2d[] drag_vector = new Vector2d[NUM_BUTTONS];
+    private final Vector2f[] drag_origin = new Vector2f[NUM_BUTTONS];
+    private final Vector2f[] drag_vector = new Vector2f[NUM_BUTTONS];
 
     private boolean cursor_in_window;
     private boolean cursor_just_left;
-    private double callback_scroll;
-    private double current_scroll;
+    private float callback_scroll;
+    private float current_scroll;
 
     Mouse() {
         for (int i = 0; i < NUM_BUTTONS; i++) {
-            drag_origin[i] = new Vector2d();
-            drag_vector[i] = new Vector2d();
+            drag_origin[i] = new Vector2f();
+            drag_vector[i] = new Vector2f();
         } GLFWWindow window = Engine.get().window();
         window.cursorScreenPosition(last_position);
         screenToViewportCoordinates(last_position);
@@ -76,7 +76,6 @@ public class Mouse {
         clampToViewport(current_position);
 
         delta_vector.set(current_position).sub(last_position);
-        normalized_device.set(current_position).mul(2).sub(1,1);
         current_scroll = callback_scroll;
         callback_scroll = 0;
 
@@ -119,7 +118,7 @@ public class Mouse {
     }
 
     protected void onScroll(double amount) {
-        callback_scroll += amount;
+        callback_scroll += (float) amount;
     }
 
     protected void onPress(int button, boolean press) {
@@ -137,31 +136,23 @@ public class Mouse {
 
     // GETTERS **************************************************************
 
-    public double scrollValue() {
-        return current_scroll;
-    }
+    public float scrollValue() { return current_scroll; }
 
-    public Vector2d prevPosition() {
+    public Vector2f prevPosition() {
         return last_position;
     }
 
-    public Vector2d position() {
+    public Vector2f position() {
         return current_position;
     }
 
-    public Vector2d deltaVector() {
+    public Vector2f deltaVector() {
         return delta_vector;
     }
 
-    public Vector2d ndc() {
-        return normalized_device;
-    }
+    public Vector2f dragVector(int button) { return drag_vector[button]; }
 
-    public Vector2d dragVector(int button) {
-        return drag_vector[button];
-    }
-
-    public Vector2d dragOrigin(int button) {
+    public Vector2f dragOrigin(int button) {
         return drag_origin[button];
     }
 
@@ -210,12 +201,12 @@ public class Mouse {
     }
 
 
-    private void clampToViewport(Vector2d cursor) {
+    private void clampToViewport(Vector2f cursor) {
         cursor.x = cursor.x > 1 ? 1 : cursor.x < 0 ? 0 : cursor.x;
         cursor.y = cursor.y > 1 ? 1 : cursor.y < 0 ? 0 : cursor.y;
     }
 
-    private void screenToViewportCoordinates(Vector2d cursor) {
+    private void screenToViewportCoordinates(Vector2f cursor) {
         GLFWWindow window = Engine.get().window();
         window.windowScreenSize(window_size);
         // Inverting y to bottom instead of top.
@@ -223,8 +214,8 @@ public class Mouse {
         // Framebuffer width and height should equal the size
         // of the windows content area as far as I know.
         // But just in case they ar not, I'm attempting to adjust.
-        cursor.x *= ((double) window.framebufferW() / window_size.x);
-        cursor.y *= ((double) window.framebufferH() / window_size.y);
+        cursor.x *= ((float) window.framebufferW() / window_size.x);
+        cursor.y *= ((float) window.framebufferH() / window_size.y);
         // Adjusting to window viewport and normalizing to [0-1] range.
         cursor.x = (cursor.x - window.viewportX()) / window.viewportW();
         cursor.y = (cursor.y - window.viewportY()) / window.viewportH();

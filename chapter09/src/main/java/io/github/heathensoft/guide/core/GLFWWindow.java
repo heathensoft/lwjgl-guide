@@ -2,6 +2,7 @@ package io.github.heathensoft.guide.core;
 
 import io.github.heathensoft.guide.utils.OS;
 import org.joml.Vector2d;
+import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
@@ -177,7 +178,7 @@ public final class GLFWWindow {
 
     /** Returns the position of the cursor, in screen coordinates,
      * relative to the upper-left corner of the content area of the specified window */
-    public void cursorScreenPosition(Vector2d dst) {
+    public void cursorScreenPosition(Vector2f dst) {
         try (MemoryStack stack = MemoryStack.stackPush()){
             DoubleBuffer cx = stack.mallocDouble(1);
             DoubleBuffer cy = stack.mallocDouble(1);

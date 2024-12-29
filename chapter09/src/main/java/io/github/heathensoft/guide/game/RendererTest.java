@@ -4,6 +4,7 @@ import io.github.heathensoft.guide.core.*;
 import io.github.heathensoft.guide.core.gfx.*;
 import io.github.heathensoft.guide.utils.Resources;
 import org.joml.Vector2d;
+import org.joml.Vector2f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -69,11 +70,11 @@ public class RendererTest implements Disposable {
         glBindVertexArray(0);
     }
 
-    public void draw(Vector2d cursor) {
+    public void draw(Vector2f cursor) {
         try (MemoryStack stack = MemoryStack.stackPush()){
             Resolution app_res = Engine.get().window().gameResolution();
-            float cx = (float) cursor.x() * app_res.width();
-            float cy = (float) cursor.y() * app_res.height();
+            float cx = cursor.x() * app_res.width();
+            float cy = cursor.y() * app_res.height();
             float x1 = cx - 32;
             float x2 = cx + 32;
             float y1 = cy - 32;

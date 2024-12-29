@@ -165,8 +165,15 @@ public class ShaderProgram {
 
     public static void deleteAllPrograms() {
         for (var entry : programs_by_id.entrySet()) {
-            deleteProgram(entry.getValue());
-        }
+            ShaderProgram program = entry.getValue();
+            if (program == current_program) {
+                current_program = null;
+                glUseProgram(GL_NONE);
+            } String name = program.name;
+            Logger.debug("deleting shader program: \"{}\"",name);
+            program.detachShaders(true);
+            glDeleteProgram(program.handle);
+        } programs_by_id.clear();
     }
 
     public static void setUniform(String name, int i) {

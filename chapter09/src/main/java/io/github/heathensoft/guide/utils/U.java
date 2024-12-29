@@ -1,6 +1,8 @@
 package io.github.heathensoft.guide.utils;
 
+import org.joml.*;
 import org.joml.Math;
+import org.joml.primitives.Rectanglef;
 
 /**
  * Frederik Dahl 12/21/2024
@@ -9,12 +11,73 @@ public class U {
 
     private static final int[] logTable = new int[256];
 
+    private static final byte v2Count = 32;
+    private static final byte v3Count = 16;
+    private static final byte v4Count = 16;
+    private static final byte m3Count = 4;
+    private static final byte m4Count = 8;
+    private static final byte rfCount = 32;
+    private static int rfIdx = rfCount - 1;
+    private static int v4Idx = v4Count - 1;
+    private static int v3Idx = v3Count - 1;
+    private static int v2Idx = v2Count - 1;
+    private static int m4Idx = m4Count - 1;
+    private static int m3Idx = m3Count - 1;
+    private static final Vector2f[] vec2_stack = new Vector2f[v2Count];
+    private static final Vector3f[] vec3_stack = new Vector3f[v3Count];
+    private static final Vector4f[] vec4_stack = new Vector4f[v4Count];
+    private static final Matrix3f[] mat3_stack = new Matrix3f[m3Count];
+    private static final Matrix4f[] mat4_stack = new Matrix4f[m4Count];
+    private static final Rectanglef[] rect_stack = new Rectanglef[rfCount];
+
+    public static void pushVec2() { v2Idx++; }
+    public static void pushVec3() { v3Idx++; }
+    public static void pushVec4() { v4Idx++; }
+    public static void pushMat3() { m3Idx++; }
+    public static void pushMat4() { m4Idx++; }
+    public static void pushRect() { rfIdx++; }
+    public static void pushVec2(int count) { v2Idx += count; }
+    public static void pushVec3(int count) { v3Idx += count; }
+    public static void pushVec4(int count) { v4Idx += count; }
+    public static void pushMat3(int count) { m3Idx += count; }
+    public static void pushMat4(int count) { m4Idx += count; }
+    public static void pushRect(int count) { rfIdx += count; }
+
+    public static Vector2f popVec2() { return vec2_stack[v2Idx--]; }
+    public static Vector3f popVec3() { return vec3_stack[v3Idx--]; }
+    public static Vector4f popVec4() { return vec4_stack[v4Idx--]; }
+    public static Matrix3f popMat3() { return mat3_stack[m3Idx--]; }
+    public static Matrix4f popMat4() { return mat4_stack[m4Idx--]; }
+    public static Rectanglef popRect() { return rect_stack[rfIdx--]; }
+    public static Vector2f popSetVec2(Vector2f vec) { return popVec2().set(vec); }
+    public static Vector3f popSetVec3(Vector3f vec) { return popVec3().set(vec); }
+    public static Vector4f popSetVec4(Vector4f vec) { return popVec4().set(vec); }
+    public static Rectanglef popSetRect(Rectanglef rect) { return popRect().set(rect); }
+    public static Vector2f popSetVec2(float x, float y) { return popVec2().set(x,y); }
+    public static Vector3f popSetVec3(float x, float y, float z) { return popVec3().set(x,y,z); }
+    public static Vector4f popSetVec4(float x, float y, float z, float w) { return popVec4().set(x,y,z,w); }
+    public static Rectanglef popSetRect(float minX, float minY, float maxX, float maxY) {
+        Rectanglef rect = popRect();
+        rect.minX = minX;
+        rect.minY = minY;
+        rect.maxX = maxX;
+        rect.maxY = maxY;
+        return rect;
+    }
+
 
     static {
 
         logTable[0] = logTable[1] = 0;
         for (int i=2; i<256; i++) logTable[i] = 1 + logTable[i/2];
         logTable[0] = -1;
+
+        for (int i = 0; i < vec2_stack.length; i++) vec2_stack[i] = new Vector2f();
+        for (int i = 0; i < vec3_stack.length; i++) vec3_stack[i] = new Vector3f();
+        for (int i = 0; i < vec4_stack.length; i++) vec4_stack[i] = new Vector4f();
+        for (int i = 0; i < mat3_stack.length; i++) mat3_stack[i] = new Matrix3f();
+        for (int i = 0; i < mat4_stack.length; i++) mat4_stack[i] = new Matrix4f();
+        for (int i = 0; i < rect_stack.length; i++) rect_stack[i] = new Rectanglef();
 
     }
 
