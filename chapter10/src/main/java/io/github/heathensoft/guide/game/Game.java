@@ -32,7 +32,7 @@ public class Game implements IGame {
         boot_config.supported_resolutions.add(new Resolution(game_res_w,game_res_h));
         boot_config.windowed_mode_height = game_res_h;
         boot_config.windowed_mode_width = game_res_w;
-        boot_config.windowed_mode = false;
+        boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
         boot_config.vsync_enabled = true;
     }

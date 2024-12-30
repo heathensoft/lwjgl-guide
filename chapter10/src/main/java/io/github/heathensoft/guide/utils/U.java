@@ -182,5 +182,41 @@ public class U {
     }
 
 
+    public static Vector4f texRegionToUV(Vector4f dst, int texture_w, int texture_h, int region_x, int region_y, int region_w, int region_h) {
+        return texRegionToUV(dst,texture_w,texture_h,region_x,region_y,region_w,region_h,false);
+    }
+
+    public static Vector4f texRegionToUV(Vector4f dst, int texture_w, int texture_h, int region_x, int region_y, int region_w, int region_h, boolean pixel_centered) {
+        if (texture_w <= 0 || texture_h <= 0) throw new RuntimeException("invalid texture region size");
+        texture_w = Math.max(1,texture_w);
+        texture_h = Math.max(1,texture_h);
+        region_x = region_x % texture_w;
+        region_y = region_y % texture_h;
+        if (pixel_centered) {
+            dst.x = (region_x + 0.5f) / texture_w;
+            dst.y = (region_y + 0.5f) / texture_h;
+            dst.z = (region_x + region_w - 0.5f) / texture_w;
+            dst.w = (region_y + region_h - 0.5f) / texture_h;
+        } else {
+            dst.x = (float) region_x / texture_w;
+            dst.y = (float) region_y / texture_h;
+            dst.z = (float) (region_x + region_w) / texture_w;
+            dst.w = (float) (region_y + region_h) / texture_h;
+        } return dst;
+    }
+
+    public static Vector4f uvFlipV(Vector4f dst) {
+        float tmp = dst.y;
+        dst.y = dst.w;
+        dst.w = tmp;
+        return dst;
+    }
+
+    public static Vector4f uvFlipH(Vector4f dst) {
+        float tmp = dst.x;
+        dst.x = dst.z;
+        dst.z = tmp;
+        return dst;
+    }
 
 }

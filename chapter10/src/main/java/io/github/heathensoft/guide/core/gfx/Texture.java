@@ -345,8 +345,10 @@ public class Texture implements Disposable {
 
     // *********************** TEXTURE SLOTS ***********************
 
+    // https://stackoverflow.com/questions/46426331/number-of-texture-units-gl-texturei-in-opengl-4-implementation-in-visual-studi
+
     private static final int NO_SLOT = -1;
-    private static final int NUM_SLOTS = 16;
+    private static final int NUM_SLOTS = 48;
     private static final int UNIQUE_TARGETS = 6; // Add more later
     private static final int[][] SLOTS = new int[NUM_SLOTS][UNIQUE_TARGETS];
     private static int active_slot;

@@ -23,6 +23,7 @@ public class GLInfo {
     public final int version_major;
     public final int version_minor;
     public final int max_texture_units;
+    public final int max_combined_texture_units;
     public final int max_draw_buffers;
     public final int max_uniform_buffer_bindings;
     public final int max_uniform_block_size;
@@ -38,6 +39,8 @@ public class GLInfo {
             version_minor = buffer.get(0);
             glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, buffer);
             max_texture_units = buffer.get(0);
+            glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, buffer);
+            max_combined_texture_units = buffer.get(0);
             glGetIntegerv(GL_MAX_DRAW_BUFFERS, buffer);
             max_draw_buffers = buffer.get(0);
             glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, buffer);
@@ -52,6 +55,7 @@ public class GLInfo {
         Logger.debug("opengl version: {}.{}",version_major,version_minor);
         Logger.debug("opengl core profile: {}",core_profile);
         Logger.debug("opengl max texture units: {}", max_texture_units);
+        Logger.debug("opengl max combined texture units: {}", max_combined_texture_units);
         Logger.debug("opengl max shader output draw buffers: {}", max_draw_buffers);
         Logger.debug("opengl max uniform buffer bindings: {}", max_uniform_buffer_bindings);
         Logger.debug("opengl max uniform buffer block size: {} Bytes", max_uniform_block_size);
