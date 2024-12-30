@@ -25,7 +25,7 @@ public class Camera2D {
 
     public float far  = 257.0f; // far plane (anything beyond gets clipped)
     public float near = 1.00f;  // near plane (anything closer gets clipped)
-    public float zoom = 1.0f;   // zoom
+    public float zoom = 1.0f;   // zoom (used to expand, contract the frustum making the scene appear smaller / larger)
 
 
     public void refresh() {

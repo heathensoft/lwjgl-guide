@@ -27,9 +27,6 @@ public class Game implements IGame {
     private Camera2D camera;
 
 
-
-
-
     public void configure(BootConfiguration boot_config, String[] args) {
         boot_config.window_title = "lwjgl-guide";
         boot_config.supported_resolutions.add(new Resolution(game_res_w,game_res_h));
@@ -51,8 +48,6 @@ public class Game implements IGame {
     public void resize(Resolution resolution) { /* */ }
 
     public void update(float delta_time) {
-
-
         GLFWWindow window = Engine.get().window();
         Keyboard keys = window.keys();
         Mouse mouse = window.mouse();
@@ -62,9 +57,7 @@ public class Game implements IGame {
         } else if (keys.justPressed(GLFW_KEY_F1)) {
             if (window.isWindowedMode()) window.fullScreen();
             else window.windowedMode(game_res_w,game_res_h);
-        }
-        cameraControl(camera,delta_time);
-
+        } cameraControl(camera,delta_time);
     }
 
     public void render() {
@@ -79,8 +72,6 @@ public class Game implements IGame {
         Disposable.dispose(renderer,background);
         ShaderProgram.deleteAllPrograms();
     }
-
-
 
 
 
