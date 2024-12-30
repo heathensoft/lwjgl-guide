@@ -1,6 +1,5 @@
 package io.github.heathensoft.guide.core;
 
-import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
