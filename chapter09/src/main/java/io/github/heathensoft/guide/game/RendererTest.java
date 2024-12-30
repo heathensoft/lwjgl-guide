@@ -3,7 +3,6 @@ package io.github.heathensoft.guide.game;
 import io.github.heathensoft.guide.core.*;
 import io.github.heathensoft.guide.core.gfx.*;
 import io.github.heathensoft.guide.utils.Resources;
-import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.lwjgl.system.MemoryStack;
 

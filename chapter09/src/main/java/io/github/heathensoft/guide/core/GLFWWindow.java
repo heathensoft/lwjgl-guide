@@ -1,14 +1,12 @@
 package io.github.heathensoft.guide.core;
 
 import io.github.heathensoft.guide.utils.OS;
-import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.windows.KEYBDINPUT;
 import org.tinylog.Logger;
 
 import java.nio.DoubleBuffer;
