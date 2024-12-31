@@ -160,6 +160,8 @@ public class U {
         return Math.abs(a - b) < epsilon;
     }
 
+    public static int modRepeat(int v, int range) { return v < 0 ? (range + (v % range)) % range : v % range; }
+
     public static int nextPowerOfTwo(int value) {
         if (value-- == 0) return 1;
         value |= value >>> 1;

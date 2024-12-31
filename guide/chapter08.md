@@ -48,7 +48,7 @@ while(running) {
 }
 ```
 
-You can see that for every frame we are polling for [user events](https://www.glfw.org/docs/3.3/input_guide.html#events).
+You can see that in every frame we are polling for [user events](https://www.glfw.org/docs/3.3/input_guide.html#events).
 Key presses, cursor movements etc. And if there were any events, glfw will trigger appropriate callbacks.
 We have set up callback listeners in the GLFWWindow class. One example:
 
@@ -73,7 +73,7 @@ the arrow key and the game logic could miss the button press entirely.
 We also need to be careful the other way around (UPS > FPS). In that case typing a character
 might be interpreted as the user holding that character down or other similar bugs.
 
-To solve these problems, callbacks called on polling user events are queued for processing.
+To solve these problems, callbacks called when polling user events are queued for processing.
 
 ```
 void keyEventCallback(int key) {
@@ -113,7 +113,7 @@ while(running) {
     // one loop = one update tick
     while (time_accumulator >= fixed_time_step) {
     
-        // We also takes care not to process input
+        // We also take care not to process input
         // more than once each frame.
         if (process_input) {
             // process the input queues

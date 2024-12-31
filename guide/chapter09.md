@@ -167,7 +167,7 @@ I should explain a few things.
 
 Like the viewport defines the XY of our view, Near and far
 defines the range of the view relative to the camera direction.
-Objects rendered to close or to far away from the camara eye will
+Objects rendered too close or too far away from the camara eye will
 we clipped.
 
 These are somewhat arbitrary (at least for our purposes),
@@ -334,8 +334,8 @@ It has some utility classes for primitive shapes and collision detection.
 ### Primitive Stacks
 
 In the utility class U.java, I initialize stack pools of smaller math objects so we don't need
-to initialize new Objects all over the place. This is just a personal preference, I doubt it affects
-performance in any meaningful way. It might have a decade ago.
+to create new Objects all over the place. This is just a personal preference, I doubt it affects
+performance in any way. It might have a decade ago.
 
 ```
 Vector2f vec1 = U.popVec2(2,4)

@@ -4,13 +4,13 @@ import io.github.heathensoft.guide.core.*;
 import io.github.heathensoft.guide.core.Disposable;
 import io.github.heathensoft.guide.core.gfx.ShaderProgram;
 import io.github.heathensoft.guide.core.gfx.SpriteBatch;
+import io.github.heathensoft.guide.utils.Camera2D;
 import io.github.heathensoft.guide.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 
 /**
  * Frederik Dahl 12/5/2024
@@ -26,7 +26,7 @@ public class Game implements IGame {
     private SpriteBatch batch;
     private Background background;
     private Camera2D camera;
-    private World world;
+    private TileMap tile_map;
 
 
     public void configure(BootConfiguration boot_config, String[] args) {
@@ -41,18 +41,17 @@ public class Game implements IGame {
 
     public void start(Resolution resolution) throws Exception {
         camera = new Camera2D();
-        world = new World();
+        tile_map = new TileMap(MapSize.SMALL);
         camera.viewport.set(resolution.width(),resolution.height()).div(100);
         camera.refresh();
-        batch = new SpriteBatch(256);
+        batch = new SpriteBatch(512);
         background = new Background();
     }
 
     public void resize(Resolution resolution) { /* */ }
 
     public void update(float delta_time) {
-        controls(camera,world,delta_time);
-        world.update(delta_time);
+        controls(camera, tile_map,delta_time);
     }
 
     public void render() {
@@ -61,12 +60,12 @@ public class Game implements IGame {
         glClear(GL_COLOR_BUFFER_BIT);
         background.draw(camera);
         batch.begin(camera);
-        world.render(batch,camera.bounds);
+        tile_map.renderBlocks(batch, camera.bounds);
         batch.end();
     }
 
     public void exit() {
-        Disposable.dispose(batch,background);
+        Disposable.dispose(tile_map,batch,background);
         ShaderProgram.deleteAllPrograms();
     }
 
@@ -77,25 +76,32 @@ public class Game implements IGame {
     private float camera_target_zoom;
     private final Vector2f camera_drag_origin = new Vector2f();
 
-    private void controls(Camera2D camera, World world, float delta_time) {
-
+    private void controls(Camera2D camera, TileMap tile_map, float delta_time) {
         GLFWWindow window = Engine.get().window();
         Keyboard keys = window.keys();
         Mouse mouse = window.mouse();
-
         if (keys.justPressed(GLFW_KEY_ESCAPE)) {
             Engine.get().exitMainLoop();
             return;
         } else if (keys.justPressed(GLFW_KEY_F1)) {
             if (window.isWindowedMode()) window.fullScreen();
             else window.windowedMode(game_res_w,game_res_h);
+        } else if (keys.justPressed(GLFW_KEY_DELETE,GLFW_KEY_LEFT_CONTROL)) {
+            tile_map.clear();
         }
 
-        if (mouse.justClicked(Mouse.LEFT)) {
+        if (mouse.buttonPressed(Mouse.LEFT)) {
             Vector2f cursor = U.popSetVec2(mouse.position());
             camera.unProjectPosition(cursor);
-            world.toggleBlock(U.floor(cursor.x),U.floor(cursor.y));
-            U.pushVec2();
+            if (tile_map.contains(cursor)) {
+                tile_map.addBlock(U.floor(cursor.x),U.floor(cursor.y));
+            } U.pushVec2();
+        } else if (mouse.buttonPressed(Mouse.RIGHT)) {
+            Vector2f cursor = U.popSetVec2(mouse.position());
+            camera.unProjectPosition(cursor);
+            if (tile_map.contains(cursor)) {
+                tile_map.removeBlock(U.floor(cursor.x),U.floor(cursor.y));
+            } U.pushVec2();
         }
 
         final float move_speed = 5.0f;

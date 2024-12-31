@@ -1,6 +1,6 @@
 package io.github.heathensoft.guide.core.gfx;
 
-import io.github.heathensoft.guide.core.Camera2D;
+import io.github.heathensoft.guide.utils.Camera2D;
 import io.github.heathensoft.guide.core.Disposable;
 import io.github.heathensoft.guide.utils.Color;
 import io.github.heathensoft.guide.utils.Resources;
@@ -16,8 +16,6 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.*;
 
 /**
- *
- *
  * Frederik Dahl 12/30/2024
  */
 public class SpriteBatch implements Disposable {
@@ -27,7 +25,6 @@ public class SpriteBatch implements Disposable {
      * |        |
      * |        |
      * v1------v2
-     *
      * -----------------------------------
      * vertex: | pos | uv | color | bits |
      * -----------------------------------
@@ -38,6 +35,8 @@ public class SpriteBatch implements Disposable {
     private static final int SPRITE_COUNT_LIMIT = (Short.MAX_VALUE + 1) / 4;
     private static final int SAMPLER_ARRAY_SIZE = 15; // (not 16) using 0x0F for NO_TEXTURE
     private static final int SAMPLER_ARRAY_TEX_UNIT_OFFSET = 16;
+    private static final int VERTEX_SIZE_FLOAT = 6;
+    private static final int SPRITE_SIZE_FLOAT = VERTEX_SIZE_FLOAT * 4;
 
     private final ShaderProgram program;    // shader program
     private final SamplerArray samplers;    // shader samplers
@@ -52,62 +51,50 @@ public class SpriteBatch implements Disposable {
 
 
     public SpriteBatch(int capacity) throws Exception {
-
+        // Load / Compile Shaders
         String vert_shader_source = Resources.asString("spritebatch.vert");
         String frag_shader_source = Resources.asString("spritebatch.frag");
         Shader vert_shader = new Shader(vert_shader_source, Shader.Type.VERT_SHADER);
         Shader frag_shader = new Shader(frag_shader_source, Shader.Type.FRAG_SHADER);
         program = new ShaderProgram("spritebatch-shader", vert_shader,frag_shader);
         program.detachShaders(true);
-
-        final int vertex_size = 6;
-        final int sprite_size = vertex_size * 4;
-
+        // **********************************************
         limit = U.clamp(capacity,16,SPRITE_COUNT_LIMIT);
         samplers = new SamplerArray(GL_TEXTURE_2D,SAMPLER_ARRAY_SIZE,SAMPLER_ARRAY_TEX_UNIT_OFFSET);
-        vertices = MemoryUtil.memAllocFloat(limit * sprite_size);
-
+        vertices = MemoryUtil.memAllocFloat(limit * SPRITE_SIZE_FLOAT);
+        // Generate GL Objects
         vao = glGenVertexArrays();
         vbo = glGenBuffers();
         ebo = glGenBuffers();
-
         glBindVertexArray(vao);
-
         {
+            // Element Buffer
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ebo);
             ShortBuffer element_array = generateIndicesBuffer(limit);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER,element_array,GL_STATIC_DRAW);
             MemoryUtil.memFree(element_array);
         }
         {
-            int sprite_size_bytes = sprite_size * Float.BYTES;
+            // Vertex Buffer
+            int sprite_size_bytes = SPRITE_SIZE_FLOAT * Float.BYTES;
             int buffer_capacity = sprite_size_bytes * limit;
             glBindBuffer(GL_ARRAY_BUFFER,vbo);
             glBufferData(GL_ARRAY_BUFFER,buffer_capacity,GL_DYNAMIC_DRAW);
         }
         {
+            // Vertex Attributes
             int pointer = 0;
-            int vertex_size_bytes = vertex_size * Float.BYTES;
-            // Position **************************************
+            int vertex_size_bytes = VERTEX_SIZE_FLOAT * Float.BYTES;
             glVertexAttribPointer(0,2,GL_FLOAT,false,vertex_size_bytes,pointer);
-            glEnableVertexAttribArray(0);
-            pointer += 2 * Float.BYTES;
-            // UV Coordinates ********************************
+            glEnableVertexAttribArray(0); pointer += 2 * Float.BYTES;
             glVertexAttribPointer(1,2,GL_FLOAT,false,vertex_size_bytes,pointer);
-            glEnableVertexAttribArray(1);
-            pointer += 2 * Float.BYTES;
-            // Color *****************************************
+            glEnableVertexAttribArray(1); pointer += 2 * Float.BYTES;
             glVertexAttribPointer(2,4,GL_UNSIGNED_BYTE,true,vertex_size_bytes,pointer);
-            glEnableVertexAttribArray(2);
-            pointer += Float.BYTES;
-            // Texture unit **********************************
+            glEnableVertexAttribArray(2); pointer += Float.BYTES;
             glVertexAttribPointer(3,1,GL_FLOAT,false,vertex_size_bytes,pointer);
             glEnableVertexAttribArray(3);
         }
-
         glBindVertexArray(0);
-
-
     }
 
 
@@ -115,29 +102,20 @@ public class SpriteBatch implements Disposable {
         if (!buffering) {
             ShaderProgram.useProgram(program);
             ShaderProgram.setUniform("u_combined",camera.combined);
-            // No depth test
-            // existing colors in the buffer
-            // will always be overwritten
             glDisable(GL_DEPTH_TEST);
-            // Alpha blending
-            // Here we assume the destination color
-            // to be fully opaque (alpha == 1)
             glEnable(GL_BLEND);
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
             buffering = true;
+            draw_calls = 0;
         }
     }
 
-    /** returns num draw calls between begin and end*/
-    public int end() {
+    public void end() {
         if (buffering) {
-            flush();
-            int calls = draw_calls;
-            draw_calls = 0;
             buffering = false;
-            return calls;
-        } else return 0;
+            flush();
+        }
     }
 
     public void flush() {
@@ -166,15 +144,12 @@ public class SpriteBatch implements Disposable {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
         int texture_slot;
-        if (texture == null) {
-            texture_slot = SAMPLER_ARRAY_SIZE;
+        if (texture == null) { texture_slot = SAMPLER_ARRAY_SIZE;
         } else if (texture.hasBeenDisposed()) {
             texture_slot = SAMPLER_ARRAY_SIZE;
             color = Color.ERROR_BITS;
-        } else {
-            texture_slot = samplers.assignSlot(texture);
-            if (texture_slot == SAMPLER_ARRAY_SIZE) {
-                flush();
+        } else { texture_slot = samplers.assignSlot(texture);
+            if (texture_slot == SAMPLER_ARRAY_SIZE) { flush();
                 texture_slot = samplers.assignSlot(texture);
             }
         }
@@ -187,34 +162,21 @@ public class SpriteBatch implements Disposable {
         count++;
     }
 
+    public int drawCalls() {
+        return draw_calls;
+    }
+
     private static ShortBuffer generateIndicesBuffer(int sprites) {
         int len = sprites * 6;
         ShortBuffer buffer = MemoryUtil.memAllocShort(len);
-        buffer.put(generateIndices(sprites));
-        //for (int i = 0, j = 0; i < len; i += 6, j += 4) {
-        //    buffer.put(i,          (short)(j    ));
-        //    buffer.put(i + 1,(short)(j + 1));
-        //    buffer.put(i + 2,(short)(j + 2));
-        //    buffer.put(i + 3,(short)(j + 2));
-        //    buffer.put(i + 4,(short)(j + 3));
-        //    buffer.put(i + 5,(short)(j    ));
-        //}
-
-        return buffer.flip();
-    }
-
-    private static short[] generateIndices(int sprites) {
-        int len = sprites * 6;
-        short[] indices = new short[len];
-        short j = 0;
-        for (int i = 0; i < len; i += 6, j += 4) {
-            indices[i] = j;
-            indices[i + 1] = (short)(j + 1);
-            indices[i + 2] = (short)(j + 2);
-            indices[i + 3] = (short)(j + 2);
-            indices[i + 4] = (short)(j + 3);
-            indices[i + 5] = j;
-        } return indices;
+        for (int i = 0, j = 0; i < len; i += 6, j += 4) {
+            buffer.put(i,          (short)(j    ));
+            buffer.put(i + 1,(short)(j + 1));
+            buffer.put(i + 2,(short)(j + 2));
+            buffer.put(i + 3,(short)(j + 2));
+            buffer.put(i + 4,(short)(j + 3));
+            buffer.put(i + 5,(short)(j    ));
+        } return buffer;
     }
 
 }

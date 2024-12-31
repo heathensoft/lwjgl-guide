@@ -1,6 +1,5 @@
-package io.github.heathensoft.guide.core;
+package io.github.heathensoft.guide.utils;
 
-import io.github.heathensoft.guide.utils.U;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;

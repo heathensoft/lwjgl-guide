@@ -1,10 +1,11 @@
 package io.github.heathensoft.guide.game;
 
-import io.github.heathensoft.guide.core.Camera2D;
+import io.github.heathensoft.guide.utils.Camera2D;
 import io.github.heathensoft.guide.core.Disposable;
 import io.github.heathensoft.guide.core.gfx.Shader;
 import io.github.heathensoft.guide.core.gfx.ShaderProgram;
 import io.github.heathensoft.guide.utils.Resources;
+import org.joml.primitives.Rectanglef;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
