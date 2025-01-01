@@ -4,7 +4,6 @@ import io.github.heathensoft.guide.core.Disposable;
 import io.github.heathensoft.guide.core.gfx.Bitmap;
 import io.github.heathensoft.guide.core.gfx.SpriteBatch;
 import io.github.heathensoft.guide.core.gfx.Texture;
-import io.github.heathensoft.guide.utils.Color;
 import io.github.heathensoft.guide.utils.Resources;
 import io.github.heathensoft.guide.utils.U;
 import org.joml.Vector2f;
@@ -14,8 +13,7 @@ import org.joml.primitives.Rectanglef;
 import java.util.Arrays;
 
 import static io.github.heathensoft.guide.game.MapSize.CHUNK_SIZE;
-import static org.lwjgl.opengl.GL11.GL_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR;
+import static org.lwjgl.opengl.GL11.*;
 
 /**
  * Frederik Dahl 12/31/2024
@@ -23,12 +21,11 @@ import static org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR;
 public class TileMap implements Disposable {
 
 
-    private final MapSize size;
     private final int[] tiles;
     private final int[] chunks;
-
+    private final MapSize size;
     private final Texture block_texture;
-    private final Vector4f[][] block_uvs;
+    private final Vector4f[] block_uvs;
 
     public TileMap(MapSize size) throws Exception {
 
@@ -39,19 +36,19 @@ public class TileMap implements Disposable {
         this.block_texture.generateMipmap();
         bitmap.dispose();
 
-        this.block_uvs = new Vector4f[6][8];
+        this.block_uvs = new Vector4f[6 * 8];
         {
             int block_size_pixels = 16;
             int tex_width = block_texture.width();
             int tex_height = block_texture.height();
-            for (int r = 0; r < block_uvs.length; r++) {
+            for (int r = 0; r < 6; r++) {
                 int region_y = r * block_size_pixels;
-                for (int c = 0; c < block_uvs[r].length; c++) {
+                for (int c = 0; c < 8; c++) {
                     int region_x = c * block_size_pixels;
                     Vector4f block_uv = new Vector4f();
                     U.texRegionToUV(block_uv,tex_width,tex_height,region_x,region_y,
                     block_size_pixels,block_size_pixels,true);
-                    block_uvs[r][c] = block_uv;
+                    block_uvs[r * 8 + c] = block_uv;
                 }
             }
         }
@@ -79,13 +76,14 @@ public class TileMap implements Disposable {
                         int y = y0 + r;
                         for (int c = 0; c < CHUNK_SIZE; c++) {
                             int x = x0 + c;
-                            if (isBlock(tileIndex(x,y))) {
+                            int tile_index = tileIndex(x,y);
+                            if (isBlock(tile_index)) {
                                 rect.setMin(x,y);
                                 rect.setMax(x+1,y+1);
-                                batch.draw(block_texture,rect,block_uvs[5][7],Color.WHITE_BITS);
+                                int uv_index = block_uv_map[getTileMask(tile_index)];
+                                batch.draw(block_texture,rect,block_uvs[uv_index],0xFF66BBEE);
                                 if (--count == 0) break early_out;
                             }
-
                         }
                     }
                 } U.pushRect();
@@ -96,7 +94,8 @@ public class TileMap implements Disposable {
     public void addBlock(int x, int y) {
         int index = tileIndex(x, y);
         if (!isBlock(index)) {
-            setTile(index,1);
+            toggleBlock(index,true);
+            updateTileMask(x,y);
             index = chunkIndex(x, y);
             chunkIncrementBlockCount(index,1);
         }
@@ -105,7 +104,8 @@ public class TileMap implements Disposable {
     public void removeBlock(int x, int y) {
         int index = tileIndex(x, y);
         if (isBlock(index)) {
-            setTile(index,0);
+            toggleBlock(index,false);
+            updateTileMask(x,y);
             index = chunkIndex(x, y);
             chunkIncrementBlockCount(index,-1);
         }
@@ -148,6 +148,10 @@ public class TileMap implements Disposable {
         Arrays.fill(chunks, 0);
     }
 
+    public void dispose() {
+        Disposable.dispose(block_texture);
+    }
+
     private int tileIndex(int x, int y) {
         return y * widthTiles() + x;
     }
@@ -157,7 +161,7 @@ public class TileMap implements Disposable {
     }
 
     private boolean isBlock(int index) {
-        return tiles[index] != 0;
+        return tiles[index] < 0;
     }
 
     private int chunkBlockCount(int index) {
@@ -172,14 +176,53 @@ public class TileMap implements Disposable {
         tiles[index] = value;
     }
 
-    @Override
-    public void dispose() {
-        Disposable.dispose(block_texture);
+    private void toggleBlock(int index, boolean on) {
+        tiles[index] = (tiles[index] &~ 0x8000_0000) | ((on ? 1 : 0) << 31);
+    }
+
+    private void setTileMask(int index, int mask) {
+        tiles[index] = (tiles[index] &~ 0xFF) | (mask & 0xFF);
+    }
+
+    private int getTileMask(int index) {
+        return tiles[index] & 0xFF;
+    }
+
+    private void updateTileMask(int x, int y) {
+        for (int[] offset : adjacent9) {
+            int tile_x = x + offset[0];
+            int tile_y = y + offset[1];
+            if (contains(tile_x, tile_y)) {
+                int index = tileIndex(tile_x, tile_y);
+                if (isBlock(tile_x, tile_y)) {
+                    int mask = calculateTileMask(tile_x, tile_y);
+                    setTileMask(index, mask);
+                } else setTile(index, 0);
+            }
+        }
+    }
+
+    private int calculateTileMask(int x, int y) {
+        int mask = 0;
+        for (int i = 0; i < adjacent8.length; i++) {
+            int tile_x = x + adjacent8[i][0];
+            int tile_y = y + adjacent8[i][1];
+            if (contains(tile_x,tile_y)) {
+                if (isBlock(tile_x,tile_y))
+                    mask |= (1 << i);
+            } else mask |= (1 << i);
+        } return mask;
     }
 
     public static final int[][] adjacent8 = {
             {-1, 1},{ 0, 1},{ 1, 1},
             {-1, 0}        ,{ 1, 0},
+            {-1,-1},{ 0,-1},{ 1,-1}
+    };
+
+    public static final int[][] adjacent9 = {
+            {-1, 1},{ 0, 1},{ 1, 1},
+            {-1, 0},{ 0, 0},{ 1, 0},
             {-1,-1},{ 0,-1},{ 1,-1}
     };
 

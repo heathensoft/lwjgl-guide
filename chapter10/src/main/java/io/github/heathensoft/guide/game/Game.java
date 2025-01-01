@@ -21,8 +21,8 @@ public class Game implements IGame {
         Engine.get().run(new Game(),args);
     }
 
-    public static final int game_res_w = 1200;
-    public static final int game_res_h = 800;
+    public static final int game_res_w = 1920;
+    public static final int game_res_h = 1080;
     private SpriteBatch batch;
     private Background background;
     private Camera2D camera;
@@ -34,7 +34,7 @@ public class Game implements IGame {
         boot_config.supported_resolutions.add(new Resolution(game_res_w,game_res_h));
         boot_config.windowed_mode_height = game_res_h;
         boot_config.windowed_mode_width = game_res_w;
-        boot_config.windowed_mode = true;
+        boot_config.windowed_mode = false;
         boot_config.resizable_window = true;
         boot_config.vsync_enabled = true;
     }
@@ -42,8 +42,8 @@ public class Game implements IGame {
     public void start(Resolution resolution) throws Exception {
         camera = new Camera2D();
         tile_map = new TileMap(MapSize.SMALL);
-        camera.viewport.set(resolution.width(),resolution.height()).div(100);
-        camera.refresh();
+        //camera.viewport.set(resolution.width(),resolution.height()).div(100);
+        //camera.refresh();
         batch = new SpriteBatch(512);
         background = new Background();
     }
@@ -60,7 +60,7 @@ public class Game implements IGame {
         glClear(GL_COLOR_BUFFER_BIT);
         background.draw(camera);
         batch.begin(camera);
-        tile_map.renderBlocks(batch, camera.bounds);
+        tile_map.renderBlocks(batch,camera.bounds);
         batch.end();
     }
 
@@ -90,6 +90,7 @@ public class Game implements IGame {
             tile_map.clear();
         }
 
+        // Block Placement
         if (mouse.buttonPressed(Mouse.LEFT)) {
             Vector2f cursor = U.popSetVec2(mouse.position());
             camera.unProjectPosition(cursor);
