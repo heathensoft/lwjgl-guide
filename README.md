@@ -13,4 +13,4 @@
 * [CHAPTER 07 - Textures II](guide/chapter07.md)
 * [CHAPTER 08 - Mouse & Keyboard](guide/chapter08.md)
 * [CHAPTER 09 - Camera / Coordinates II](guide/chapter09.md)
-* CHAPTER 10 - Batching
+* [CHAPTER 10 - Batching](guide/chapter10.md)
