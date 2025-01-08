@@ -14,7 +14,7 @@ public interface Disposable {
     static void dispose(Disposable ...disposables) {
         if (disposables != null) {
             for (Disposable disposable : disposables)
-                disposable.dispose();
+                dispose(disposable);
         }
     }
 

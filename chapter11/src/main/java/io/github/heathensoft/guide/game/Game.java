@@ -2,9 +2,11 @@ package io.github.heathensoft.guide.game;
 
 import io.github.heathensoft.guide.core.*;
 import io.github.heathensoft.guide.core.Disposable;
+import io.github.heathensoft.guide.core.gfx.LineBatch;
 import io.github.heathensoft.guide.core.gfx.ShaderProgram;
 import io.github.heathensoft.guide.core.gfx.SpriteBatch;
 import io.github.heathensoft.guide.utils.Camera2D;
+import io.github.heathensoft.guide.utils.Color;
 import io.github.heathensoft.guide.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
@@ -21,9 +23,10 @@ public class Game implements IGame {
         Engine.get().run(new Game(),args);
     }
 
-    public static final int game_res_w = 1920;
-    public static final int game_res_h = 1080;
-    private SpriteBatch batch;
+    public static final int game_res_w = 1280;
+    public static final int game_res_h = 720;
+    private SpriteBatch sprite_batch;
+    private LineBatch line_batch;
     private Background background;
     private Camera2D camera;
     private TileMap tile_map;
@@ -42,10 +45,11 @@ public class Game implements IGame {
     public void start(Resolution resolution) throws Exception {
         camera = new Camera2D();
         tile_map = new TileMap(MapSize.SMALL);
-        //camera.viewport.set(resolution.width(),resolution.height()).div(100);
-        //camera.refresh();
-        batch = new SpriteBatch(512);
+        sprite_batch = new SpriteBatch(512);
         background = new Background();
+        line_batch = new LineBatch(256);
+        line_batch.setLineWidth(2f);
+        line_batch.enableSmoothLines(true);
     }
 
     public void resize(Resolution resolution) { /* */ }
@@ -59,13 +63,24 @@ public class Game implements IGame {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         background.draw(camera);
-        batch.begin(camera);
-        tile_map.renderBlocks(batch,camera.bounds);
-        batch.end();
+        sprite_batch.begin(camera);
+        tile_map.renderBlocks(sprite_batch,camera.bounds);
+        sprite_batch.end();
+
+
+        line_batch.begin(camera);
+        Vector2f center = U.popSetVec2(4,4);
+        line_batch.drawCircle(center,1,32, 0xFF00FF00);
+        U.pushVec2();
+        line_batch.end();
     }
 
     public void exit() {
-        Disposable.dispose(tile_map,batch,background);
+        Disposable.dispose(
+                tile_map,
+                sprite_batch,
+                line_batch,
+                background);
         ShaderProgram.deleteAllPrograms();
     }
 

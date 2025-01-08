@@ -183,6 +183,10 @@ public class U {
         }
     }
 
+    public static float angle2D(float x, float y) { return Math.atan2(y,x); }
+
+    public static float angle2D(Vector2f v) { return Math.atan2(v.y,v.x); }
+
 
     public static Vector4f texRegionToUV(Vector4f dst, int texture_w, int texture_h, int region_x, int region_y, int region_w, int region_h) {
         return texRegionToUV(dst,texture_w,texture_h,region_x,region_y,region_w,region_h,false);
