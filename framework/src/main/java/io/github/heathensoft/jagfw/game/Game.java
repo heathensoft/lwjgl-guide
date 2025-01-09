@@ -9,6 +9,7 @@ import io.github.heathensoft.jagfw.utils.Camera2D;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
+import org.tinylog.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -36,7 +37,7 @@ public class Game implements IGame {
         boot_config.supported_resolutions.add(new Resolution(game_res_w,game_res_h));
         boot_config.windowed_mode_height = game_res_h;
         boot_config.windowed_mode_width = game_res_w;
-        boot_config.windowed_mode = false;
+        boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
         boot_config.vsync_enabled = true;
     }
@@ -53,7 +54,35 @@ public class Game implements IGame {
 
     public void resize(Resolution resolution) { /* */ }
 
+
     public void update(float delta_time) {
+
+        Controller controller = Engine.get().window().controller();
+        if (controller.isConnected()) {
+
+            if (controller.leftTriggerPressed()) {
+                Logger.debug("left trigger magnitude: {}", controller.leftTriggerMagnitude());
+            }
+
+            if (controller.rightTriggerPressed()) {
+                Logger.debug("right trigger magnitude: {}", controller.rightTriggerMagnitude());
+            }
+
+            if (controller.buttonJustPressed(Controller.BUTTON_CROSS)) {
+                Logger.debug("X just pressed");
+            }
+            else if (controller.buttonJustReleased(Controller.BUTTON_CROSS)) {
+                Logger.debug("X just released");
+            }
+
+            if (controller.leftStickPushed()) {
+                Vector2f dir = controller.leftStickDirection();
+                float magnitude = controller.leftStickMagnitude();
+                Logger.debug("axis max -> x:{}, y:{}, l:{}",dir.x,dir.y,magnitude);
+            }
+
+        }
+
         controls(camera, tile_map,delta_time);
     }
 

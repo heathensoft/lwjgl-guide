@@ -28,6 +28,7 @@ public final class GLFWWindow {
 
     private Mouse mouse;
     private Keyboard keys;
+    private Controller controller;
     private List<Resolution> supported_resolutions; // resolutions supported by our game
     private Resolution game_resolution; // The current resolution
     private boolean game_resolution_changed; // found a better supported resolution for the game
@@ -155,6 +156,7 @@ public final class GLFWWindow {
 
         mouse = new Mouse();
         keys = new Keyboard();
+        controller = new Controller();
         cursor_visible = true;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         setUpInputCallbacks();
@@ -257,6 +259,7 @@ public final class GLFWWindow {
     }
 
     void processInput(float delta) {
+        controller.processInput(delta);
         keys.processInput();
         mouse.processInput(delta);
     }
@@ -282,6 +285,8 @@ public final class GLFWWindow {
      * @return current game resolution
      */
     public Resolution gameResolution() { return game_resolution; }
+
+    public Controller controller() { return controller; }
 
     public Keyboard keys() { return keys; }
 
@@ -326,6 +331,7 @@ public final class GLFWWindow {
         Logger.debug("clearing opengl capabilities");
         GL.setCapabilities(null); // this IS nullable
         Logger.debug("freeing glfw input callbacks");
+        controller.dispose();
         freeInputCallbacks();
         Logger.debug("freeing glfw display callbacks");
         freeDisplayCallbacks();
@@ -428,6 +434,19 @@ public final class GLFWWindow {
         glfwSetScrollCallback(window, new GLFWScrollCallback() {
             public void invoke(long window, double xoffset, double yoffset) {
                 mouse.onScroll(yoffset);
+            }
+        });
+        glfwSetJoystickCallback(new GLFWJoystickCallback() {
+            @Override
+            public void invoke(int jid, int event) {
+                if (event == GLFW_CONNECTED)
+                {
+                    controller.onJoystickConnect(jid);
+                }
+                else if (event == GLFW_DISCONNECTED)
+                {
+                    controller.onJoystickDisconnect(jid);
+                }
             }
         });
     }

@@ -18,7 +18,7 @@ public class IntQueue {
     }
     
     public IntQueue() {
-        this(0);
+        this(16);
     }
 
     /**
