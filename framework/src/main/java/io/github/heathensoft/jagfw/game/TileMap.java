@@ -24,7 +24,7 @@ public class TileMap implements Disposable {
     private final int[] tiles;
     private final int[] chunks;
     private final MapSize size;
-    private final Texture block_texture;
+    public final Texture block_texture;
     private final Vector4f[] block_uvs;
 
     public TileMap(MapSize size) throws Exception {
@@ -81,7 +81,7 @@ public class TileMap implements Disposable {
                                 rect.setMin(x,y);
                                 rect.setMax(x+1,y+1);
                                 int uv_index = block_uv_map[getTileMask(tile_index)];
-                                batch.draw(block_texture,rect,block_uvs[uv_index],0xFF66BBEE);
+                                batch.draw(block_texture,rect,block_uvs[uv_index],0xFF66BBEE,4);
                                 if (--count == 0) break early_out;
                             }
                         }

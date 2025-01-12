@@ -3,6 +3,7 @@ package io.github.heathensoft.jagfw.utils;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import static io.github.heathensoft.jagfw.utils.U.floor;
 import static java.lang.Math.min;
 
 /**
@@ -185,6 +186,17 @@ public class Color {
         return rgbToHex(hsvToRgb(new Vector4f(value)));
     }
 
+    public static Vector4f hsvLerp(Vector4f hsv1, Vector4f hsv2, float t, Vector4f dst) {
+        if (t <= 0) { dst.set(hsv1);
+        } else if (t > 1) { dst.set(hsv2);
+        } else {
+            dst.x = hueLerp(hsv1.x,hsv2.x,t);
+            dst.y = U.lerp(hsv1.y,hsv2.y,t);
+            dst.z = U.lerp(hsv1.z,hsv2.z,t);
+            dst.w = U.lerp(hsv1.w,hsv2.w,t);
+        } return dst;
+    }
+
     public static Vector4f hslToHsv(Vector4f value) {
         float v = value.z + value.y * min(value.z,1-value.z);
         if (v > 0) { value.y = 2 - (2 * value.z) / v;
@@ -280,6 +292,8 @@ public class Color {
         return clampHSV(value);
     }
 
+
+
     public static int rBits(int value) { return value & 0xFF; }
 
     public static int gBits(int value) { return (value >> 8) & 0xFF; }
@@ -290,6 +304,15 @@ public class Color {
 
     private static float clampNormalized(float value) {
         return value < 0 ? 0 : value > 1 ? 1 : value;
+    }
+
+    private static float hueLerp(float a, float b, float t) {
+        float dt = hueRepeat(b - a);
+        return U.lerp(a,a + (dt > 180 ? dt - 360 : dt), t);
+    }
+
+    private static float hueRepeat(float t) {
+        return U.clamp(t - floor(t / 360f) * 360f,0,360f);
     }
 
 }

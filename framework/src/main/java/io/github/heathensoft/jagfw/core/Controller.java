@@ -16,7 +16,6 @@ import static org.lwjgl.glfw.GLFW.*;
  */
 public class Controller implements Disposable {
 
-    // ALLOWS FOR 4 GAMEPADS TO BE CONNECTED AT THE SAME TIME
     public static final int SLOT_0 = 0;
     public static final int SLOT_1 = 1;
     public static final int SLOT_2 = 2;
@@ -54,12 +53,12 @@ public class Controller implements Disposable {
     private static final int AXIS_LAST = AXIS_RIGHT_TRIGGER;
 
     private static final float STICK_DEAD_ZONE = 0.2f;
-    private static final int LEFT_STICK = 16;
-    private static final int RIGHT_STICK = 17;
+    private static final int STICK_LEFT = 16;
+    private static final int STICK_RIGHT = 17;
 
     private static final float TRIGGER_DEAD_ZONE = 0.15f;
-    private static final int LEFT_TRIGGER = 18;
-    private static final int RIGHT_TRIGGER = 19;
+    private static final int TRIGGER_LEFT = 18;
+    private static final int TRIGGER_RIGHT = 19;
 
 
     private final GamePad[] gamepads = new GamePad[SLOT_COUNT];
@@ -70,7 +69,31 @@ public class Controller implements Disposable {
     Controller() {
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (glfwJoystickPresent(slot)) {
-                onJoystickConnect(slot);
+                String name = glfwGetGamepadName(slot);
+                Logger.debug("controller connected: [{}] \"{}\"",slot,name);
+                gamepads[slot] = new GamePad(slot,name);
+                num_connected++;
+            }
+        }
+    }
+
+    protected void processInput(float dt) {
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            boolean p_connected = gamepads[slot] != null;
+            boolean c_connected = glfwJoystickIsGamepad(slot);
+            if (c_connected &! p_connected) { // CONNECT
+                String name = glfwGetGamepadName(slot);
+                Logger.debug("controller connected: [{}] \"{}\"",slot,name);
+                gamepads[slot] = new GamePad(slot,name);
+                num_connected++;
+            } else if (p_connected &! c_connected) { // DISCONNECT
+                String name = gamepads[slot].name;
+                Logger.debug("controller disconnected: [{}] \"{}\"",slot,name);
+                gamepads[slot].dispose();
+                gamepads[slot] = null;
+                num_connected--;
+            } else if (gamepads[slot] != null) { // UPDATE STATE
+                gamepads[slot].updateState(dt);
             }
         }
     }
@@ -138,158 +161,110 @@ public class Controller implements Disposable {
 
     public boolean leftStickPushed() {
         if (isConnected()) {
-            return gamepads[active_slot].currentlyPressed(LEFT_STICK);
+            return gamepads[active_slot].currentlyPressed(STICK_LEFT);
         } return false;
     }
 
     public boolean leftStickJustPushed() {
         if (isConnected()) {
-            return gamepads[active_slot].justPressed(LEFT_STICK);
+            return gamepads[active_slot].justPressed(STICK_LEFT);
         } return false;
     }
 
     public boolean leftStickJustReleased() {
         if (isConnected()) {
-            return gamepads[active_slot].justReleased(LEFT_STICK);
+            return gamepads[active_slot].justReleased(STICK_LEFT);
         } return false;
     }
 
     public boolean rightStickPushed() {
         if (isConnected()) {
-            return gamepads[active_slot].currentlyPressed(RIGHT_STICK);
+            return gamepads[active_slot].currentlyPressed(STICK_RIGHT);
         } return false;
     }
 
     public boolean rightStickJustPushed() {
         if (isConnected()) {
-            return gamepads[active_slot].justPressed(RIGHT_STICK);
+            return gamepads[active_slot].justPressed(STICK_RIGHT);
         } return false;
     }
 
     public boolean rightStickJustReleased() {
         if (isConnected()) {
-            return gamepads[active_slot].justReleased(RIGHT_STICK);
+            return gamepads[active_slot].justReleased(STICK_RIGHT);
         } return false;
     }
 
     public Vector2f leftStickDirection() {
         if (isConnected()) {
-            return gamepads[active_slot].c_axis_left_dir;
+            return gamepads[active_slot].c_stick_l_dir;
         } return null;
     }
 
     public Vector2f rightStickDirection() {
         if (isConnected()) {
-            return gamepads[active_slot].c_axis_right_dir;
+            return gamepads[active_slot].c_stick_r_dir;
         } return null;
     }
 
     public float leftStickMagnitude() {
         if (isConnected()) {
-            return gamepads[active_slot].c_axis_left_magnitude;
+            return gamepads[active_slot].c_stick_l_magnitude;
         } return 0;
     }
 
     public float rightStickMagnitude() {
         if (isConnected()) {
-            return gamepads[active_slot].c_axis_right_magnitude;
+            return gamepads[active_slot].c_stick_r_magnitude;
         } return 0;
     }
 
-
-
     public boolean leftTriggerPressed() {
         if (isConnected()) {
-            return gamepads[active_slot].currentlyPressed(LEFT_TRIGGER);
+            return gamepads[active_slot].currentlyPressed(TRIGGER_LEFT);
         } return false;
     }
 
     public boolean leftTriggerJustPressed() {
         if (isConnected()) {
-            return gamepads[active_slot].justPressed(LEFT_TRIGGER);
+            return gamepads[active_slot].justPressed(TRIGGER_LEFT);
         } return false;
     }
 
     public boolean leftTriggerJustReleased() {
         if (isConnected()) {
-            return gamepads[active_slot].justReleased(LEFT_TRIGGER);
+            return gamepads[active_slot].justReleased(TRIGGER_LEFT);
         } return false;
     }
 
     public float leftTriggerMagnitude() {
         if (isConnected()) {
-            return gamepads[active_slot].c_axis_left_trigger;
+            return gamepads[active_slot].c_trigger_l_magnitude;
         } return 0;
     }
 
-
-
     public boolean rightTriggerPressed() {
         if (isConnected()) {
-            return gamepads[active_slot].currentlyPressed(RIGHT_TRIGGER);
+            return gamepads[active_slot].currentlyPressed(TRIGGER_RIGHT);
         } return false;
     }
 
     public boolean rightTriggerJustPressed() {
         if (isConnected()) {
-            return gamepads[active_slot].justPressed(RIGHT_TRIGGER);
+            return gamepads[active_slot].justPressed(TRIGGER_RIGHT);
         } return false;
     }
 
     public boolean rightTriggerJustReleased() {
         if (isConnected()) {
-            return gamepads[active_slot].justReleased(RIGHT_TRIGGER);
+            return gamepads[active_slot].justReleased(TRIGGER_RIGHT);
         } return false;
     }
 
     public float rightTriggerMagnitude() {
         if (isConnected()) {
-            return gamepads[active_slot].c_axis_right_trigger;
+            return gamepads[active_slot].c_trigger_r_magnitude;
         } return 0;
-    }
-
-
-
-    protected void processInput(float dt) {
-
-        if (num_connected < 0 || num_connected > SLOT_LAST) {
-            // TODO: Remove
-            Logger.error("illegal num controllers: [{}]. Should not occur",num_connected);
-            Engine.get().exitMainLoop();
-        }
-
-        for (int slot = 0; slot < SLOT_COUNT; slot++) {
-            if (gamepads[slot] != null) {
-                gamepads[slot].updateState(dt);
-            }
-        }
-    }
-
-    protected void onJoystickConnect(int slot) {
-        if (isValidSlot(slot)) {
-            if (glfwJoystickIsGamepad(slot)) {
-                if (gamepads[slot] != null) {
-                    gamepads[slot].dispose();
-                    num_connected--;
-                } String name = glfwGetGamepadName(slot);
-                Logger.debug("game-pad connected: [{}] \"{}\"",slot,name);
-                gamepads[slot] = new GamePad(slot,name);
-                num_connected++;
-
-            }
-        }
-    }
-
-    protected void onJoystickDisconnect(int slot) {
-        if (isValidSlot(slot)) {
-            if (gamepads[slot] != null) {
-                String name = gamepads[slot].name;
-                Logger.debug("game-pad disconnected: [{}] \"{}\"",slot,name);
-                gamepads[slot].dispose();
-                gamepads[slot] = null;
-                num_connected--;
-            }
-        }
     }
 
     private static boolean isValidSlot(int slot) {
@@ -307,31 +282,31 @@ public class Controller implements Disposable {
         }
     }
 
+    @FunctionalInterface
+    public interface ConnectionListener {
+        void invoke(String name, int slot, boolean connected);
+    }
+
     private static final class GamePad implements Disposable {
 
         int slot;
-
-        int c_buttons;
-        int p_buttons;
-
-        String name;
-        ByteBuffer buffer;
-        GLFWGamepadState state;
-
-        float c_axis_left_trigger;
-        float c_axis_right_trigger;
-        float p_axis_left_trigger;
-        float p_axis_right_trigger;
-
-        float c_axis_left_magnitude;
-        float c_axis_right_magnitude;
-        float p_axis_left_magnitude;
-        float p_axis_right_magnitude;
-
-        final Vector2f c_axis_left_dir = new Vector2f();
-        final Vector2f c_axis_right_dir = new Vector2f();
-        final Vector2f p_axis_left_dir = new Vector2f();
-        final Vector2f p_axis_right_dir = new Vector2f();
+        int c_buttons_state;
+        int p_buttons_state;
+        final String name;
+        final ByteBuffer buffer;
+        final GLFWGamepadState state;
+        float c_trigger_l_magnitude;
+        float c_trigger_r_magnitude;
+        float p_trigger_l_magnitude;
+        float p_trigger_r_magnitude;
+        float c_stick_l_magnitude;
+        float c_stick_r_magnitude;
+        float p_stick_l_magnitude;
+        float p_stick_r_magnitude;
+        final Vector2f c_stick_l_dir = new Vector2f();
+        final Vector2f c_stick_r_dir = new Vector2f();
+        final Vector2f p_stick_l_dir = new Vector2f();
+        final Vector2f p_stick_r_dir = new Vector2f();
 
         GamePad(int slot, String name) {
             this.slot = slot;
@@ -342,79 +317,79 @@ public class Controller implements Disposable {
 
         void updateState(float dt) {
 
-            p_buttons = c_buttons;
-            p_axis_left_dir.set(c_axis_left_dir);
-            p_axis_right_dir.set(c_axis_right_dir);
-            p_axis_left_trigger = c_axis_left_trigger;
-            p_axis_right_trigger = c_axis_right_trigger;
-            p_axis_left_magnitude = c_axis_left_magnitude;
-            p_axis_right_magnitude = c_axis_right_magnitude;
+            p_buttons_state = c_buttons_state;
+            p_stick_l_dir.set(c_stick_l_dir);
+            p_stick_r_dir.set(c_stick_r_dir);
+            p_trigger_l_magnitude = c_trigger_l_magnitude;
+            p_trigger_r_magnitude = c_trigger_r_magnitude;
+            p_stick_l_magnitude = c_stick_l_magnitude;
+            p_stick_r_magnitude = c_stick_r_magnitude;
 
-            c_buttons = 0;
-            c_axis_left_dir.zero();
-            c_axis_right_dir.zero();
-            c_axis_left_magnitude = 0f;
-            c_axis_right_magnitude = 0f;
-            c_axis_left_trigger = 0f;
-            c_axis_right_trigger = 0f;
+            c_buttons_state = 0;
+            c_stick_l_dir.zero();
+            c_stick_r_dir.zero();
+            c_stick_l_magnitude = 0f;
+            c_stick_r_magnitude = 0f;
+            c_trigger_l_magnitude = 0f;
+            c_trigger_r_magnitude = 0f;
 
             if (glfwGetGamepadState(slot,state)) {
 
                 for (int btn = 0; btn <= BUTTON_LAST; btn++) {
                     if (state.buttons(btn) == GLFW_PRESS) {
-                        c_buttons |= (1 << btn);
+                        c_buttons_state |= (1 << btn);
                     }
                 }
 
-                c_axis_left_dir.x = state.axes(AXIS_LEFT_X);
-                c_axis_left_dir.y = state.axes(AXIS_LEFT_Y);
-                c_axis_left_magnitude = c_axis_left_dir.length();
-                if (c_axis_left_magnitude > STICK_DEAD_ZONE) {
-                    c_axis_left_dir.x /= c_axis_left_magnitude;
-                    c_axis_left_dir.y /= c_axis_left_magnitude;
-                    c_axis_left_magnitude = Math.min(c_axis_left_magnitude,1.0f);
-                    c_axis_left_magnitude -= STICK_DEAD_ZONE;
-                    c_axis_left_magnitude /= (1.0f - STICK_DEAD_ZONE);
-                    c_buttons |= (1 << LEFT_STICK);
-                } else c_axis_left_magnitude = 0f;
+                c_stick_l_dir.x = state.axes(AXIS_LEFT_X);
+                c_stick_l_dir.y = -state.axes(AXIS_LEFT_Y);
+                c_stick_l_magnitude = c_stick_l_dir.length();
+                if (c_stick_l_magnitude > STICK_DEAD_ZONE) {
+                    c_stick_l_dir.x /= c_stick_l_magnitude;
+                    c_stick_l_dir.y /= c_stick_l_magnitude;
+                    c_stick_l_magnitude = Math.min(c_stick_l_magnitude,1.0f);
+                    c_stick_l_magnitude -= STICK_DEAD_ZONE;
+                    c_stick_l_magnitude /= (1.0f - STICK_DEAD_ZONE);
+                    c_buttons_state |= (1 << STICK_LEFT);
+                } else c_stick_l_magnitude = 0f;
 
-                c_axis_right_dir.x = state.axes(AXIS_RIGHT_X);
-                c_axis_right_dir.y = state.axes(AXIS_RIGHT_Y);
-                c_axis_right_magnitude = c_axis_right_dir.length();
-                if (c_axis_right_magnitude > STICK_DEAD_ZONE) {
-                    c_axis_right_dir.x /= c_axis_right_magnitude;
-                    c_axis_right_dir.y /= c_axis_right_magnitude;
-                    c_axis_right_magnitude = Math.min(c_axis_right_magnitude,1.0f);
-                    c_axis_right_magnitude -= STICK_DEAD_ZONE;
-                    c_axis_right_magnitude /= (1.0f - STICK_DEAD_ZONE);
-                    c_buttons |= (1 << RIGHT_STICK);
-                } else c_axis_right_magnitude = 0f;
+                c_stick_r_dir.x = state.axes(AXIS_RIGHT_X);
+                c_stick_r_dir.y = -state.axes(AXIS_RIGHT_Y);
+                c_stick_r_magnitude = c_stick_r_dir.length();
+                if (c_stick_r_magnitude > STICK_DEAD_ZONE) {
+                    c_stick_r_dir.x /= c_stick_r_magnitude;
+                    c_stick_r_dir.y /= c_stick_r_magnitude;
+                    c_stick_r_magnitude = Math.min(c_stick_r_magnitude,1.0f);
+                    c_stick_r_magnitude -= STICK_DEAD_ZONE;
+                    c_stick_r_magnitude /= (1.0f - STICK_DEAD_ZONE);
+                    c_buttons_state |= (1 << STICK_RIGHT);
+                } else c_stick_r_magnitude = 0f;
 
-                c_axis_left_trigger = state.axes(AXIS_LEFT_TRIGGER);
-                c_axis_left_trigger = U.clamp(c_axis_left_trigger,-1f,1f);
-                c_axis_left_trigger = (c_axis_left_trigger + 1f) / 2f;
-                if (c_axis_left_trigger > TRIGGER_DEAD_ZONE) {
-                    c_axis_left_trigger -= TRIGGER_DEAD_ZONE;
-                    c_axis_left_trigger /= (1.0f - TRIGGER_DEAD_ZONE);
-                    c_buttons |= (1 << LEFT_TRIGGER);
-                } else c_axis_left_trigger = 0f;
+                c_trigger_l_magnitude = state.axes(AXIS_LEFT_TRIGGER);
+                c_trigger_l_magnitude = U.clamp(c_trigger_l_magnitude,-1f,1f);
+                c_trigger_l_magnitude = (c_trigger_l_magnitude + 1f) / 2f;
+                if (c_trigger_l_magnitude > TRIGGER_DEAD_ZONE) {
+                    c_trigger_l_magnitude -= TRIGGER_DEAD_ZONE;
+                    c_trigger_l_magnitude /= (1.0f - TRIGGER_DEAD_ZONE);
+                    c_buttons_state |= (1 << TRIGGER_LEFT);
+                } else c_trigger_l_magnitude = 0f;
 
-                c_axis_right_trigger = state.axes(AXIS_RIGHT_TRIGGER);
-                c_axis_right_trigger = U.clamp(c_axis_right_trigger,-1f,1f);
-                c_axis_right_trigger = (c_axis_right_trigger + 1f) / 2f;
-                if (c_axis_right_trigger > TRIGGER_DEAD_ZONE) {
-                    c_axis_right_trigger -= TRIGGER_DEAD_ZONE;
-                    c_axis_right_trigger /= (1.0f - TRIGGER_DEAD_ZONE);
-                    c_buttons |= (1 << RIGHT_TRIGGER);
-                } else c_axis_right_trigger = 0f;
+                c_trigger_r_magnitude = state.axes(AXIS_RIGHT_TRIGGER);
+                c_trigger_r_magnitude = U.clamp(c_trigger_r_magnitude,-1f,1f);
+                c_trigger_r_magnitude = (c_trigger_r_magnitude + 1f) / 2f;
+                if (c_trigger_r_magnitude > TRIGGER_DEAD_ZONE) {
+                    c_trigger_r_magnitude -= TRIGGER_DEAD_ZONE;
+                    c_trigger_r_magnitude /= (1.0f - TRIGGER_DEAD_ZONE);
+                    c_buttons_state |= (1 << TRIGGER_RIGHT);
+                } else c_trigger_r_magnitude = 0f;
 
             } else {
                 Logger.warn("unable to retrieve game-pad state for [{}] \"{}\"",slot,name);
             }
         }
 
-        boolean currentlyPressed(int btn) { return (c_buttons & (1 << btn)) > 0; }
-        boolean previouslyPressed(int btn) { return (p_buttons & (1 << btn)) > 0; }
+        boolean currentlyPressed(int btn) { return (c_buttons_state & (1 << btn)) > 0; }
+        boolean previouslyPressed(int btn) { return (p_buttons_state & (1 << btn)) > 0; }
         boolean justPressed(int btn) { return currentlyPressed(btn) &! previouslyPressed(btn); }
         boolean justReleased(int btn) { return previouslyPressed(btn) &! currentlyPressed(btn); }
         int setButtonState(int state, int btn) { return state | (1 << btn); }

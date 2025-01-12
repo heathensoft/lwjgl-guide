@@ -61,6 +61,7 @@ public class Background implements Disposable {
     public void draw(Camera2D camera) {
         ShaderProgram.useProgram(shader_program);
         ShaderProgram.setUniform("u_combined_inv",camera.combined_inv);
+        glDisable(GL_DEPTH_TEST);
         glBindVertexArray(vertex_attrib_array);
         glDrawArrays(GL_TRIANGLES,0,6);
         glBindVertexArray(0);

@@ -1,10 +1,7 @@
 package io.github.heathensoft.jagfw.core.gfx;
 
 import io.github.heathensoft.jagfw.core.Disposable;
-import io.github.heathensoft.jagfw.utils.Camera2D;
-import io.github.heathensoft.jagfw.utils.Color;
-import io.github.heathensoft.jagfw.utils.Resources;
-import io.github.heathensoft.jagfw.utils.U;
+import io.github.heathensoft.jagfw.utils.*;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.primitives.Rectanglef;
@@ -74,6 +71,22 @@ public class LineBatch implements Disposable {
         color_float_bits = Color.intColorToFloat(previous_int_color);
     }
 
+    public void setCamera(Camera2D camera) {
+        if (buffering) flush();
+        ShaderProgram.useProgram(program);
+        ShaderProgram.setUniform("u_combined",camera.combined);
+    }
+
+    public void begin() {
+        if (!buffering) {
+            ShaderProgram.useProgram(program);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_BLEND);
+            buffering = true;
+            draw_calls = 0;
+        }
+    }
+
     public void begin(Camera2D camera) {
         if (!buffering) {
             ShaderProgram.useProgram(program);
@@ -114,8 +127,7 @@ public class LineBatch implements Disposable {
             if (color != previous_int_color) {
                 previous_int_color = color;
                 color_float_bits = Color.intColorToFloat(color);
-            }
-            Vector2f p0 = U.popSetVec2(center).add(radius,0f);
+            } Vector2f p0 = U.popSetVec2(center).add(radius,0f);
             Vector2f p1 = U.popVec2();
             float delta = Math.PI_TIMES_2_f / resolution;
             for (int i = 1; i <= resolution; i++) {
@@ -125,38 +137,40 @@ public class LineBatch implements Disposable {
                 p1.set(center).add(x,y);
                 push(p0.x,p0.y,p1.x,p1.y);
                 p0.set(p1);
-            }
-            U.pushVec2(2);
+            } U.pushVec2(2);
         }
     }
 
-    public void drawRectangle(Rectanglef quad, int color) {
+    public void drawRect(Rectanglef rect, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if ((count + 4) >= limit) flush();
         if (color != previous_int_color) {
             previous_int_color = color;
             color_float_bits = Color.intColorToFloat(color);
-        }
-
+        } push(rect.minX,rect.maxY,rect.maxX,rect.maxY);
+        push(rect.maxX,rect.maxY,rect.maxX,rect.minY);
+        push(rect.maxX,rect.minY,rect.minX,rect.minY);
+        push(rect.minX,rect.minY,rect.minX,rect.maxY);
     }
 
-    public void draw(Vector2f position, float rotation, float radius, int color) {
+    public void drawLine(Vector2f origin, float angle, float len, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
         if (color != previous_int_color) {
             previous_int_color = color;
             color_float_bits = Color.intColorToFloat(color);
-        }
-
+        } float x = origin.x + len * Math.cos(angle);
+        float y = origin.y + len * Math.sin(angle);
+        push(origin.x,origin.y,x,y);
     }
 
-    public void draw(Vector2f pos1, Vector2f pos2, int color) {
+    public void drawLine(Vector2f p0, Vector2f p1, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
         if (color != previous_int_color) {
             previous_int_color = color;
             color_float_bits = Color.intColorToFloat(color);
-        }
+        } push(p0.x,p0.y,p1.x,p1.y);
     }
 
 

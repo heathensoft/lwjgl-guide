@@ -1,13 +1,11 @@
 package io.github.heathensoft.jagfw.core.gfx;
 
-import io.github.heathensoft.jagfw.utils.Camera2D;
+import io.github.heathensoft.jagfw.utils.*;
 import io.github.heathensoft.jagfw.core.Disposable;
-import io.github.heathensoft.jagfw.utils.Color;
-import io.github.heathensoft.jagfw.utils.Resources;
-import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;
 import org.lwjgl.system.MemoryUtil;
+import org.tinylog.Logger;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
@@ -48,6 +46,7 @@ public class SpriteBatch implements Disposable {
     private int count;                      // num buffered sprites
     private int draw_calls;                 // draw calls between begin to end
     private boolean buffering;              // begin has been called
+    private boolean depth_enabled;          // enable depth layers
 
 
     public SpriteBatch(int capacity) throws Exception {
@@ -97,12 +96,46 @@ public class SpriteBatch implements Disposable {
         glBindVertexArray(0);
     }
 
+    public void setCamera(Camera2D camera) {
+        if (buffering) flush();
+        ShaderProgram.useProgram(program);
+        ShaderProgram.setUniform("u_combined",camera.combined);
+    }
+
+    public void enableLayers(boolean enable) {
+        if (buffering) {
+            if (depth_enabled != enable) {
+                flush();
+                ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
+            }
+        } depth_enabled = enable;
+    }
+
+    public void begin() {
+        if (!buffering) {
+            ShaderProgram.useProgram(program);
+            ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
+            if (depth_enabled) {
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LEQUAL);
+            } else glDisable(GL_DEPTH_TEST);
+            glEnable(GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+            buffering = true;
+            draw_calls = 0;
+        }
+    }
 
     public void begin(Camera2D camera) {
         if (!buffering) {
             ShaderProgram.useProgram(program);
             ShaderProgram.setUniform("u_combined",camera.combined);
-            glDisable(GL_DEPTH_TEST);
+            ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
+            if (depth_enabled) {
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LEQUAL);
+            } else glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -140,7 +173,7 @@ public class SpriteBatch implements Disposable {
         if (ebo != 0) glDeleteBuffers(ebo);
     }
 
-    public void draw(Texture texture, Rectanglef quad, Vector4f uv, int color) {
+    public void draw(Texture texture, Rectanglef quad, Vector4f uv, int color, int z_layer) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
         int texture_slot;
@@ -153,8 +186,18 @@ public class SpriteBatch implements Disposable {
                 texture_slot = samplers.assignSlot(texture);
             }
         }
+
+        int bits = 0;
+
+        {
+            bits |= texture_slot;
+            bits |= ((z_layer & 0x0F) << 4);
+        }
+
         float color_float = Color.intColorToFloat(color);
-        float bits_float = Float.intBitsToFloat(texture_slot);
+        float bits_float = Float.intBitsToFloat(bits);
+
+
         vertices.put(quad.minX).put(quad.maxY).put(uv.x).put(uv.y).put(color_float).put(bits_float);
         vertices.put(quad.minX).put(quad.minY).put(uv.x).put(uv.w).put(color_float).put(bits_float);
         vertices.put(quad.maxX).put(quad.minY).put(uv.z).put(uv.w).put(color_float).put(bits_float);

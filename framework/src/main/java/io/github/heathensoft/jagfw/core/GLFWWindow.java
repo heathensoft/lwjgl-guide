@@ -436,19 +436,15 @@ public final class GLFWWindow {
                 mouse.onScroll(yoffset);
             }
         });
-        glfwSetJoystickCallback(new GLFWJoystickCallback() {
-            @Override
-            public void invoke(int jid, int event) {
-                if (event == GLFW_CONNECTED)
-                {
-                    controller.onJoystickConnect(jid);
-                }
-                else if (event == GLFW_DISCONNECTED)
-                {
-                    controller.onJoystickDisconnect(jid);
-                }
-            }
-        });
+        // glfwSetJoystickCallback(new GLFWJoystickCallback() {
+        //     public void invoke(int jid, int event) {
+        //         if (event == GLFW_CONNECTED) {
+        //             controller.onJoystickConnect(jid);
+        //         }  else if (event == GLFW_DISCONNECTED) {
+        //             controller.onJoystickDisconnect(jid);
+        //         }
+        //     }
+        // });
     }
 
     private void freeInputCallbacks() {
