@@ -1,12 +1,13 @@
 package io.github.heathensoft.jagfw.physics;
 
-
+import io.github.heathensoft.jagfw.physics.old.Body;
 import org.joml.Vector2f;
 
-import static io.github.heathensoft.jlib.test.physics.PhysicsUtil.*;
+import static io.github.heathensoft.jagfw.utils.U.popSetVec2;
+import static io.github.heathensoft.jagfw.utils.U.pushVec2;
 
 /**
- * Utility class to calculate different common forces.
+ * Utility class to calculate various common forces.
  * There are a lot more you could add in later.
  * Apart from the methods of this class
  * you can also simply just call body.addForce(force)
@@ -15,10 +16,8 @@ import static io.github.heathensoft.jlib.test.physics.PhysicsUtil.*;
  * @author Frederik Dahl
  * 14/01/2025
  */
+public class ForceUtil {
 
-
-public class Force {
-    
     /**
      * Apply drag force to body
      * (larger k, more drag)
@@ -26,7 +25,7 @@ public class Force {
      * @param body body
      * @param k drag coefficient
      */
-    public static void applyDrag(Body body, float k) {
+    public static void applyDrag(RigidBody body, float k) {
         /*
             p = fluid/gas density
             Kd = Drag coefficient
@@ -48,13 +47,13 @@ public class Force {
             pushVec2();
         }
     }
-    
+
     /**
      * Apply friction to body
      * @param body body
      * @param k friction coefficient
      */
-    public static void applyFriction(Body body, float k) {
+    public static void applyFriction(RigidBody body, float k) {
         if (body.isStatic()) return;
         // Calculate the drag direction (inverse of velocity unit vector)
         Vector2f v = popSetVec2(body.velocity).normalize().mul(-1.0f);
@@ -62,18 +61,18 @@ public class Force {
         body.addForce(v.mul(k));
         pushVec2();
     }
-    
+
     /**
      * Apply Gravitational force between two bodies
      * The universal gravitational constant is 6.673e-11f.
-     * For small bodies, that force would be un measurable.
+     * For small bodies, that force would be practically non-existent.
      * @param a body a
      * @param b body b
-     * @param G A gravitational constant ()
+     * @param G A customized gravitational constant
      * @param min_dist clamp the distance to a min dist
      * @param max_dist clamp the distance to a max dist
      */
-    public static void applyGravitation(Body a, Body b, float G, float min_dist, float max_dist) {
+    public static void applyGravitation(RigidBody a, RigidBody b, float G, float min_dist, float max_dist) {
         if (a.isStatic() && b.isStatic()) return;
         if (max_dist < min_dist) {
             float tmp = max_dist;
@@ -93,7 +92,7 @@ public class Force {
         b.addForce(-v.x,-v.y);
         pushVec2();
     }
-    
+
     /**
      * Apply Spring force between body and static anchor
      * @param body body
@@ -101,7 +100,7 @@ public class Force {
      * @param rest_len length of spring at rest
      * @param k "spring stiffness"
      */
-    public static void applySpringForce(Body body, Vector2f anchor, float rest_len, float k) {
+    public static void applySpringForce(RigidBody body, Vector2f anchor, float rest_len, float k) {
         // Calculate the distance between the anchor and the object
         Vector2f vec = popSetVec2(body.position).sub(anchor);
         // Find the spring displacement considering the rest length
@@ -114,7 +113,7 @@ public class Force {
         body.addForce(vec);
         pushVec2();
     }
-    
+
     /**
      * Apply Spring force between two bodies
      * @param a body a
@@ -122,7 +121,7 @@ public class Force {
      * @param rest_len length of spring at rest
      * @param k "spring stiffness"
      */
-    public static void applySpringForce(Body a, Body b, float rest_len, float k) {
+    public static void applySpringForce(RigidBody a, RigidBody b, float rest_len, float k) {
         // Calculate the distance between the anchor and the object
         Vector2f v = popSetVec2(a.position).sub(b.position);
         // Find the spring displacement considering the rest length
@@ -136,5 +135,4 @@ public class Force {
         b.addForce(-v.x,-v.y);
         pushVec2();
     }
-    
 }

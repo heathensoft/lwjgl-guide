@@ -1,11 +1,10 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physics.old;
 
 
+import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 
-import static io.github.heathensoft.jlib.test.physics.PhysicsUtil.PI2;
-import static io.github.heathensoft.jlib.test.physics.PhysicsUtil.cross;
 
 /**
  * Physics Body
@@ -17,7 +16,7 @@ import static io.github.heathensoft.jlib.test.physics.PhysicsUtil.cross;
 
 public class Body {
     
-    public final Shape shape;
+    public final Shape2 shape;
     
     // POSITIONAL FORCES
     
@@ -80,7 +79,7 @@ public class Body {
     public boolean colliding;
     
     
-    public Body(Shape shape, float x, float y, float mass) {
+    public Body(Shape2 shape, float x, float y, float mass) {
         this.shape = shape;
         this.position.set(x,y);
         this.position_Last.set(position);
@@ -89,7 +88,7 @@ public class Body {
         this.rotation = 0f;
         this.rotation_last = rotation;
         this.setMass(mass);
-        if (shape instanceof Shape.PolygonShape polygon) {
+        if (shape instanceof Shape2.PolygonShape polygon) {
             polygon.updateVertices(position,rotation);
         }
     }
@@ -106,9 +105,9 @@ public class Body {
      */
     public void update(float dt) {
         position_Last.set(position);
-        rotation_last = rotation % PI2;
+        rotation_last = rotation % Math.PI_TIMES_2_f;
         if (rotation_last < 0) {
-            rotation_last += PI2;
+            rotation_last += Math.PI_TIMES_2_f;
         }
         if (isStatic()) {
             velocity.zero();
@@ -121,7 +120,7 @@ public class Body {
         }
         clearForces(); // Clear all the forces acting on the object before the next physics step
         clearTorque(); // Clear all the torque acting on the object before the next physics step
-        if (shape instanceof Shape.PolygonShape polygon) {
+        if (shape instanceof Shape2.PolygonShape polygon) {
             polygon.updateVertices(position,rotation);
         }
         colliding = false; // collision reset
@@ -197,7 +196,7 @@ public class Body {
     public void applyImpulse(Vector2f j, Vector2f r) {
         velocity.x += j.x * mass_inv;
         velocity.y += j.y * mass_inv;
-        angular_vel += cross(r,j) * I_inv;
+        angular_vel += U.cross(r,j) * I_inv;
     }
     
     /**

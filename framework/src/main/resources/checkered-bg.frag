@@ -12,5 +12,7 @@ void main() {
     if(world_pos.x < 0 || world_pos.y < 0 || world_pos.x > 128 || world_pos.y > 128) {
         rgb *= 0.5;
     }
+
+    rgb *= 0.5;
     f_color = vec4(rgb,1.0);
 }

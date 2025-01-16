@@ -1,15 +1,20 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physics.old;
+
 
 import org.joml.Math;
 import org.joml.Vector2f;
 
-/**
- * Physics Body Shape
- *
- * Frederik Dahl 1/16/2025
- */
-public abstract class Shape {
 
+/**
+ * Various Physics Shapes
+ *
+ * @author Frederik Dahl
+ * 13/01/2025
+ */
+
+
+public abstract class Shape2 {
+    
     /**
      * Calculates the moment of inertia of shape based on Body mass
      * @param mass the mass of the Body
@@ -17,77 +22,63 @@ public abstract class Shape {
      */
     public abstract float momentOfInertia(float mass);
 
-    /**
-     * Called every physics step to update position and rotation of shape.
-     * @param position body world position
-     * @param rotation body world rotation in radians
-     */
-    public void updateVertices(Vector2f position, float rotation) { }
 
+    public static void main(String[] args) {
 
-    /**
-     * A polygon is a convex shape with an arbitrary number of vertices.
-     * Edges are connected in the counter-clockwise order and the edge normal
-     * is a vector pointing outwards
-     */
-    public static abstract class Polygon extends Shape {
+        Box box = new Box(1);
+
+        for (int i = 0; i < 4; i++) {
+            Vector2f edge = box.edge(i,new Vector2f());
+            Vector2f edge_normal = new Vector2f(edge);
+            edge_normal.perpendicular().normalize();
+            System.out.print("Edge " + i + ": ");
+            System.out.print("[ "+edge.x+", "+edge.y+" ]");
+            System.out.print(" -- Normal: ");
+            System.out.println("[ "+edge_normal.x+", "+edge_normal.y+" ]");
+        }
+
+    }
+    
+    
+    public static abstract class PolygonShape extends Shape2 {
+        
         /** @return Vertices of Polygon Shape in world coordinates */
         public abstract Vector2f[] vertices();
+        
+        /**
+         * Called every physics step to update position and rotation of shape.
+         * @param position body world position
+         * @param rotation body world rotation in radians
+         */
+        public abstract void updateVertices(Vector2f position, float rotation);
+        
         /**
          * Get the edge vector of polygon from v[index % len] -> v[(index + 1) % len]
-         * The edges are in counter-clockwise order
          * @param index the polygon vertex
-         * @param dst the vector to put the values into
-         * @return the dst vector
+         * @param dst the destination vector
+         * @return dst (edge)
          */
-        public Vector2f edgeVector(int index, Vector2f dst) {
+        public Vector2f edge(int index, Vector2f dst) {
             Vector2f[] vertices = vertices();
             int len = vertices.length;
             Vector2f v0 = vertices[index % len];
             Vector2f v1 = vertices[(index + 1) % len];
             return dst.set(v1).sub(v0);
         }
-
-        /**
-         * Get the normal of the edge vector of polygon
-         * (index % len) -> ((index + 1) % len)
-         * The edges are in counter-clockwise order and
-         * the normal is pointing outwards
-         * @param index the index of the edge
-         * @param dst the vector to put the values into
-         * @return the dst vector
-         */
-        public Vector2f edgeNormal(int index, Vector2f dst) {
-            Vector2f edge = edgeVector(index,dst);
-            return edge.perpendicular().normalize();
-        }
-
-        public int numVertices() {
-            return vertices().length;
-        }
-
     }
-
-    /**
-     * A circle shape with radius r
-     */
-    public static class Circle extends Shape {
+    
+    public static class Circle extends Shape2 {
         public float radius;
         public Circle() { this(0.5f); }
         public Circle(float radius) { this.radius = radius; }
         public float momentOfInertia(float mass) {
-            // For solid circles, the moment of inertia is 1/2 * r^2 * mass
+            // For solid circles, the moment of inertia is 1/2 * r^2
+            // But this still needs to be multiplied by the rigidbody's mass
             return 0.5f * (radius * radius) * mass;
         }
     }
-
-    /**
-     * A Box is a Polygon Shape with 4 vertices.
-     * It has a width and a height.
-     * The edges are in counter-clockwise order
-     * starting from the top left vertex (un-rotated)
-     */
-    public static class Box extends Polygon {
+    
+    public static class Box extends PolygonShape {
         public float width;
         public float height;
         public final Vector2f[] vertices = new Vector2f[4];
@@ -97,24 +88,25 @@ public abstract class Shape {
             this.height = height;
             for (int i = 0; i < vertices.length; i++)
                 vertices[i] = new Vector2f();
-            /*
-             * v0------v3
-             * |        |
-             * |        |
-             * v1------v2
-             */
             vertices[0].set(-(width / 2f), (height / 2f));
             vertices[1].set(-(width / 2f),-(height / 2f));
             vertices[2].set( (width / 2f),-(height / 2f));
             vertices[3].set( (width / 2f), (height / 2f));
+            /*
+            localVertices.push_back(Vec2(-width / 2.0, -height / 2.0));
+            localVertices.push_back(Vec2(+width / 2.0, -height / 2.0));
+            localVertices.push_back(Vec2(+width / 2.0, +height / 2.0));
+            localVertices.push_back(Vec2(-width / 2.0, +height / 2.0));
+             */
         }
-
-        public Vector2f[] vertices() { return vertices; }
         public float momentOfInertia(float mass) {
-            // For a rectangle, the moment of inertia is 1/12 * (w^2 + h^2) * mass
+            // For a rectangle, the moment of inertia is 1/12 * (w^2 + h^2)
+            // But this still needs to be multiplied by the rigidbody's mass
             return (0.083333f) * (width * width + height * height) * mass;
         }
-
+        
+        public Vector2f[] vertices() { return vertices; }
+        
         /**
          * The Box is Axis Aligned when the
          * distance in x between vertex[0] and vertex[1] (left edge)
@@ -127,19 +119,22 @@ public abstract class Shape {
             float dx = Math.abs(vertices[0].x - vertices[1].x);
             return dx == 0 || dx == height;
         }
-
+        
         public void updateVertices(Vector2f position, float rotation) {
+            // First rotate, then we translate
             final float wh = width * 0.5f;
             final float hh = height * 0.5f;
             float rot = rotation % Math.PI_TIMES_2_f;
             if (rot < 0) rot += Math.PI_TIMES_2_f;
             if (rot < 1e-3f) {
                 /*
-                    we only test for rotation ~= 0.
+                    we only test for rotation ~= 0
                     Don't want to check all other axis aligned
                     angles for special cases.
+                    
                     keep rotation set to 0 if you need
                     to avoid to calculate rotation every frame.
+                    
                  */
                 vertices[0].set(-wh, hh).add(position);
                 vertices[1].set(-wh,-hh).add(position);
@@ -152,7 +147,6 @@ public abstract class Shape {
                 final float sin_hh = sin * hh;
                 final float cos_wh = cos * wh;
                 final float cos_hh = cos * hh;
-                // First rotate, then translate
                 vertices[0].x = -cos_wh - sin_hh + position.x;
                 vertices[0].y = -sin_wh + cos_hh + position.y;
                 vertices[1].x = -cos_wh + sin_hh + position.x;
@@ -163,7 +157,27 @@ public abstract class Shape {
                 vertices[3].y =  sin_wh + cos_hh + position.y;
             }
         }
-
+        
     }
+    
+    //public static class Polygon extends Shape {
+    //    public Vector2f[] local_vertices;
+    //    public Vector2f[] world_vertices;
+    //    public float momentOfInertia(float mass) {
+    //        return 0;
+    //    } public void updateVertices(Vector2f position, float rotation) {
+    //        // First rotate, then we translate
+    //        float sin = Math.sin(rotation);
+    //        float cos = Math.cos(rotation);
+    //        for (int i = 0; i < local_vertices.length; i++) {
+    //            float local_x = local_vertices[i].x;
+    //            float local_y = local_vertices[i].y;
+    //            world_vertices[i].x = (local_x * cos - local_y * sin) + position.x;
+    //            world_vertices[i].y = (local_x * sin + local_y * cos) + position.y;
+    //        }
+    //    }
+    //}
+    
+    
 
 }

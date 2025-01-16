@@ -183,10 +183,30 @@ public class U {
         }
     }
 
+    /**
+     * "Cross product" of two 2D vectors.
+     * The scalar magnitude of the z component of
+     * the resulting perpendicular vector
+     * @param a vector a
+     * @param b vector b
+     * @return the z value of the cross product
+     */
+    public static float cross(Vector2f a, Vector2f b) {
+        return a.x * b.y - a.y * a.x;
+    }
+
     public static float angle2D(float x, float y) { return Math.atan2(y,x); }
 
     public static float angle2D(Vector2f v) { return Math.atan2(v.y,v.x); }
 
+    public static Vector2f rotate2D(Vector2f dst, float deg) {
+        // rotates around origin
+        float sin = Math.sin(deg);
+        float cos = Math.cos(deg);
+        dst.x = dst.x * cos - dst.y * sin;
+        dst.y = dst.x * sin + dst.y * cos;
+        return dst;
+    }
 
     public static Vector4f texRegionToUV(Vector4f dst, int texture_w, int texture_h, int region_x, int region_y, int region_w, int region_h) {
         return texRegionToUV(dst,texture_w,texture_h,region_x,region_y,region_w,region_h,false);

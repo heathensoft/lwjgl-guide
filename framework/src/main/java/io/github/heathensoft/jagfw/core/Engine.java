@@ -74,14 +74,13 @@ public class Engine {
                     fixed_time_step = 1.0 / window.targetUps();
                     time.tick();
                     time_accumulator += time.frameTimeSeconds();
-                    boolean process_input = true;
+                    //boolean process_input = true;
                     while (time_accumulator >= fixed_time_step) {
                         /*
                          *  Game update happens at a fixed interval of (window.targetUps()) / second
                          */
-                        if (!window.isMinimized() && process_input) {
+                        if (!window.isMinimized()) {
                             window.processInput((float)fixed_time_step);
-                            process_input = false;
                         }
                         game.update((float) fixed_time_step);
                         time.incrementUpsCounter();

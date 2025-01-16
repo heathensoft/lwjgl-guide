@@ -5,7 +5,6 @@ import io.github.heathensoft.jagfw.core.Disposable;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;
 import org.lwjgl.system.MemoryUtil;
-import org.tinylog.Logger;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;

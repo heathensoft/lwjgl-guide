@@ -1,10 +1,10 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physics.old;
 
 
 import org.joml.Math;
 import org.joml.Vector2f;
 
-import static io.github.heathensoft.jlib.test.physics.PhysicsUtil.*;
+import static io.github.heathensoft.jagfw.utils.U.*;
 
 /**
  * @author Frederik Dahl
