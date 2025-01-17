@@ -2,13 +2,18 @@ package io.github.heathensoft.jagfw.physics;
 
 import org.joml.Math;
 import org.joml.Vector2f;
+import org.joml.primitives.Rectanglef;
 
 /**
  * Physics Body Shape
- *
  * Frederik Dahl 1/16/2025
  */
 public abstract class Shape {
+
+    /*
+        Possible Todo: LineSegment (extends shape), Triangle (extends Polygon)
+
+     */
 
     /**
      * Calculates the moment of inertia of shape based on Body mass
@@ -26,13 +31,24 @@ public abstract class Shape {
 
 
     /**
-     * A polygon is a convex shape with an arbitrary number of vertices.
-     * Edges are connected in the counter-clockwise order and the edge normal
+     * A polygon is a convex shape with a number of vertices > 2.
+     * Edges should be connected in the counter-clockwise order where the edge normal
      * is a vector pointing outwards
      */
     public static abstract class Polygon extends Shape {
         /** @return Vertices of Polygon Shape in world coordinates */
         public abstract Vector2f[] vertices();
+
+        /**
+         * calculate an axis aligned rectangle from the max and min x anf y
+         * values of the polygon vertices. The bounding box contains the polygon.
+         * @param dst the resulting bounding box
+         * @return dst
+         */
+        // More complex polygons should have a bounding box rectangle field
+        // And update the bounding box when updating it's vertices
+        // so: return dst.set(bounding_box);
+        public abstract Rectanglef boundingBox(Rectanglef dst);
         /**
          * Get the edge vector of polygon from v[index % len] -> v[(index + 1) % len]
          * The edges are in counter-clockwise order
@@ -69,7 +85,7 @@ public abstract class Shape {
     }
 
     /**
-     * A circle shape with radius r
+     * A Circle Shape with radius r
      */
     public static class Circle extends Shape {
         public float radius;
@@ -110,6 +126,26 @@ public abstract class Shape {
         }
 
         public Vector2f[] vertices() { return vertices; }
+
+        public Rectanglef boundingBox(Rectanglef dst) {
+            // Don't do this for more complex polygons
+            float min_x = Float.POSITIVE_INFINITY;
+            float min_y = Float.POSITIVE_INFINITY;
+            float max_x = Float.NEGATIVE_INFINITY;
+            float max_y = Float.NEGATIVE_INFINITY;
+            for (Vector2f vertex : vertices) {
+                min_x = Math.min(min_x, vertex.x);
+                min_y = Math.min(min_y, vertex.y);
+                max_x = Math.max(max_x, vertex.x);
+                max_y = Math.max(max_y, vertex.y);
+            }
+            dst.minX = min_x;
+            dst.minY = min_y;
+            dst.maxX = max_x;
+            dst.maxY = max_y;
+            return dst;
+        }
+
         public float momentOfInertia(float mass) {
             // For a rectangle, the moment of inertia is 1/12 * (w^2 + h^2) * mass
             return (0.083333f) * (width * width + height * height) * mass;
@@ -139,7 +175,7 @@ public abstract class Shape {
                     Don't want to check all other axis aligned
                     angles for special cases.
                     keep rotation set to 0 if you need
-                    to avoid to calculate rotation every frame.
+                    to avoid to calculate rotations each frame.
                  */
                 vertices[0].set(-wh, hh).add(position);
                 vertices[1].set(-wh,-hh).add(position);

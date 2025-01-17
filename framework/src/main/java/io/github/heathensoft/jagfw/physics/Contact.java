@@ -1,11 +1,6 @@
 package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.utils.U;
-import org.joml.Math;
 import org.joml.Vector2f;
-
-import java.util.Random;
-
 import static io.github.heathensoft.jagfw.utils.U.*;
 
 /**
@@ -22,12 +17,13 @@ public class Contact {
 
     public void resolveCollision() {
 
+
+        Vector2f ra = popSetVec2(end).sub(bodyA.position);
+        Vector2f rb = popSetVec2(start).sub(bodyB.position);
         resolvePenetration();
         // Define elasticity (coefficient of restitution e) and friction
         float e = (bodyA.restitution + bodyB.restitution) * 0.5f;
         float f = (bodyA.friction + bodyB.friction) * 0.5f;
-        Vector2f ra = popSetVec2(end).sub(bodyA.position);
-        Vector2f rb = popSetVec2(start).sub(bodyB.position);
         // linear + angular velocity of a -> a.v + w x ra
         // linear + angular velocity of b -> b.v + w x rb
         Vector2f va = popSetVec2(-bodyA.angular_vel * ra.y, bodyA.angular_vel * ra.x).add(bodyA.velocity);

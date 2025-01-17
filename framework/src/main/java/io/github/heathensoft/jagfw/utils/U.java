@@ -192,7 +192,7 @@ public class U {
      * @return the z value of the cross product
      */
     public static float cross(Vector2f a, Vector2f b) {
-        return a.x * b.y - a.y * a.x;
+        return a.x * b.y - a.y * b.x;
     }
 
     public static float angle2D(float x, float y) { return Math.atan2(y,x); }

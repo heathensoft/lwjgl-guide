@@ -4,7 +4,6 @@ import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 
-import static io.github.heathensoft.jagfw.utils.U.abs;
 
 /**
  * Frederik Dahl 1/16/2025
@@ -33,7 +32,6 @@ public class RigidBody {
     protected float restitution;
     protected float friction;
     public boolean colliding;
-    public boolean rotatable; // Todo (not working correctly)
     public boolean moved;
     public boolean sleep; // used by world
 
@@ -60,17 +58,18 @@ public class RigidBody {
         this.restitution = 0.5f;
         this.friction = 0.5f;
         this.colliding = false;
-        this.rotatable = true;
         this.moved = false;
         this.sleep = false;
     }
 
     public void update(float dt) {
 
+        boolean body_moved_manually = bodyMoved();
         colliding = false;
         position_Last.set(position);
         rotation_last = rotation % Math.PI_TIMES_2_f;
         if (rotation_last < 0) rotation_last += Math.PI_TIMES_2_f;
+
 
         if (isStatic()) {
             velocity.zero();
@@ -79,19 +78,16 @@ public class RigidBody {
             angular_acc = 0f;
         } else  {
             integrateLinear(dt);
-            if (rotatable) {
-                integrateAngular(dt);
-            } else {
-                angular_vel = 0f;
-                angular_acc = 0f;
-            }
+            integrateAngular(dt);
+
+
         }
         sum_torque = 0;
         sum_forces.zero();
 
-        moved = bodyMoved(); // todo:
-        moved = true;
-        if (moved) {
+        moved = bodyMoved();
+
+        if (moved || body_moved_manually) {
             shape.updateVertices(position,rotation);
         }
 
@@ -150,17 +146,10 @@ public class RigidBody {
         velocity.y += j.y * mass_inv;
     }
 
-    static float max = 0;
     public void applyImpulse(Vector2f j, Vector2f r) {
         velocity.x += j.x * mass_inv;
         velocity.y += j.y * mass_inv;
-        angular_vel += U.cross(r,j) * I_inv;;
-       //if (!isStatic()) {
-       //    if (abs(cross) > max) {
-       //        max = abs(cross);
-       //        System.out.println(cross);
-       //    }
-       //}
+        angular_vel += U.cross(r,j) * I_inv;
     }
     // ********************************************************************************************
     // MASS AND MOMENT OF INERTIA

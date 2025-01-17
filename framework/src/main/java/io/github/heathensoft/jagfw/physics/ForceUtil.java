@@ -1,6 +1,5 @@
 package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.physics.old.Body;
 import org.joml.Vector2f;
 
 import static io.github.heathensoft.jagfw.utils.U.popSetVec2;

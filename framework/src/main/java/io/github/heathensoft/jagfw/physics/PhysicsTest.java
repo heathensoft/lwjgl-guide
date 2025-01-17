@@ -43,7 +43,7 @@ public class PhysicsTest implements IGame {
         boot_config.windowed_mode_width = game_res_w;
         boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
-        boot_config.vsync_enabled = true;
+        boot_config.vsync_enabled = false;
     }
 
     public void start(Resolution resolution) throws Exception {
@@ -60,25 +60,35 @@ public class PhysicsTest implements IGame {
         float window_height_tiles = (window_height_pixels / tile_size);
         float center_x = window_width_tiles / 2f;
         float center_y = window_height_tiles / 2f;
+        float wall_thickness = 2.0f;
+        float wall_restitution = 0.2f;
 
         RigidBody ground = new RigidBody(
-                new Shape.Box(window_width_tiles,4),0,
-                center_x,2f
-        ); ground.setRestitution(1.0f);
-        bodies.add(ground);
-        ground.setFriction(0);
+                new Shape.Box(window_width_tiles,wall_thickness),
+                0, center_x,wall_thickness / 2f
+        ); ground.setRestitution(wall_restitution);
+        RigidBody wall_left = new RigidBody(
+                new Shape.Box(wall_thickness, window_height_tiles - wall_thickness),
+                0, wall_thickness / 2f, center_y + wall_thickness / 2f
+        ); wall_left.setRestitution(wall_restitution);
+        RigidBody wall_right = new RigidBody(
+                new Shape.Box(wall_thickness, window_height_tiles - wall_thickness),
+                0, window_width_tiles - wall_thickness / 2f, center_y + wall_thickness / 2f
+        ); wall_right.setRestitution(wall_restitution);
 
 
         big_ball = new RigidBody(
                 new Shape.Circle(3),0,
                 center_x, center_y);
-
         big_box = new RigidBody(
                 new Shape.Box(4,4),0,
                 center_x,center_y);
+        //big_box.setRotation(0.73f);
 
-        big_box.setRotation(0.73f);
-        big_box.friction = 0.0f;
+
+        bodies.add(ground);
+        bodies.add(wall_left);
+        bodies.add(wall_right);
         bodies.add(big_box);
     }
 
@@ -88,51 +98,54 @@ public class PhysicsTest implements IGame {
 
     public void update(float delta_time) {
 
-        Mouse mouse = Engine.get().window().mouse();
-        Vector2f mouse_pos = U.popSetVec2(mouse.position());
-        camera.unProjectPosition(mouse_pos);
-
-        if (mouse.justClicked(Mouse.LEFT)) {
-
-            //RigidBody body = new RigidBody(new Shape.Circle(1),100,mouse_pos.x,mouse_pos.y);
-            RigidBody body = new RigidBody(new Shape.Box(1),10,mouse_pos.x,mouse_pos.y);
-            body.friction = 0.0f;
-            body.setRotation(1);
-            body.restitution = 0.1f;
-            body.rotatable = false;
-            bodies.add(body);
-
-        } else if (mouse.buttonPressed(Mouse.RIGHT)) {
-            big_box.position.set(mouse_pos);
+        //System.out.println(Engine.get().time().framesPerSecond());
+        {   // MOUSE INPUT
+            Mouse mouse = Engine.get().window().mouse();
+            Vector2f mouse_pos = U.popSetVec2(mouse.position());
+            camera.unProjectPosition(mouse_pos);
+            if (mouse.justClicked(Mouse.LEFT)) {
+                RigidBody body = new RigidBody(new Shape.Circle(0.5f),50,mouse_pos.x,mouse_pos.y);
+                body.friction = 0.2f;
+                body.restitution = 0.8f;
+                bodies.add(body);
+            } else if (mouse.justClicked(Mouse.RIGHT)) {
+                RigidBody body = new RigidBody(new Shape.Box(1),100,mouse_pos.x,mouse_pos.y);
+                body.friction = 0.6f;
+                body.restitution = 0.2f;
+                // body.setRotation(0.09f);
+                bodies.add(body);
+            } U.pushVec2(); // mouse
         }
 
-        U.pushVec2(); // mouse
+        {   // APPLY FORCES
+            Vector2f vec = U.popVec2();
+            for (RigidBody body : bodies) {
+                Vector2f weight = vec.set(0f,-9.8f * body.mass());
+                body.addForce(weight);
+                //Vector2f wind = vec.set(10.0f,0.0f);
+                //body.addForce(wind);
+                //ForceUtil.applyDrag(body,1f);
+                body.update(delta_time);
+            } U.pushVec2();
+        }
 
-        Vector2f vec = U.popVec2();
-        for (RigidBody body : bodies) {
-            Vector2f weight = vec.set(0f,-9.8f * body.mass());
-            body.addForce(weight);
-            Vector2f wind = vec.set(10.0f,0.0f);
-            //body.addForce(wind);
-            ForceUtil.applyDrag(body,0f);
-            //if (body != big_ball) {
-            //    ForceUtil.applySpringForce(big_ball,body,4,1000);
-            //}
-            body.update(delta_time);
-        } U.pushVec2();
-        int num_bodies = bodies.size();
-        Contact contact = new Contact();
-        for (int i = 0; i < num_bodies; i++) {
-            for (int j = i + 1; j < num_bodies; j++) {
-                RigidBody bodyA = bodies.get(i);
-                RigidBody bodyB = bodies.get(j);
-                if (CollisionDetection.check(bodyA,bodyB,contact)) {
-                    contact.resolveCollision();
-                    bodyA.colliding = true;
-                    bodyB.colliding = true;
+
+        {   // COLLISION
+            int num_bodies = bodies.size();
+            Contact contact = new Contact();
+            for (int i = 0; i < num_bodies; i++) {
+                for (int j = i + 1; j < num_bodies; j++) {
+                    RigidBody bodyA = bodies.get(i);
+                    RigidBody bodyB = bodies.get(j);
+                    if (CollisionDetection.bodyBody(bodyA,bodyB,contact)) {
+                        contact.resolveCollision();
+                        bodyA.colliding = true;
+                        bodyB.colliding = true;
+                    }
                 }
             }
         }
+
 
         Rectanglef view = camera.frustum;
         for (RigidBody body : bodies) {
