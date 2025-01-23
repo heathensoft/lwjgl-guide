@@ -1,134 +1,124 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physics.ny;
 
+import io.github.heathensoft.jagfw.physics.ny.shape.Circle;
+import io.github.heathensoft.jagfw.physics.ny.shape.PolygonShape;
 import org.joml.Intersectionf;
 import org.joml.Vector2f;
 import org.joml.primitives.Rectanglef;
 
 import static io.github.heathensoft.jagfw.utils.U.*;
+import static io.github.heathensoft.jagfw.utils.U.pushVec2;
 
 /**
- * Frederik Dahl 1/16/2025
+ * Frederik Dahl 1/23/2025
  */
 public class CollisionDetection {
 
 
-    public static boolean bodyBody(RigidBody a, RigidBody b, Contact contact_info) {
-        if (a.isStatic() && b.isStatic()) return false;
-        boolean a_polygon = a.shape instanceof Shape.Polygon;
-        boolean b_polygon = b.shape instanceof Shape.Polygon;
-        boolean a_circle  = a.shape instanceof Shape.Circle;
-        boolean b_circle  = b.shape instanceof Shape.Circle;
-        if (a_circle && b_circle) {
-            return circleCircle(a,b,contact_info);
-        }if (a_polygon && b_polygon) {
-            return polyPoly(a,b,contact_info);
-        }if (a_circle && b_polygon) {
-            return polyCircle(b,a,contact_info);
-        }if (a_polygon && b_circle) {
-            return polyCircle(a,b,contact_info);
+
+    public static boolean bodyBody(PhysicsBody A, PhysicsBody B, BodyContact contact) {
+        if (!(A.isStatic() && B.isStatic())) {
+            boolean a_poly = A.shape instanceof PolygonShape;
+            boolean b_poly = B.shape instanceof PolygonShape;
+            boolean a_circ  = A.shape instanceof Circle;
+            boolean b_circ  = B.shape instanceof Circle;
+            if (a_circ && b_circ) return circleCircle(A,B,contact);
+            if (a_poly && b_poly) return polyPoly(A,B,contact);
+            if (a_circ && b_poly) return polyCircle(B,A,contact);
+            if (a_poly && b_circ) return polyCircle(A,B,contact);
         } return false;
     }
 
-    private static boolean circleCircle(RigidBody a, RigidBody b, Contact contact_info) {
-        Shape.Circle circle_a = (Shape.Circle) a.shape;
-        Shape.Circle circle_b = (Shape.Circle) b.shape;
-        Vector2f ab = popSetVec2(b.position).sub(a.position);
-        float radius_sum = circle_a.radius + circle_b.radius;
+    private static boolean circleCircle(PhysicsBody A, PhysicsBody B, BodyContact contact) {
+        Circle circle_a = (Circle) A.shape;
+        Circle circle_b = (Circle) B.shape;
+        Vector2f ab = popSetVec2(B.position).sub(A.position);
+        float radius_sum = circle_a.radius() + circle_b.radius();
         boolean collision = ab.lengthSquared() <= (radius_sum * radius_sum);
         if (collision) {
             Vector2f start_end = popVec2();
-            contact_info.bodyA = a;
-            contact_info.bodyB = b;
-            contact_info.normal.set(ab).normalize();
-            contact_info.start.set(contact_info.normal).negate();
-            contact_info.start.mul(circle_b.radius).add(b.position);
-            contact_info.end.set(contact_info.normal);
-            contact_info.end.mul(circle_a.radius).add(a.position);
-            start_end.set(contact_info.end).sub(contact_info.start);
-            contact_info.depth = start_end.length();
+            contact.A = A;
+            contact.B = B;
+            contact.normal.set(ab).normalize();
+            contact.start.set(contact.normal).negate();
+            contact.start.mul(circle_b.radius()).add(B.position);
+            contact.end.set(contact.normal);
+            contact.end.mul(circle_a.radius()).add(A.position);
+            start_end.set(contact.end).sub(contact.start);
+            contact.depth = start_end.length();
             pushVec2();
         } pushVec2();
         return collision;
     }
 
-    private static boolean polyPoly(RigidBody a, RigidBody b, Contact contact_info) {
-        Shape.Polygon a_polygon = (Shape.Polygon) a.shape;
-        Shape.Polygon b_polygon = (Shape.Polygon) b.shape;
-
+    private static boolean polyPoly(PhysicsBody A, PhysicsBody B, BodyContact contact) {
+        PolygonShape a_poly = (PolygonShape) A.shape;
+        PolygonShape b_poly = (PolygonShape) B.shape;
         {
-            // NOTE: very little impact if any on fps
-            // should test with more complex shapes
-            boolean possible_intersection;
-            Rectanglef aar_a = a_polygon.boundingBox(popRect());
-            Rectanglef aar_b = b_polygon.boundingBox(popRect());
-            possible_intersection = rectRect(aar_a,aar_b);
-            pushRect(2);
+            boolean possible_intersection = circleCircle(
+                    A.position,a_poly.radius(),
+                    B.position,b_poly.radius());
             if (!possible_intersection) {
                 return false;
             }
-        }
-
-        {
+        }{
             Vector2f a_point = popVec2();
             Vector2f b_point = popVec2();
             Vector2f a_edge_normal = popVec2();
             Vector2f b_edge_normal = popVec2();
-            float ab_separation = findMinSeparation(a_polygon,b_polygon,a_edge_normal,a_point);
+            float ab_separation = findMinSeparation(a_poly,b_poly,a_edge_normal,a_point);
             if (ab_separation >= 0) {
                 pushVec2(4);
                 return false;
             }
-            float ba_separation = findMinSeparation(b_polygon,a_polygon,b_edge_normal,b_point);
+            float ba_separation = findMinSeparation(b_poly,a_poly,b_edge_normal,b_point);
             if (ba_separation >= 0) {
                 pushVec2(4);
                 return false;
             }
-            contact_info.bodyA = a;
-            contact_info.bodyB = b;
+            contact.A = A;
+            contact.B = B;
             if (ab_separation >= ba_separation) {
                 // best separation was from polygon a to polygon b
                 // the penetration was bigger, (the b vertex corner inside a)
-                contact_info.depth = -ab_separation;
-                contact_info.normal.set(a_edge_normal);
-                contact_info.start.set(a_point);
-                contact_info.end.set(a_edge_normal).mul(contact_info.depth);
-                contact_info.end.add(contact_info.start);
+                contact.depth = -ab_separation;
+                contact.normal.set(a_edge_normal);
+                contact.start.set(a_point);
+                contact.end.set(a_edge_normal).mul(contact.depth);
+                contact.end.add(contact.start);
             } else {
-                contact_info.depth = -ba_separation;
-                contact_info.normal.set(b_edge_normal).negate();
-                contact_info.end.set(b_point);
-                contact_info.start.set(b_edge_normal).mul(contact_info.depth);
-                contact_info.start.add(contact_info.end);
-            }
-            pushVec2(4);
+                contact.depth = -ba_separation;
+                contact.normal.set(b_edge_normal).negate();
+                contact.end.set(b_point);
+                contact.start.set(b_edge_normal).mul(contact.depth);
+                contact.start.add(contact.end);
+            } pushVec2(4);
         } return true;
     }
 
-    private static boolean polyCircle(RigidBody a, RigidBody b, Contact contact_info) {
-        Shape.Polygon polygon = (Shape.Polygon) a.shape;
-        Shape.Circle circle = (Shape.Circle) b.shape;
-        Vector2f circle_position = b.position;
+    private static boolean polyCircle(PhysicsBody A, PhysicsBody B, BodyContact contact) {
+        PolygonShape polygon = (PolygonShape) A.shape;
+        Circle circle = (Circle) B.shape;
+        Vector2f circle_position = B.position;
+        Vector2f polygon_position = A.position;
 
         {
             // ###############################
             // Check if a collision is possible
             // with a cheaper check using the
-            // polygons bounding box (AAR)
+            // polygons bounding radius
             // ###############################
 
-            boolean possible_intersection;
-            Rectanglef aar = polygon.boundingBox(popRect());
-            possible_intersection = circleRect(circle_position,circle.radius,aar);
-            pushRect();
+            boolean possible_intersection = circleCircle(
+                    circle_position,circle.radius(),
+                    polygon_position,polygon.radius());
             if (!possible_intersection) return false;
         }
-
         /*
          * Todo: Need to test with more complex polygons
          * From here, i think the code might only apply for rectangles and triangles
          * Check the todo below
          */
-
 
         Vector2f edge_v0 = null;
         Vector2f edge_v1 = null;
@@ -183,16 +173,13 @@ public class CollisionDetection {
             pushVec2(2);
         }
 
-
         // They shouldn't be atp.
         // (polygons have at least 3 edges)
         if (edge_v0 == null) return false;
         if (edge_v1 == null) return false;
 
-
         // negative distance if circle center is inside polygon
         boolean outside = dist > 0;
-
 
         try {
 
@@ -210,7 +197,6 @@ public class CollisionDetection {
                  *  by the edges of the polygon (think rectangle)
                  *  A and C are the corners
                  */
-
                 Vector2f v0_circle = tmp0.set(circle_position).sub(edge_v0);
                 Vector2f v1_circle = tmp1.set(circle_position).sub(edge_v1);
                 Vector2f v0_v1 = tmp2.set(edge_v1).sub(edge_v0);
@@ -222,22 +208,20 @@ public class CollisionDetection {
                     // ###############################
 
                     float v1_circle_len = v1_circle.length();
-
-                    if (v1_circle_len > circle.radius) {
+                    if (v1_circle_len > circle.radius()) {
                         // not colliding with corner
                         return false;
                     }
-
                     // Collision Region A
-                    contact_info.bodyA = a;
-                    contact_info.bodyB = b;
-                    contact_info.depth = circle.radius - v1_circle_len;
-                    contact_info.normal.set(v1_circle).normalize();
-                    contact_info.start.set(contact_info.normal);
-                    contact_info.start.mul(-circle.radius);
-                    contact_info.start.add(circle_position);
-                    contact_info.end.set(contact_info.normal).mul(contact_info.depth);
-                    contact_info.end.add(contact_info.start);
+                    contact.A = A;
+                    contact.B = B;
+                    contact.depth = circle.radius() - v1_circle_len;
+                    contact.normal.set(v1_circle).normalize();
+                    contact.start.set(contact.normal);
+                    contact.start.mul(-circle.radius());
+                    contact.start.add(circle_position);
+                    contact.end.set(contact.normal).mul(contact.depth);
+                    contact.end.add(contact.start);
                     return true;
 
                 } else if (v0_circle.dot(v0_v1) < 0) {
@@ -247,52 +231,43 @@ public class CollisionDetection {
                     // ###############################
 
                     float v0_circle_len = v1_circle.length();
-
-                    if (v0_circle_len > circle.radius) {
+                    if (v0_circle_len > circle.radius()) {
                         // not colliding with corner
                         return false;
                     }
-
                     // Collision Region C
-                    contact_info.bodyA = a;
-                    contact_info.bodyB = b;
-                    contact_info.depth = circle.radius - v0_circle_len;
-                    contact_info.normal.set(v0_circle).normalize();
-                    contact_info.start.set(contact_info.normal);
-                    contact_info.start.mul(-circle.radius);
-                    contact_info.start.add(circle_position);
-                    contact_info.end.set(contact_info.normal).mul(contact_info.depth);
-                    contact_info.end.add(contact_info.start);
+                    contact.A = A;
+                    contact.B = B;
+                    contact.depth = circle.radius() - v0_circle_len;
+                    contact.normal.set(v0_circle).normalize();
+                    contact.start.set(contact.normal);
+                    contact.start.mul(-circle.radius());
+                    contact.start.add(circle_position);
+                    contact.end.set(contact.normal).mul(contact.depth);
+                    contact.end.add(contact.start);
                     return true;
 
-
                 } else {
-
                     // ###############################
                     // Inside region B (Center)
                     // ###############################
 
-                    if (dist > circle.radius) {
+                    if (dist > circle.radius()) {
                         // not colliding with edge
                         return false;
                     }
-
                     // Collision Region B
-                    contact_info.bodyA = a;
-                    contact_info.bodyB = b;
-                    contact_info.depth = circle.radius - dist;
-                    contact_info.normal.set(v0_v1).perpendicular().normalize();
-                    contact_info.start.set(contact_info.normal);
-                    contact_info.start.mul(-circle.radius);
-                    contact_info.start.add(circle_position);
-                    contact_info.end.set(contact_info.normal).mul(contact_info.depth);
-                    contact_info.end.add(contact_info.start);
+                    contact.A = A;
+                    contact.B = B;
+                    contact.depth = circle.radius() - dist;
+                    contact.normal.set(v0_v1).perpendicular().normalize();
+                    contact.start.set(contact.normal);
+                    contact.start.mul(-circle.radius());
+                    contact.start.add(circle_position);
+                    contact.end.set(contact.normal).mul(contact.depth);
+                    contact.end.add(contact.start);
                     return true;
-
-
-
                 }
-
             } else {
 
                 // ###############################
@@ -304,31 +279,27 @@ public class CollisionDetection {
                  *  It seems to collide trying to get out.
                  *  (Has to be completely inside)
                  */
-                System.out.println(b.velocity.x);
                 Vector2f v0_v1 = tmp0.set(edge_v1).sub(edge_v0);
-                contact_info.bodyA = a;
-                contact_info.bodyB = b;
-                contact_info.depth = circle.radius + dist;
-                contact_info.normal.set(v0_v1).perpendicular().normalize();
-                contact_info.start.set(contact_info.normal);
-                contact_info.start.mul(-circle.radius);
-                contact_info.start.add(circle_position);
-                contact_info.end.set(contact_info.normal).mul(contact_info.depth);
-                contact_info.end.add(contact_info.start);
+                contact.A = A;
+                contact.B = B;
+                contact.depth = circle.radius() + dist;
+                contact.normal.set(v0_v1).perpendicular().normalize();
+                contact.start.set(contact.normal);
+                contact.start.mul(-circle.radius());
+                contact.start.add(circle_position);
+                contact.end.set(contact.normal).mul(contact.depth);
+                contact.end.add(contact.start);
                 return true;
             }
         } finally {
             pushVec2(3);
         }
-
-
     }
-
 
     /**
      * Look up SAT (Separating Axis Theorem)
      */
-    private static float findMinSeparation(Shape.Polygon a, Shape.Polygon b, Vector2f edge_normal, Vector2f point) {
+    private static float findMinSeparation(PolygonShape a, PolygonShape b, Vector2f edge_normal, Vector2f point) {
         float separation = Float.NEGATIVE_INFINITY;
         final Vector2f[] a_vertices = a.vertices();
         final Vector2f[] b_vertices = b.vertices();

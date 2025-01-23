@@ -1,18 +1,21 @@
-package io.github.heathensoft.jagfw.game;
+package no.hio.jagfw.examples;
 
 import io.github.heathensoft.jagfw.core.Disposable;
 import io.github.heathensoft.jagfw.core.gfx.Bitmap;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.core.gfx.Texture;
+import io.github.heathensoft.jagfw.physics.RigidBody;
+import io.github.heathensoft.jagfw.physics.Shape;
+import io.github.heathensoft.jagfw.utils.Coordinate;
 import io.github.heathensoft.jagfw.utils.Resources;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;
 
-import java.util.Arrays;
+import java.util.*;
 
-import static io.github.heathensoft.jagfw.game.MapSize.CHUNK_SIZE;
+import static no.hio.jagfw.examples.MapSize.CHUNK_SIZE;
 import static org.lwjgl.opengl.GL11.*;
 
 /**
@@ -24,7 +27,7 @@ public class TileMap implements Disposable {
     private final int[] tiles;
     private final int[] chunks;
     private final MapSize size;
-    public final Texture block_texture;
+    private final Texture block_texture;
     private final Vector4f[] block_uvs;
 
     public TileMap(MapSize size) throws Exception {
@@ -55,6 +58,7 @@ public class TileMap implements Disposable {
         this.size = size;
         this.tiles = new int[size.tiles_count];
         this.chunks = new int[size.chunks_count];
+
     }
 
     public void renderBlocks(SpriteBatch batch, Rectanglef camera_view) {
@@ -101,6 +105,8 @@ public class TileMap implements Disposable {
         }
     }
 
+
+
     public void removeBlock(int x, int y) {
         int index = tileIndex(x, y);
         if (isBlock(index)) {
@@ -110,6 +116,7 @@ public class TileMap implements Disposable {
             chunkIncrementBlockCount(index,-1);
         }
     }
+
 
     public boolean isBlock(int x, int y) {
         return isBlock(tileIndex(x, y));
@@ -187,6 +194,7 @@ public class TileMap implements Disposable {
     private int getTileMask(int index) {
         return tiles[index] & 0xFF;
     }
+
 
     private void updateTileMask(int x, int y) {
         for (int[] offset : adjacent9) {

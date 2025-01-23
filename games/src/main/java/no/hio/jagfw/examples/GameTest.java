@@ -1,19 +1,16 @@
-package io.github.heathensoft.jagfw.game;
+package no.hio.jagfw.examples;
 
 import io.github.heathensoft.jagfw.core.*;
 import io.github.heathensoft.jagfw.core.Disposable;
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.core.gfx.ShaderProgram;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
-import io.github.heathensoft.jagfw.core.gfx.Texture;
 import io.github.heathensoft.jagfw.utils.Camera2D;
 import io.github.heathensoft.jagfw.utils.Color;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
-import org.joml.Random;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
-import org.joml.primitives.Rectanglef;
 
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -22,10 +19,10 @@ import static org.lwjgl.opengl.GL11.*;
 /**
  * Frederik Dahl 12/5/2024
  */
-public class Game implements IGame {
+public class GameTest extends Game {
 
     public static void main(String[] args) {
-        Engine.get().run(new Game(),args);
+        Engine.get().run(new GameTest(),args);
     }
 
     public static final int game_res_w = 1280;
@@ -76,10 +73,9 @@ public class Game implements IGame {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         background.draw(camera_world);
-        sprite_batch.enableLayers(true);
+        sprite_batch.enableLayers(false);
         sprite_batch.begin(camera_world);
         tile_map.renderBlocks(sprite_batch, camera_world.frustum);
-        zFightingTest(sprite_batch);
         sprite_batch.end();
         renderControllerState();
     }
@@ -260,38 +256,4 @@ public class Game implements IGame {
         }
     }
 
-    float accum = 0;
-    int[] colors = new int[] {
-            0xFFFFFFFF, 0xFF0000FF, 0xFF0000FF,
-            0xFFFFFFFF, 0xFFFF00FF, 0xFFFF00FF,
-            0xFFFFFFFF, 0xFF0000FF, 0xFF0000FF,
-            0xFFFFFFFF, 0xFFFF00FF, 0xFFFF00FF,
-    };
-    private void zFightingTest(SpriteBatch batch) {
-        accum += 0.01666667f;
-        if (accum >= 10) {
-            accum -= 10;
-            shuffle(colors);
-        }
-        Texture tex = tile_map.block_texture;
-        Rectanglef rect = U.popSetRect(0,0,8,6);
-        Vector4f uvs = U.popSetVec4(0,0,1,1);
-        for (int i = 0; i < 1; i++) {
-            batch.draw(tex,rect,uvs,colors[i],15);
-        } U.pushVec4();
-        U.pushRect();
-
-    }
-
-    private void shuffle(int[] arr) {
-        Random r = new Random();
-        for (int i = arr.length - 1; i > 0; i--) {
-            // Random index from 0 to i
-            int j = r.nextInt(i + 1);
-            // Swap elements at i and j
-            int t = arr[i];
-            arr[i] = arr[j];
-            arr[j] = t;
-        }
-    }
 }

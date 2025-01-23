@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.game;
+package no.hio.jagfw.examples;
 
 /**
  * Frederik Dahl 12/31/2024

@@ -16,8 +16,6 @@ public class Contact {
 
 
     public void resolveCollision() {
-
-
         Vector2f ra = popSetVec2(end).sub(bodyA.position);
         Vector2f rb = popSetVec2(start).sub(bodyB.position);
         resolvePenetration();
@@ -32,7 +30,6 @@ public class Contact {
         // minus the linear + angular velocity of body b
         Vector2f v_rel = popSetVec2(va).sub(vb);
         Vector2f jn, jt;
-
         // collision impulse along the normal
         {
             // the relative velocity along the collision normal
@@ -62,7 +59,6 @@ public class Contact {
             float impulse_magnitude = numerator / denominator;
             jt = popSetVec2(tangent).mul(impulse_magnitude);
         }
-
         Vector2f j = jn.add(jt);
         bodyA.applyImpulse(j,ra);
         bodyB.applyImpulse(j.negate(),rb);

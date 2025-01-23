@@ -199,13 +199,17 @@ public class U {
 
     public static float angle2D(Vector2f v) { return Math.atan2(v.y,v.x); }
 
-    public static Vector2f rotate2D(Vector2f dst, float deg) {
+    public static Vector2f rotate2D(Vector2f dst, float rotation) {
         // rotates around origin
-        float sin = Math.sin(deg);
-        float cos = Math.cos(deg);
+        float sin = Math.sin(rotation);
+        float cos = Math.cos(rotation);
         dst.x = dst.x * cos - dst.y * sin;
         dst.y = dst.x * sin + dst.y * cos;
         return dst;
+    }
+
+    public static Vector2f lerp(Vector2f a, Vector2f b, float t, Vector2f dst) {
+        return a.lerp(b,t,dst);
     }
 
     public static Vector4f texRegionToUV(Vector4f dst, int texture_w, int texture_h, int region_x, int region_y, int region_w, int region_h) {

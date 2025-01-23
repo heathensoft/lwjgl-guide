@@ -1,6 +1,6 @@
 
 plugins {
-    `java-library`
+    java
     //application
 }
 
@@ -11,7 +11,7 @@ version = "SNAPSHOT"
 val lwjglVersion = "3.3.4"
 val jomlVersion = "1.10.7"
 val tinyLogVersion = "2.7.0"
-val `jomlPrimitivesVersion` = "1.10.0"
+val jomlPrimitivesVersion = "1.10.0"
 
 val lwjglNatives = Pair(
     System.getProperty("os.name")!!,
@@ -39,6 +39,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":framework"))
     implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
     implementation("org.tinylog:tinylog-api:$tinyLogVersion")
     implementation("org.tinylog:tinylog-impl:$tinyLogVersion")
@@ -47,7 +48,7 @@ dependencies {
     implementation("org.lwjgl", "lwjgl-opengl")
     implementation("org.lwjgl", "lwjgl-stb")
     implementation("org.joml", "joml", jomlVersion)
-    implementation("org.joml", "joml-primitives", `jomlPrimitivesVersion`)
+    implementation("org.joml", "joml-primitives", jomlPrimitivesVersion)
     runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)

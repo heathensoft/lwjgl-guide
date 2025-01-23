@@ -55,10 +55,16 @@ public class ForceUtil {
     public static void applyFriction(RigidBody body, float k) {
         if (body.isStatic()) return;
         // Calculate the drag direction (inverse of velocity unit vector)
+        if (body.velocity.x == 0 && body.velocity.y == 0) return;
+
         Vector2f v = popSetVec2(body.velocity).normalize().mul(-1.0f);
-        // Calculate the friction magnitude (just k, for now)
-        body.addForce(v.mul(k));
+        if (v.lengthSquared() < body.acceleration.lengthSquared()) {
+            body.addForce(v.mul(k));
+
+        }
         pushVec2();
+
+
     }
 
     /**

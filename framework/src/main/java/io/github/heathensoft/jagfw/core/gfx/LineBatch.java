@@ -25,7 +25,7 @@ public class LineBatch implements Disposable {
     private static final int LINE_SIZE_FLOAT = 2 * VERTEX_SIZE_FLOAT;
 
     private final ShaderProgram program;    // shader program
-    private final FloatBuffer vertices;     // cpu vertex buffer
+    private final FloatBuffer vertices;  // cpu vertex buffer
     private final int vao;                  // vertex array object
     private final int vbo;                  // vertex buffer object
     private final int limit;                // batch sprite limit
@@ -110,7 +110,7 @@ public class LineBatch implements Disposable {
             ShaderProgram.useProgram(program);
             glBindVertexArray(vao);
             glBindBuffer(GL_ARRAY_BUFFER,vbo);
-            glBufferSubData(GL_ARRAY_BUFFER,0,vertices.flip());
+            glBufferSubData(GL_ARRAY_BUFFER,0, vertices.flip());
             glDrawArrays(GL_LINES,0,count * 2);
             glBindVertexArray(0);
             vertices.clear();
@@ -124,10 +124,8 @@ public class LineBatch implements Disposable {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (resolution > 3 && resolution <= limit) {
             if ((count + resolution) >= limit) flush();
-            if (color != previous_int_color) {
-                previous_int_color = color;
-                color_float_bits = Color.intColorToFloat(color);
-            } Vector2f p0 = U.popSetVec2(center).add(radius,0f);
+            useColor(color);
+            Vector2f p0 = U.popSetVec2(center).add(radius,0f);
             Vector2f p1 = U.popVec2();
             float delta = Math.PI_TIMES_2_f / resolution;
             for (int i = 1; i <= resolution; i++) {
@@ -144,10 +142,8 @@ public class LineBatch implements Disposable {
     public void drawRect(Rectanglef rect, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if ((count + 4) >= limit) flush();
-        if (color != previous_int_color) {
-            previous_int_color = color;
-            color_float_bits = Color.intColorToFloat(color);
-        } push(rect.minX,rect.maxY,rect.maxX,rect.maxY);
+        useColor(color);
+        push(rect.minX,rect.maxY,rect.maxX,rect.maxY);
         push(rect.maxX,rect.maxY,rect.maxX,rect.minY);
         push(rect.maxX,rect.minY,rect.minX,rect.minY);
         push(rect.minX,rect.minY,rect.minX,rect.maxY);
@@ -156,10 +152,8 @@ public class LineBatch implements Disposable {
     public void drawLine(Vector2f origin, float angle, float len, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
-        if (color != previous_int_color) {
-            previous_int_color = color;
-            color_float_bits = Color.intColorToFloat(color);
-        } float x = origin.x + len * Math.cos(angle);
+        useColor(color);
+        float x = origin.x + len * Math.cos(angle);
         float y = origin.y + len * Math.sin(angle);
         push(origin.x,origin.y,x,y);
     }
@@ -167,10 +161,22 @@ public class LineBatch implements Disposable {
     public void drawLine(Vector2f p0, Vector2f p1, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
-        if (color != previous_int_color) {
-            previous_int_color = color;
-            color_float_bits = Color.intColorToFloat(color);
-        } push(p0.x,p0.y,p1.x,p1.y);
+        useColor(color);
+        push(p0.x,p0.y,p1.x,p1.y);
+    }
+
+    public void drawLines(Vector2f[] lines, int color) {
+        if (!buffering) throw new IllegalStateException("call begin() before rendering");
+        if (lines.length > 1) {
+            useColor(color);
+            for (int i = 0; i < lines.length; i++) {
+                Vector2f p0 = lines[i];
+                Vector2f p1 = lines[(i + 1) % lines.length];
+                if (count == limit) flush();
+                push(p0.x,p0.y,p1.x,p1.y);
+            }
+        }
+
     }
 
 
@@ -206,5 +212,12 @@ public class LineBatch implements Disposable {
         if (vertices != null) MemoryUtil.memFree(vertices);
         if (vao != 0) glDeleteVertexArrays(vao);
         if (vbo != 0) glDeleteBuffers(vbo);
+    }
+
+    private void useColor(int color) {
+        if (color != previous_int_color) {
+            previous_int_color = color;
+            color_float_bits = Color.intColorToFloat(color);
+        }
     }
 }

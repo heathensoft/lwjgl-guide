@@ -3,9 +3,12 @@ package io.github.heathensoft.jagfw.core;
 import org.lwjgl.Version;
 import org.tinylog.Logger;
 
+import static io.github.heathensoft.jagfw.core.Game.State.*;
 import static java.lang.System.nanoTime;
 
 /**
+ * The Engine is responsible for running the Game Object.
+ *
  * Frederik Dahl 12/5/2024
  */
 public class Engine {
@@ -21,10 +24,10 @@ public class Engine {
 
     private GLFWWindow window;
     private GLInfo info;
-    private IGame game;
+    private Game game;
     private Time time;
 
-    public void run(IGame game, String[] args) {
+    public void run(Game game, String[] args) {
         if (this.game == null && game != null) {
             this.game = game;
             this.time = new Time();
@@ -46,9 +49,13 @@ public class Engine {
             /*
              *  Initialize Window
              */
-            try { window.initialize(boot_configuration);
+            try {
+                window.initialize(boot_configuration);
+                game.state = STARTING;
             } catch (Exception e) {
                 Logger.error(e);
+                Logger.debug("Game State: {}",game.state);
+                game.state = TERMINATED;
                 return;
             }
             info = new GLInfo(window.handle());
@@ -56,11 +63,15 @@ public class Engine {
             /*
              *  Game start
              */
-            try { game.start(window.gameResolution());
+            try {
+                game.start(window.gameResolution());
             } catch (Exception e) {
                 Logger.error(e);
+                Logger.debug("Game State: {}",game.state);
+                game.state = EXITING;
                 game.exit();
                 window.terminate();
+                game.state = TERMINATED;
                 return;
             }
             try {
@@ -79,6 +90,7 @@ public class Engine {
                         /*
                          *  Game update happens at a fixed interval of (window.targetUps()) / second
                          */
+                        game.state = UPDATING;
                         if (!window.isMinimized()) {
                             window.processInput((float)fixed_time_step);
                         }
@@ -86,16 +98,19 @@ public class Engine {
                         time.incrementUpsCounter();
                         time_accumulator -= fixed_time_step;
                     }
+                    game.state = RENDERING;
                     if (!window.isMinimized()) {
                         if (window.shouldChangeGameResolution()) {
                             /*
                              *  Window found a better suited Game resolution.
-                             *  Can only be one of the provided resolutions (BootConfiguration)
+                             *  Can only be one of the provided resolutions
+                             *  (From BootConfiguration)
                              */
                             game.resize(window.gameResolution());
                         }
                         /*
                          *  Game render
+                         * Todo: "alpha" as argument to game.render()
                          */
                         game.render();
 
@@ -113,11 +128,14 @@ public class Engine {
                 }
             } catch (Exception e) {
                 Logger.error(e);
+                Logger.debug("Game State: {}",game.state);
             } finally {
                 Logger.debug("exiting game");
+                game.state = EXITING;
                 game.exit();
                 Logger.debug("terminating window");
                 window.terminate();
+                game.state = TERMINATED;
             }
         }
     }
@@ -131,12 +149,14 @@ public class Engine {
     public Time time() { return time; }
     public GLInfo glInfo() { return info; }
     public GLFWWindow window() { return window; }
-    public <T extends IGame> T game(Class<T> clazz) {
+    public Game game() { return game; }
+    public <T extends Game> T game(Class<T> clazz) {
         if (game.getClass() != clazz) {
             throw new ClassCastException("");
         } return clazz.cast(game);
     }
 
+    /** Engine Time Details */
     public static final class Time {
 
         private static final double FRAME_TIME_MAX_SECONDS = 1 / 4.0; // 250 ms (15 frames of 60 fps)
@@ -148,12 +168,14 @@ public class Engine {
         private int ups_counter;
         private int fps;
         private int ups;
+        private long frame;
 
         Time() { /* */ }
 
         void start() {
             init_time_seconds = systemTimeSeconds();
             last_frame_seconds = init_time_seconds;
+            frame = -1L;
         }
         void tick() {
             double time_seconds = systemTimeSeconds();
@@ -167,15 +189,20 @@ public class Engine {
                 fps_counter = 0;
                 ups_counter = 0;
                 counter_time_accumulator -= 1.0;
-            }
+            } frame++;
         }
         void incrementFpsCounter() { fps_counter++; }
         void incrementUpsCounter() { ups_counter++; }
+        /** @return Average FPS over a 1-second time span */
         public int framesPerSecond() { return fps > 0 ? fps : fps_counter; }
+        /** @return Average UPS over a 1-second time span */
         public int updatesPerSecond() { return ups > 0 ? ups : ups_counter; }
+        /** @return duration of the last frame in seconds */
         public double frameTimeSeconds() { return frame_time_seconds; }
         public double systemTimeSeconds() { return nanoTime() / 1_000_000_000.0; }
-        public double lastFrameSeconds() { return last_frame_seconds; }
+        /** @return time spent in the main loop in seconds (game run time) */
         public double runTimeSeconds() { return systemTimeSeconds() - init_time_seconds; }
+        /** @return the current frame (frame increments each iteration of the main loop) */
+        public long frame() { return frame; }
     }
 }

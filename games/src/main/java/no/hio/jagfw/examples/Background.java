@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.game;
+package no.hio.jagfw.examples;
 
 import io.github.heathensoft.jagfw.utils.Camera2D;
 import io.github.heathensoft.jagfw.core.Disposable;
