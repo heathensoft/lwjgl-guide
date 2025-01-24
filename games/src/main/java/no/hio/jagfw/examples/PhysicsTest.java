@@ -3,11 +3,15 @@ package no.hio.jagfw.examples;
 import io.github.heathensoft.jagfw.core.*;
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.core.gfx.ShaderProgram;
-import io.github.heathensoft.jagfw.physics.*;
+import io.github.heathensoft.jagfw.physics.BodyContact;
+import io.github.heathensoft.jagfw.physics.CollisionDetection;
+import io.github.heathensoft.jagfw.physics.CommonForces;
+import io.github.heathensoft.jagfw.physics.PhysicsBody;
+import io.github.heathensoft.jagfw.physics.shape.*;
 import io.github.heathensoft.jagfw.utils.Camera2D;
 import io.github.heathensoft.jagfw.utils.U;
+import org.joml.Math;
 import org.joml.Vector2f;
-import org.joml.primitives.Rectanglef;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +35,13 @@ public class PhysicsTest extends Game {
     private LineBatch line_batch;
     private Background background;
     private Camera2D camera;
-    private List<RigidBody> bodies;
+    private List<PhysicsBody> bodies;
 
-    RigidBody big_ball;
-    RigidBody big_box;
-    RigidBody player;
+    PhysicsBody big_ball;
+    PhysicsBody big_box;
+    PhysicsBody player;
+    HitBoxCluster hitbox_list = HitBoxCluster.pillbox(1,2,new Vector2f(0,0.0f));
+
 
 
     public void configure(BootConfiguration boot_config, String[] args) {
@@ -46,6 +52,7 @@ public class PhysicsTest extends Game {
         boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
         boot_config.vsync_enabled = true;
+        boot_config.target_ups = 120;
     }
 
     public void start(Resolution resolution) throws Exception {
@@ -65,37 +72,51 @@ public class PhysicsTest extends Game {
         float wall_thickness = 2.0f;
         float wall_restitution = 0.2f;
 
-        RigidBody ground = new RigidBody(
-                new Shape.Box(window_width_tiles,wall_thickness),
+        PhysicsBody ground = new PhysicsBody(
+                new Box(window_width_tiles,wall_thickness),
                 0, center_x,wall_thickness / 2f
         ); ground.setRestitution(wall_restitution);
         ground.setFriction(0.1f);
-        RigidBody wall_left = new RigidBody(
-                new Shape.Box(wall_thickness, window_height_tiles - wall_thickness),
+
+        PhysicsBody wall_left = new PhysicsBody(
+                new Box(wall_thickness, window_height_tiles - wall_thickness),
                 0, wall_thickness / 2f, center_y + wall_thickness / 2f
         ); wall_left.setRestitution(wall_restitution);
-        RigidBody wall_right = new RigidBody(
-                new Shape.Box(wall_thickness, window_height_tiles - wall_thickness),
+
+        PhysicsBody wall_right = new PhysicsBody(
+                new Box(wall_thickness, window_height_tiles - wall_thickness),
                 0, window_width_tiles - wall_thickness / 2f, center_y + wall_thickness / 2f
         ); wall_right.setRestitution(wall_restitution);
 
 
         for (int i = 0; i < window_width_tiles; i++) {
-           RigidBody body = new RigidBody(new Shape.Box(1),0,i,5.5f);
+           PhysicsBody body = new PhysicsBody(new Box(1),0,i,5.5f);
            body.setFriction(0.1f);
            bodies.add(body);
         }
 
-        big_ball = new RigidBody(
-                new Shape.Circle(3),0,
-                center_x, center_y);
-        big_box = new RigidBody(
-                new Shape.Box(4,4),0,
-                center_x,center_y);
-        big_box.setRotation(0.73f);
+        Vector2f[] polygon_vertices = new Vector2f[6];
 
-        player = new RigidBody(new Shape.Circle(0.5f),100,6,10);
-        player.rotatable = false;
+        for (int i = 0; i < polygon_vertices.length; i++) {
+            Vector2f vertex = new Vector2f(1,0);
+            float div = (i + 1f) / polygon_vertices.length;
+            U.rotate2D(vertex, Math.PI_TIMES_2_f * div).mul(2);
+            polygon_vertices[i] = vertex;
+        }
+
+
+
+
+        big_ball = new PhysicsBody(
+                new Circle(3),0,
+                center_x, center_y);
+        big_box = new PhysicsBody(
+                new Polygon(polygon_vertices),500,
+                center_x,center_y);
+        // big_box.setRotation(0.73f);
+
+        player = new PhysicsBody(new Circle(0.5f),100,6,10);
+        player.setRotatable(false);
 
 
         bodies.add(ground);
@@ -119,13 +140,13 @@ public class PhysicsTest extends Game {
         Vector2f v = U.popSetVec2(0,0);
 
         if (keys.pressed(GLFW_KEY_A)) {
-            v.add(-2000,0);
+            v.add(-3000,0);
         } if (keys.pressed(GLFW_KEY_S)) {
-            v.add(0,-2000);
+            v.add(0,-3000);
         } if (keys.pressed(GLFW_KEY_D)) {
-            v.add(2000,0);
+            v.add(3000,0);
         } if (keys.pressed(GLFW_KEY_W)) {
-            v.add(0,2000);
+            v.add(0,3000);
         }
 
         player.addForce(v);
@@ -135,7 +156,7 @@ public class PhysicsTest extends Game {
             player.setRotation(U.angle2D(v));
 
             if (keys.justPressed(GLFW_KEY_SPACE)) {
-                v.normalize().mul(5000);
+                v.normalize().mul(6000);
                 player.applyImpulse(v);
             }
         }
@@ -152,50 +173,52 @@ public class PhysicsTest extends Game {
             Vector2f mouse_pos = U.popSetVec2(mouse.position());
             camera.unProjectPosition(mouse_pos);
             if (mouse.justClicked(Mouse.LEFT)) {
-                RigidBody body = new RigidBody(new Shape.Circle(0.5f),50,mouse_pos.x,mouse_pos.y);
+                PhysicsBody body = new PhysicsBody(new Circle(0.5f),50,mouse_pos.x,mouse_pos.y);
                 body.setFriction(0.2f);
                 body.setRestitution(0.8f);
                 //body.rotatable = false;
                 bodies.add(body);
             } else if (mouse.justClicked(Mouse.RIGHT)) {
-                RigidBody body = new RigidBody(new Shape.Box(1),100,mouse_pos.x,mouse_pos.y);
+                PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_pos.x,mouse_pos.y);
                 body.setFriction(0.6f);
                 body.setRestitution(0.2f);
-                body.angular_damping = 4.0f;
+                body.setAngularDamping(4.0f);
                 bodies.add(body);
             } U.pushVec2(); // mouse
         }
 
         {   // APPLY FORCES
             Vector2f vec = U.popVec2();
-            for (RigidBody body : bodies) {
-                ForceUtil.applyFriction(body,200f);
-                //Vector2f weight = vec.set(0f,-8f * body.mass());
-                //body.addForce(weight);
-                //Vector2f wind = vec.set(300.0f,0.0f);
-                //body.addForce(wind);
-                ForceUtil.applyDrag(body,50f);
-                body.update(delta_time);
+            for (PhysicsBody body : bodies) {
+                if (!body.isStatic()) {
+                    if (keys.pressed(GLFW_KEY_E)) {
+                        if (body != player) {
+                            CommonForces.applySpringForce(body,player.position(vec),2,200);
+                        }
+                    }
+                    CommonForces.applyDrag(body,50);
+                    CommonForces.applyFriction(body,200);
+                } body.update(delta_time);
             } U.pushVec2();
         }
 
 
         {   // COLLISION
             int num_bodies = bodies.size();
-            Contact contact = new Contact();
+            BodyContact contact = new BodyContact();
             for (int i = 0; i < num_bodies; i++) {
                 for (int j = i + 1; j < num_bodies; j++) {
-                    RigidBody bodyA = bodies.get(i);
-                    RigidBody bodyB = bodies.get(j);
-                    if (Collision.bodyBody(bodyA,bodyB,contact)) {
+                    PhysicsBody bodyA = bodies.get(i);
+                    PhysicsBody bodyB = bodies.get(j);
+                    if (CollisionDetection.bodyBody(bodyA,bodyB,contact)) {
                         contact.resolveCollision();
-                        bodyA.colliding = true;
-                        bodyB.colliding = true;
+
                     }
                 }
             }
         }
 
+        hitbox_list.update(player.position(new Vector2f()),player.rotation());
 
     }
 
@@ -206,13 +229,15 @@ public class PhysicsTest extends Game {
         background.draw(camera);
         line_batch.begin(camera);
         int color;
-        for (RigidBody body : bodies) {
-            if (body.colliding) color = 0xFF0000FF;
+        for (PhysicsBody body : bodies) {
+            if (body.colliding()) color = 0xFF0000FF;
             else color = 0xFF00FF00;
-            if (body.shape instanceof Shape.Circle circle) {
-                line_batch.drawCircle(body.position,circle.radius,32,color);
-                line_batch.drawLine(body.position,body.rotation(),circle.radius,color);
-            } else if (body.shape instanceof Shape.Box box) {
+            if (body.shape() instanceof Circle circle) {
+                Vector2f position = body.position(U.popVec2());
+                line_batch.drawCircle(position,circle.radius(),32,color);
+                line_batch.drawLine(position,body.rotation(),circle.radius(),color);
+                U.pushVec2();
+            } else if (body.shape() instanceof PolygonShape box) {
                 Vector2f[] vertices = box.vertices();
                 for (int i = 0; i < vertices.length; i++) {
                     Vector2f v0 = vertices[i];
@@ -221,6 +246,20 @@ public class PhysicsTest extends Game {
                 }
             }
         }
+
+        for (HitBox hitbox : hitbox_list) {
+            if (hitbox.shape() instanceof Circle circle) {
+                line_batch.drawCircle(hitbox.position(),circle.radius(),32,0xFFFF0000);
+            } else if (hitbox.shape() instanceof PolygonShape polygon) {
+                Vector2f[] vertices = polygon.vertices();
+                for (int i = 0; i < vertices.length; i++) {
+                    Vector2f v0 = vertices[i];
+                    Vector2f v1 = vertices[((i + 1) % vertices.length)];
+                    line_batch.drawLine(v0,v1,0xFFFF0000);
+                }
+            }
+        }
+
         line_batch.end();
 
     }

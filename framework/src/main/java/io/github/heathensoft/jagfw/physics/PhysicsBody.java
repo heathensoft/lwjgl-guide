@@ -1,16 +1,15 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.physics.ny.shape.Shape;
+import io.github.heathensoft.jagfw.physics.shape.Shape;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
-import org.joml.Runtime;
 import org.joml.Vector2f;
 
 /**
  *
  * Frederik Dahl 1/22/2025
  */
-public abstract class PhysicsBody {
+public class PhysicsBody {
 
     public static final float DEFAULT_ROTATION = 0f;
     public static final float DEFAULT_LINEAR_DAMPING = 1.0f;
@@ -43,11 +42,11 @@ public abstract class PhysicsBody {
     protected boolean moved_manually;
 
 
-    public PhysicsBody(Shape shape, float x, float y, float mass) {
-        reset(shape,x,y,mass);
+    public PhysicsBody(Shape shape, float mass, float x, float y) {
+        reset(shape,mass, x,y);
     }
 
-    public void reset(Shape shape, float x, float y, float mass, float restitution,
+    public void reset(Shape shape, float mass, float x, float y, float restitution,
         float friction, float linear_damping, float angular_damping) {
         if (shape == null) throw new IllegalStateException("null shape");
         this.position.x = x;
@@ -81,13 +80,13 @@ public abstract class PhysicsBody {
         this.moved_manually = false;
 
     }
-    public void reset(Shape shape, float x, float y, float mass) {
-        reset(shape,x,y,mass,DEFAULT_RESTITUTION,DEFAULT_FRICTION,
+    public void reset(Shape shape, float mass, float x, float y) {
+        reset(shape,mass,x,y,DEFAULT_RESTITUTION,DEFAULT_FRICTION,
                 DEFAULT_LINEAR_DAMPING,DEFAULT_ANGULAR_DAMPING);
     }
 
-    public void reset(float x, float y, float mass) {
-        reset(shape,x,y,mass);
+    public void reset(float mass, float x, float y) {
+        reset(shape,mass,x,y);
     }
 
     public void update(float dt) {
@@ -340,8 +339,12 @@ public abstract class PhysicsBody {
     }
 
     protected boolean bodyMoved() {
-        if (Runtime.equals(rotation,rotation_previous,1e-5f)) {
-            return position.equals(position_previous,1e-5f);
+        if (rotation == rotation_previous) {
+            if (position.x == position_previous.x) {
+                if (position.y == position_previous.y) {
+                    return false;
+                }
+            }
         } return true;
     }
 

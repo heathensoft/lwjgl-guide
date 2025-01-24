@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physics;
 
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
@@ -28,6 +28,8 @@ public class BodyContact {
      */
     public void resolveCollision() {
         // impulse, impulse along normal, impulse along tangent
+        A.colliding = true;
+        B.colliding = true;
         Vector2f j, jn, jt;
         Vector2f tmp0 = U.popVec2();
         Vector2f tmp1 = U.popVec2();

@@ -201,10 +201,12 @@ public class U {
 
     public static Vector2f rotate2D(Vector2f dst, float rotation) {
         // rotates around origin
-        float sin = Math.sin(rotation);
-        float cos = Math.cos(rotation);
-        dst.x = dst.x * cos - dst.y * sin;
-        dst.y = dst.x * sin + dst.y * cos;
+        final float sin = Math.sin(rotation);
+        final float cos = Math.cos(rotation);
+        final float x = dst.x;
+        final float y = dst.y;
+        dst.x = x * cos - y * sin;
+        dst.y = x * sin + y * cos;
         return dst;
     }
 

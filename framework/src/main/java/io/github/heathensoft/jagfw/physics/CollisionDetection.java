@@ -1,7 +1,7 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.physics.ny.shape.Circle;
-import io.github.heathensoft.jagfw.physics.ny.shape.PolygonShape;
+import io.github.heathensoft.jagfw.physics.shape.Circle;
+import io.github.heathensoft.jagfw.physics.shape.PolygonShape;
 import org.joml.Intersectionf;
 import org.joml.Vector2f;
 import org.joml.primitives.Rectanglef;
@@ -32,10 +32,8 @@ public class CollisionDetection {
     private static boolean circleCircle(PhysicsBody A, PhysicsBody B, BodyContact contact) {
         Circle circle_a = (Circle) A.shape;
         Circle circle_b = (Circle) B.shape;
-        Vector2f ab = popSetVec2(B.position).sub(A.position);
-        float radius_sum = circle_a.radius() + circle_b.radius();
-        boolean collision = ab.lengthSquared() <= (radius_sum * radius_sum);
-        if (collision) {
+        if (circleCircle(A.position,circle_a.radius(),B.position,circle_b.radius())) {
+            Vector2f ab = popSetVec2(B.position).sub(A.position);
             Vector2f start_end = popVec2();
             contact.A = A;
             contact.B = B;
@@ -46,9 +44,9 @@ public class CollisionDetection {
             contact.end.mul(circle_a.radius()).add(A.position);
             start_end.set(contact.end).sub(contact.start);
             contact.depth = start_end.length();
-            pushVec2();
-        } pushVec2();
-        return collision;
+            pushVec2(2);
+            return true;
+        } return false;
     }
 
     private static boolean polyPoly(PhysicsBody A, PhysicsBody B, BodyContact contact) {
@@ -114,6 +112,7 @@ public class CollisionDetection {
                     polygon_position,polygon.radius());
             if (!possible_intersection) return false;
         }
+
         /*
          * Todo: Need to test with more complex polygons
          * From here, i think the code might only apply for rectangles and triangles
@@ -335,7 +334,10 @@ public class CollisionDetection {
     }
 
     private static boolean circleCircle(Vector2f a, float ra, Vector2f b, float rb) {
-        return Intersectionf.testCircleCircle(a,ra*ra,b,rb*rb);
+        final float dx = b.x - a.x;
+        final float dy = b.y - a.y;
+        final float r = ra + rb;
+        return  (dx * dx + dy * dy) <= (r * r);
     }
 
     private static boolean circleRect(Vector2f a, float ra, Rectanglef b) {

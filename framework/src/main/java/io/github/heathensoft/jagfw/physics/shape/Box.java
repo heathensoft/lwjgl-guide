@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny.shape;
+package io.github.heathensoft.jagfw.physics.shape;
 
 import org.joml.Math;
 import org.joml.Vector2f;
@@ -76,7 +76,7 @@ public class Box extends PolygonShape {
         final float hh = height * 0.5f;
         float rot = rotation % Math.PI_TIMES_2_f;
         if (rot < 0) rot += Math.PI_TIMES_2_f;
-        if (rot < 1e-5f) {
+        if (rot == 0) {
             // we only test for rotation ~= 0.
             // Don't want to check all other axis aligned
             // angles for special cases.

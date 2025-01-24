@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny.shape;
+package io.github.heathensoft.jagfw.physics.shape;
 
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
@@ -48,6 +48,8 @@ public class Polygon extends PolygonShape {
     public Rectanglef boundingBox(Rectanglef dst) { return dst.set(bounding_box); }
 
     public float calculateMomentOfInertia(float mass) {
+
+        // TODO: Very very wrong
         /*
             Har det her fra
             https://stackoverflow.com/questions/41592034/computing-tensor-of-inertia-in-2d/41618980#41618980
@@ -58,20 +60,21 @@ public class Polygon extends PolygonShape {
             is in the origin 0,0. We can simplify
             thw stack overflow version
          */
-        float acc0 = 0;
-        float acc1 = 0;
-        final int n = numVertices();
-        for (int i = 0; i < n; i++) {
-            Vector2f v0 = vertices_local[i];
-            Vector2f v1 = vertices_local[(i + 1) % n];
-            // The cross product in 2D is effectively a
-            // third vector with a magnitude the same
-            // as the rectangular area of the 2 vectors.
-            float cross_product = Math.abs(U.cross(v0,v1));
-            float dot = v0.dot(v0) + v1.dot(v1) + v0.dot(v1);
-            acc0 += cross_product * dot;
-            acc1 += cross_product;
-        } return acc0 / 6 / acc1;
+        // float acc0 = 0;
+        // float acc1 = 0;
+        // final int n = numVertices();
+        // for (int i = 0; i < n; i++) {
+        //     Vector2f v0 = vertices_local[i];
+        //     Vector2f v1 = vertices_local[(i + 1) % n];
+        //     // The cross product in 2D is effectively a
+        //     // third vector with a magnitude the same
+        //     // as the rectangular area of the 2 vectors.
+        //     float cross_product = Math.abs(U.cross(v0,v1));
+        //     float dot = v0.dot(v0) + v1.dot(v1) + v0.dot(v1);
+        //     acc0 += cross_product * dot;
+        //     acc1 += cross_product;
+        // } return acc0 / 6 / acc1;
+        return 5000;
     }
 
 

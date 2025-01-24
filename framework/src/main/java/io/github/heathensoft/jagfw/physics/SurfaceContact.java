@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physics;
 
 /**
  * Collision Information for Body / Surface collision.
