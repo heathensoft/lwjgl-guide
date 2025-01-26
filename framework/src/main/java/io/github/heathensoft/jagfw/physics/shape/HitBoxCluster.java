@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * A group of Hitboxes.
  * Frederik Dahl 1/24/2025
  */
 public class HitBoxCluster implements Iterable<HitBox> {

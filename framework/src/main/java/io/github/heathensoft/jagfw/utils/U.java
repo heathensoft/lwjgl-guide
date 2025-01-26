@@ -17,18 +17,21 @@ public class U {
     private static final byte m3Count = 4;
     private static final byte m4Count = 8;
     private static final byte rfCount = 32;
+    private static final byte lsCount = 16;
     private static int rfIdx = rfCount - 1;
     private static int v4Idx = v4Count - 1;
     private static int v3Idx = v3Count - 1;
     private static int v2Idx = v2Count - 1;
     private static int m4Idx = m4Count - 1;
     private static int m3Idx = m3Count - 1;
+    private static int lsIdx = lsCount - 1;
     private static final Vector2f[] vec2_stack = new Vector2f[v2Count];
     private static final Vector3f[] vec3_stack = new Vector3f[v3Count];
     private static final Vector4f[] vec4_stack = new Vector4f[v4Count];
     private static final Matrix3f[] mat3_stack = new Matrix3f[m3Count];
     private static final Matrix4f[] mat4_stack = new Matrix4f[m4Count];
     private static final Rectanglef[] rect_stack = new Rectanglef[rfCount];
+    private static final LineSegment[] line_stack = new LineSegment[lsCount];
 
     public static void pushVec2() { v2Idx++; }
     public static void pushVec3() { v3Idx++; }
@@ -36,12 +39,14 @@ public class U {
     public static void pushMat3() { m3Idx++; }
     public static void pushMat4() { m4Idx++; }
     public static void pushRect() { rfIdx++; }
+    public static void pushLine() { lsIdx++; }
     public static void pushVec2(int count) { v2Idx += count; }
     public static void pushVec3(int count) { v3Idx += count; }
     public static void pushVec4(int count) { v4Idx += count; }
     public static void pushMat3(int count) { m3Idx += count; }
     public static void pushMat4(int count) { m4Idx += count; }
     public static void pushRect(int count) { rfIdx += count; }
+    public static void pushLine(int count) { lsIdx += count; }
 
     public static Vector2f popVec2() { return vec2_stack[v2Idx--]; }
     public static Vector3f popVec3() { return vec3_stack[v3Idx--]; }
@@ -49,6 +54,7 @@ public class U {
     public static Matrix3f popMat3() { return mat3_stack[m3Idx--]; }
     public static Matrix4f popMat4() { return mat4_stack[m4Idx--]; }
     public static Rectanglef popRect() { return rect_stack[rfIdx--]; }
+    public static LineSegment popLine() { return line_stack[lsIdx--]; }
     public static Vector2f popSetVec2(Vector2f vec) { return popVec2().set(vec); }
     public static Vector3f popSetVec3(Vector3f vec) { return popVec3().set(vec); }
     public static Vector4f popSetVec4(Vector4f vec) { return popVec4().set(vec); }
@@ -78,6 +84,7 @@ public class U {
         for (int i = 0; i < mat3_stack.length; i++) mat3_stack[i] = new Matrix3f();
         for (int i = 0; i < mat4_stack.length; i++) mat4_stack[i] = new Matrix4f();
         for (int i = 0; i < rect_stack.length; i++) rect_stack[i] = new Rectanglef();
+        for (int i = 0; i < line_stack.length; i++) line_stack[i] = new LineSegment();
 
     }
 
@@ -199,6 +206,16 @@ public class U {
 
     public static float angle2D(Vector2f v) { return Math.atan2(v.y,v.x); }
 
+    public static float lengthSquared(Vector2f a, Vector2f b) {
+        final float dx = a.x - b.x;
+        final float dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    }
+
+    public static float length(Vector2f a, Vector2f b) {
+        return Math.sqrt(lengthSquared(a,b));
+    }
+
     public static Vector2f rotate2D(Vector2f dst, float rotation) {
         // rotates around origin
         final float sin = Math.sin(rotation);
@@ -210,8 +227,27 @@ public class U {
         return dst;
     }
 
+    /** Project A onto B and store the result in dst */
+    public static Vector2f project(Vector2f a, Vector2f b, Vector2f dst) {
+        final float k = a.dot(b) / b.dot(b);
+        return dst.set(k * b.x, k * b.y);
+    }
+
     public static Vector2f lerp(Vector2f a, Vector2f b, float t, Vector2f dst) {
         return a.lerp(b,t,dst);
+    }
+
+    public static Vector2f closestPointOnSegment(float px, float py, float x0, float y0, float x1, float y1, Vector2f dst) {
+        final float a = px - x0;
+        final float b = py - y0;
+        final float c = x1 - x0;
+        final float d = y1 - y0;
+        final float dot = a * c + b * d;
+        final float l2 = c * c + d * d;
+        float param = l2 == 0 ? -1 : dot / l2;
+        if (param < 0) return dst.set(x0,y0);
+        else if (param > 1) return dst.set(x1,y1);
+        else return dst.set(x0 + param * c, y0 + param * d);
     }
 
     public static Vector4f texRegionToUV(Vector4f dst, int texture_w, int texture_h, int region_x, int region_y, int region_w, int region_h) {

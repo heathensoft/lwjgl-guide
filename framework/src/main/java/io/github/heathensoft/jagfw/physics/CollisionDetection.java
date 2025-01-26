@@ -2,30 +2,138 @@ package io.github.heathensoft.jagfw.physics;
 
 import io.github.heathensoft.jagfw.physics.shape.Circle;
 import io.github.heathensoft.jagfw.physics.shape.PolygonShape;
-import org.joml.Intersectionf;
+import io.github.heathensoft.jagfw.utils.LineSegment;
+import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
-import org.joml.primitives.Rectanglef;
 
 import static io.github.heathensoft.jagfw.utils.U.*;
 import static io.github.heathensoft.jagfw.utils.U.pushVec2;
 
 /**
+ * NOTE: Circles can get stuck inside polygons
  * Frederik Dahl 1/23/2025
  */
 public class CollisionDetection {
 
 
-
     public static boolean bodyBody(PhysicsBody A, PhysicsBody B, BodyContact contact) {
         if (!(A.isStatic() && B.isStatic())) {
-            boolean a_poly = A.shape instanceof PolygonShape;
-            boolean b_poly = B.shape instanceof PolygonShape;
-            boolean a_circ  = A.shape instanceof Circle;
-            boolean b_circ  = B.shape instanceof Circle;
-            if (a_circ && b_circ) return circleCircle(A,B,contact);
-            if (a_poly && b_poly) return polyPoly(A,B,contact);
-            if (a_circ && b_poly) return polyCircle(B,A,contact);
-            if (a_poly && b_circ) return polyCircle(A,B,contact);
+            boolean ap = A.shape instanceof PolygonShape;
+            boolean bp = B.shape instanceof PolygonShape;
+            boolean ac = A.shape instanceof Circle;
+            boolean bc = B.shape instanceof Circle;
+            if (ac && bc) return circleCircle(A,B,contact);
+            if (ap && bp) return polyPoly(A,B,contact);
+            if (ac && bp) return polyCircle(B,A,contact);
+            if (ap && bc) return polyCircle(A,B,contact);
+        } return false;
+    }
+
+    public static boolean bodySurface(PhysicsBody body, Surface surface, SurfaceContact contact) {
+        if (body.isStatic()) return false;
+        if (body.shape instanceof Circle) return circleSurface(body,surface,contact);
+        if (body.shape instanceof PolygonShape) return polySurface(body,surface,contact);
+        return false;
+    }
+
+
+    private static boolean polySurface(PhysicsBody body, Surface surface, SurfaceContact contact) {
+        PolygonShape polygon = (PolygonShape) body.shape();
+        if (surface.segment.isValid()) {
+            {
+                // If the body has gone through the surface
+                // in one frame (high velocities)
+                // Adjust the body position to it's previous position
+                LineSegment position_delta = U.popLine();
+                position_delta.set(body.position_previous,body.position); // velocity dir
+                if (position_delta.lengthSquared() > 1e-5f) {
+                    Vector2f intersection = U.popVec2();
+                    if (position_delta.intersects(surface.segment,intersection)) {
+                        body.setPosition(body.position_previous.x,body.position_previous.y);
+                    } U.pushVec2();
+                } U.pushLine();
+            }
+
+            float max_depth = Float.NEGATIVE_INFINITY;
+            Vector2f contact_point = U.popVec2();
+
+            Vector2f point = U.popVec2();
+            Vector2f pv = U.popVec2();
+            LineSegment body_to_vertex = U.popLine();
+            body_to_vertex.setP0(body.position);
+            Vector2f[] vertices = polygon.vertices();
+            for (Vector2f vertex : vertices) {
+                body_to_vertex.setP1(vertex);
+                if (body_to_vertex.intersects(surface.segment, point)) {
+                    pv.set(vertex).sub(point);
+                    float depth = pv.length();
+                    if (depth > max_depth) {
+                        max_depth = depth;
+                        contact_point.set(point);
+                    } else if (depth == max_depth) {
+                        // When we have to boxes colliding completely in parallel
+                        // We set the pont to the center of the edge
+                        contact_point.add(point).div(2);
+                        break;
+                    }
+                }
+            }
+            U.pushLine();
+            U.pushVec2(3);
+            if (max_depth > Float.NEGATIVE_INFINITY) {
+                contact.body = body;
+                contact.depth = max_depth;
+                contact.surface = surface;
+                contact.point.set(contact_point);
+                {
+                    // Need to check which side of surface we are
+                    // or and adjust the contact normal accordingly
+                    surface.segment.normal(contact.normal);
+                    Vector2f point_to_body = point.set(body.position).sub(contact.point);
+                    float dot = contact.normal.dot(point_to_body);
+                    if (dot >= 0) contact.normal.negate();
+                }
+                return true;
+            }
+        }  return false;
+    }
+
+    private static boolean circleSurface(PhysicsBody body, Surface surface, SurfaceContact contact) {
+        Circle circle = (Circle) body.shape();
+        if (surface.segment.isValid()) {
+            Vector2f circle_center = body.position;
+            {
+                // If the body has gone through the surface
+                // in one frame (high velocities)
+                // Adjust the body position to it's previous position
+                LineSegment position_delta = U.popLine();
+                position_delta.set(body.position_previous,body.position); // velocity dir
+                if (position_delta.lengthSquared() > 1e-5f) {
+                    Vector2f intersection = U.popVec2();
+                    if (position_delta.intersects(surface.segment,intersection)) {
+                        body.setPosition(body.position_previous.x,body.position_previous.y);
+                    } U.pushVec2();
+                } U.pushLine();
+            }
+            Vector2f closest_point = U.popVec2();
+            closest_point = U.closestPointOnSegment(
+                    circle_center.x, circle_center.y,
+                    surface.segment.x0, surface.segment.y0,
+                    surface.segment.x1, surface.segment.y1,
+                    closest_point
+            );
+            float r2 = U.square(circle.radius());
+            float l2 = lengthSquared(closest_point,circle_center);
+            boolean collision = r2 > l2;
+            if (collision) {
+                contact.body = body;
+                contact.surface = surface;
+                contact.point.set(closest_point);
+                contact.normal.set(closest_point).sub(circle_center);
+                contact.depth = circle.radius() - contact.normal.length();
+                contact.normal.normalize();
+            } U.pushVec2(1);
+            return collision;
         } return false;
     }
 
@@ -333,19 +441,21 @@ public class CollisionDetection {
         return separation;
     }
 
-    private static boolean circleCircle(Vector2f a, float ra, Vector2f b, float rb) {
-        final float dx = b.x - a.x;
-        final float dy = b.y - a.y;
-        final float r = ra + rb;
+
+    private static boolean circleCircle(float ax, float ay, float ar, float bx, float by, float br) {
+        final float dx = bx - ax;
+        final float dy = by - ay;
+        final float r = ar + br;
         return  (dx * dx + dy * dy) <= (r * r);
     }
 
-    private static boolean circleRect(Vector2f a, float ra, Rectanglef b) {
-        return Intersectionf.testAarCircle(b.minX,b.minY,b.maxX,b.maxY,a.x,a.y,ra*ra);
+    private static boolean circleCircle(Vector2f a, float ar, Vector2f b, float br) {
+        final float dx = b.x - a.x;
+        final float dy = b.y - a.y;
+        final float r = ar + br;
+        return  (dx * dx + dy * dy) <= (r * r);
     }
 
-    private static boolean rectRect(Rectanglef a, Rectanglef b) {
-        return a.intersectsRectangle(b);
-    }
+
 
 }

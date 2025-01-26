@@ -10,7 +10,7 @@ import static io.github.heathensoft.jagfw.utils.U.cross;
  * After a collision has occurred, the collision needs to be resolved.
  * Collisions are resolved by first moving the body out of collision.
  * Then based on various factors like collision depth, normal, frictions etc.
- * Each body is applied an impulse. An instant change in velocity.
+ * Each body is applied an appropriate impulse (instant change in velocity(.
  * Frederik Dahl 1/23/2025
  */
 public class BodyContact {

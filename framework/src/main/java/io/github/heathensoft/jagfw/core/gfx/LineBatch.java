@@ -158,6 +158,13 @@ public class LineBatch implements Disposable {
         push(origin.x,origin.y,x,y);
     }
 
+    public void drawLine(float x0, float y0, float x1, float y1, int color) {
+        if (!buffering) throw new IllegalStateException("call begin() before rendering");
+        if (count == limit) flush();
+        useColor(color);
+        push(x0, y0, x1, y1);
+    }
+
     public void drawLine(Vector2f p0, Vector2f p1, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
@@ -176,7 +183,6 @@ public class LineBatch implements Disposable {
                 push(p0.x,p0.y,p1.x,p1.y);
             }
         }
-
     }
 
 
