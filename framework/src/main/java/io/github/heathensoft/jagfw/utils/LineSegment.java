@@ -6,8 +6,7 @@ import org.joml.primitives.Rectanglef;
 
 /**
  * A line segment is a line between two points.
- * The segment is directed from p0 to p1
- *
+ * The segment is directed from p0 to p1*
  * Frederik Dahl 1/24/2025
  */
 public class LineSegment {
@@ -121,8 +120,46 @@ public class LineSegment {
         return  !(x0 == x1 && y0 == y1);
     }
 
+    public static void main(String[] args) {
+        LineSegment a = new LineSegment(0,-2,0,2);
+        LineSegment b = new LineSegment(-2,1,2,1);
+        Vector2f intersection = new Vector2f();
+
+        if (a.intersects(b,intersection)) {
+            System.out.println(intersection.x + ", " + intersection.y);
+            intersection.sub(a.x0,a.y0); // p0 to intersection;
+            System.out.println(intersection.x + ", " + intersection.y);
+            intersection.div(a.length());
+            System.out.println(intersection.x + ", " + intersection.y);
+        }
+
+        float t = a.intersection(b,intersection);
+        System.out.println(t);
+
+    }
+    public float intersection(LineSegment l, Vector2f dst) {
+        return intersection(x0,y0,x1,y1,l.x0,l.y0,l.x1,l.y1,dst);
+    }
+
     public boolean intersects(LineSegment l, Vector2f dst) {
         return intersects(x0,y0,x1,y1,l.x0,l.y0,l.x1,l.y1,dst);
+    }
+
+    private static float intersection(float ax, float ay, float bx, float by, float cx, float cy, float dx, float dy, Vector2f dst) {
+        // https://www.youtube.com/watch?v=fHOLQJo0FjQ&t=8s
+        float den = ((dy - cy) * (bx - ax)) - ((dx - cx) * (by - ay));
+        if (den == 0) return -1; // parallel
+        float num_t = ((dx - cx) * (ay - cy)) - ((dy - cy) * (ax - cx));
+        float t = num_t / den;
+        if (t >= 0 && t <= 1) {
+            float num_u = ((cy - ay) * (ax - bx)) - ((cx - ax) * (ay - by));
+            float u = num_u / den;
+            if (u >= 0 && u <= 1) {
+                dst.x = ax * (1-t) + bx * t;
+                dst.y = ay * (1-t) + by * t;
+                return t;
+            } return -1;
+        } return -1;
     }
 
     private static boolean intersects(float ax, float ay, float bx, float by, float cx, float cy, float dx, float dy, Vector2f dst) {

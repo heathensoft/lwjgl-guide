@@ -38,6 +38,7 @@ public class BodyContact {
         Vector2f tmp4 = U.popVec2();
         Vector2f ra = tmp0.set(end).sub(A.position);
         Vector2f rb = tmp1.set(start).sub(B.position);
+        if (!normal.isFinite()) normal.zero();
         resolvePenetration(); // modifies position directly
         // Define elasticity (coefficient of restitution e) and friction
         float f = (A.friction + B.friction) * 0.5f;

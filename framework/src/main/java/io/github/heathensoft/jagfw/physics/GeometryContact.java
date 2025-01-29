@@ -6,12 +6,12 @@ import org.joml.Vector2f;
 import static io.github.heathensoft.jagfw.utils.U.cross;
 
 /**
- * Collision Information for Body / Surface collision.
- * Frederik Dahl 1/23/2025
+ * Frederik Dahl 1/26/2025
  */
-public class SurfaceContact {
+public class GeometryContact {
 
-    public Surface surface;
+    // + index of edge
+    public PhysicsGeometry geometry;
     public PhysicsBody body;
     public final Vector2f point = new Vector2f();   // point of collision on surface
     public final Vector2f normal = new Vector2f();  // surface / collision normal
@@ -26,10 +26,11 @@ public class SurfaceContact {
         Vector2f tmp2 = U.popVec2();
         Vector2f tmp3 = U.popVec2();
         Vector2f r = tmp0.set(point).sub(body.position);
+        if (!normal.isFinite()) normal.zero();
         resolvePenetration(); // modifies position directly
         // Define elasticity (coefficient of restitution e) and friction
-        float f = (body.friction + surface.friction) * 0.5f;
-        float e = (body.restitution + surface.restitution) * 0.5f;
+        float f = (body.friction + geometry.friction()) * 0.5f;
+        float e = (body.restitution + geometry.restitution()) * 0.5f;
         // linear + angular velocity of body -> body.v + w x r
         Vector2f v = tmp1.set(-body.angular_velocity * r.y, body.angular_velocity * r.x).add(body.velocity);
         { // impulse along the collision normal

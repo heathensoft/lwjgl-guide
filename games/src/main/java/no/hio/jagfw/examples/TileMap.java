@@ -4,6 +4,9 @@ import io.github.heathensoft.jagfw.core.Disposable;
 import io.github.heathensoft.jagfw.core.gfx.Bitmap;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.core.gfx.Texture;
+import io.github.heathensoft.jagfw.physics.CollisionDetection;
+import io.github.heathensoft.jagfw.physics.GeometryContact;
+import io.github.heathensoft.jagfw.physics.PhysicsBody;
 import io.github.heathensoft.jagfw.utils.Resources;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
@@ -103,7 +106,6 @@ public class TileMap implements Disposable {
     }
 
 
-
     public void removeBlock(int x, int y) {
         int index = tileIndex(x, y);
         if (isBlock(index)) {
@@ -114,6 +116,42 @@ public class TileMap implements Disposable {
         }
     }
 
+    private static final GeometryContact internal_contact = new GeometryContact();
+
+    public boolean bodyCollision(PhysicsBody body, GeometryContact contact) {
+        float x = U.clamp(body.posX(),0,widthTiles() - 1);
+        float y = U.clamp(body.posY(), 0,heightTiles() - 1);
+        int ix = U.floor(x);
+        int iy = U.floor(y);
+        int tile_index = tileIndex(ix,iy);
+        int block_mask = getBlockMask(tile_index);
+        if (isBlock(tile_index)) {
+            return CollisionDetection.bodyBlock(body,ix,iy,block_mask,contact);
+        } else { float max_depth = Float.NEGATIVE_INFINITY;
+            for (int i = 0; i < adjacent8.length; i++) {
+                int tile_x = ix + adjacent8[i][0];
+                int tile_y = iy + adjacent8[i][1];
+                if (contains(tile_x,tile_y)) {
+                    tile_index = tileIndex(tile_x,tile_y);
+                    if (isBlock(tile_index)) {
+                        block_mask = getBlockMask(tile_index);
+                        if (CollisionDetection.bodyBlock(body,tile_x,tile_y,block_mask,internal_contact)) {
+                            if (internal_contact.depth > max_depth) {
+                                max_depth = internal_contact.depth;
+                                contact.normal.set(internal_contact.normal);
+                                contact.point.set(internal_contact.point);
+                                contact.depth = internal_contact.depth;
+                                contact.body = internal_contact.body;
+                                contact.geometry = internal_contact.geometry;
+                            }
+
+                        }
+                    }
+                }
+            }
+            return max_depth > Float.NEGATIVE_INFINITY;
+        }
+    }
 
     public boolean isBlock(int x, int y) {
         return isBlock(tileIndex(x, y));
@@ -192,6 +230,15 @@ public class TileMap implements Disposable {
         return tiles[index] & 0xFF;
     }
 
+    private int getBlockMask(int index) {
+        int block_mask = 0;
+        int tile_mask = getTileMask(index);
+        block_mask |= ((tile_mask & 2) >> 1);
+        block_mask |= ((tile_mask & 8) >> 2);
+        block_mask |= ((tile_mask & 16) >> 2);
+        block_mask |= ((tile_mask & 64) >> 3);
+        return block_mask;
+    }
 
     private void updateTileMask(int x, int y) {
         for (int[] offset : adjacent9) {
@@ -200,14 +247,14 @@ public class TileMap implements Disposable {
             if (contains(tile_x, tile_y)) {
                 int index = tileIndex(tile_x, tile_y);
                 if (isBlock(tile_x, tile_y)) {
-                    int mask = calculateTileMask(tile_x, tile_y);
+                    int mask = calculateUVIndexMask(tile_x, tile_y);
                     setTileMask(index, mask);
                 } else setTile(index, 0);
             }
         }
     }
 
-    private int calculateTileMask(int x, int y) {
+    private int calculateUVIndexMask(int x, int y) {
         int mask = 0;
         for (int i = 0; i < adjacent8.length; i++) {
             int tile_x = x + adjacent8[i][0];

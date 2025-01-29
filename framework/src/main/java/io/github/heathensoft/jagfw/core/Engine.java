@@ -1,5 +1,6 @@
 package io.github.heathensoft.jagfw.core;
 
+import io.github.heathensoft.jagfw.core.gfx.ShaderProgram;
 import org.lwjgl.Version;
 import org.tinylog.Logger;
 
@@ -8,7 +9,6 @@ import static java.lang.System.nanoTime;
 
 /**
  * The Engine is responsible for running the Game Object.
- *
  * Frederik Dahl 12/5/2024
  */
 public class Engine {
@@ -133,6 +133,8 @@ public class Engine {
                 Logger.debug("exiting game");
                 game.state = EXITING;
                 game.exit();
+                Logger.debug("deleting shaders");
+                ShaderProgram.deleteAllPrograms();
                 Logger.debug("terminating window");
                 window.terminate();
                 game.state = TERMINATED;

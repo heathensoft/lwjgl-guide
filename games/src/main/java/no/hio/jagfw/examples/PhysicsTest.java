@@ -2,7 +2,7 @@ package no.hio.jagfw.examples;
 
 import io.github.heathensoft.jagfw.core.*;
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
-import io.github.heathensoft.jagfw.core.gfx.ShaderProgram;
+import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.physics.*;
 import io.github.heathensoft.jagfw.physics.shape.*;
 import io.github.heathensoft.jagfw.utils.Camera2D;
@@ -24,22 +24,20 @@ public class PhysicsTest extends Game {
     public static void main(String[] args) {
         Engine.get().run(new PhysicsTest(),args);
     }
-
     public static final int game_res_w = 1280;
     public static final int game_res_h = 720;
     public static final float tile_size = 32;
+    private TileMap tile_map;
     private LineBatch line_batch;
+    private SpriteBatch sprite_batch;
     private Background background;
     private Camera2D camera;
     private List<PhysicsBody> bodies;
-    private List<Surface> surfaces;
-
+    private List<PhysicsGeometry> geometry;
 
     PhysicsBody player;
     HitBoxCluster hitbox_list = HitBoxCluster.pillbox(1,2,new Vector2f(0,0.0f));
     Vector2f mouse_world = new Vector2f();
-    SurfaceContact surface_contact = new SurfaceContact();
-
 
     public void configure(BootConfiguration boot_config, String[] args) {
         boot_config.window_title = "physics";
@@ -54,46 +52,36 @@ public class PhysicsTest extends Game {
 
     public void start(Resolution resolution) throws Exception {
         bodies = new ArrayList<>();
-        surfaces = new ArrayList<>();
+        geometry = new ArrayList<>();
         camera = new Camera2D(resolution,tile_size);
         background = new Background();
         line_batch = new LineBatch(512);
         line_batch.setLineWidth(1f);
         line_batch.enableSmoothLines(true);
+        tile_map = new TileMap(MapSize.SMALL);
+        sprite_batch = new SpriteBatch(512);
 
         float window_width_pixels = resolution.width();
         float window_height_pixels = resolution.height();
         float window_width_tiles = (window_width_pixels / tile_size);
         float window_height_tiles = (window_height_pixels / tile_size);
-        float center_x = window_width_tiles / 2f;
-        float center_y = window_height_tiles / 2f;
-        float wall_thickness = 2.0f;
-        float wall_restitution = 0.2f;
 
+        PhysicsGeometry borders = new PhysicsGeometry(4);
+        borders.vertices[0].set(2,2);
+        borders.vertices[1].set(window_width_tiles - 2, 2);
+        borders.vertices[2].set(window_width_tiles - 2,window_height_tiles - 2);
+        borders.vertices[3].set(2,window_height_tiles - 2);
+        borders.setPolygon(true);
+        geometry.add(borders);
 
-        Surface b = new Surface();
-        Surface l = new Surface();
-        Surface r = new Surface();
-        b.segment.set(0,4f,window_width_tiles,4);
-        b.friction = 0.4f;
-        l.segment.set(4,0,4,window_height_tiles);
-        r.segment.set(window_width_tiles - 4,0,window_width_tiles - 4,window_height_tiles);
-        surfaces.add(b);
-        surfaces.add(l);
-        surfaces.add(r);
+        PhysicsGeometry line = new PhysicsGeometry(2);
+        line.vertices[0].set(8,8);
+        line.vertices[1].set(16,12);
+        geometry.add(line);
 
-        Surface surface = new Surface();
-        surface.segment.set(4,8,20,20);
-        surfaces.add(surface);
-
-
-
-        player = new PhysicsBody(new Circle(0.25f),100,6,10);
+        player = new PhysicsBody(new Circle(0.5f),100,6,10);
         player.setRotatable(false);
-
         bodies.add(player);
-
-
     }
 
     public void resize(Resolution resolution) {
@@ -101,7 +89,6 @@ public class PhysicsTest extends Game {
     }
 
     public void update(float delta_time) {
-
         //System.out.println(Engine.get().time().framesPerSecond());
 
         // Player controls
@@ -116,7 +103,6 @@ public class PhysicsTest extends Game {
         } if (keys.pressed(GLFW_KEY_W)) {
             v.add(0,3000);
         }
-
         player.addForce(v);
         if (v.lengthSquared() > 0) {
             player.setRotation(U.angle2D(v));
@@ -127,25 +113,41 @@ public class PhysicsTest extends Game {
         }
         U.pushVec2();
 
-
-
+        Mouse mouse = Engine.get().window().mouse();
+        mouse_world.set(mouse.position());
+        camera.unProjectPosition(mouse_world);
         {   // MOUSE INPUT
-            Mouse mouse = Engine.get().window().mouse();
-            mouse_world.set(mouse.position());
-            camera.unProjectPosition(mouse_world);
-            if (mouse.justClicked(Mouse.LEFT)) {
-                PhysicsBody body = new PhysicsBody(new Circle(0.5f),50,mouse_world.x,mouse_world.y);
-                body.setFriction(0.2f);
-                body.setRestitution(0.8f);
-                //body.rotatable = false;
-                bodies.add(body);
-            } else if (mouse.justClicked(Mouse.RIGHT)) {
-                PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_world.x,mouse_world.y);
-                body.setFriction(0.1f);
-                body.setRestitution(0.2f);
-                body.setAngularDamping(4.0f);
-                bodies.add(body);
+
+            //if (mouse.justClicked(Mouse.LEFT)) {
+            //    PhysicsBody body = new PhysicsBody(new Circle(0.5f),50,mouse_world.x,mouse_world.y);
+            //    body.setFriction(0.2f);
+            //    body.setRestitution(0.8f);
+            //    //body.rotatable = false;
+            //    bodies.add(body);
+            //} else if (mouse.justClicked(Mouse.RIGHT)) {
+            //    PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_world.x,mouse_world.y);
+            //    body.setFriction(0.1f);
+            //    body.setRestitution(0.2f);
+            //    body.setAngularDamping(4.0f);
+            //    bodies.add(body);
+            //}
+        }
+
+        // Block Placement
+        if (mouse.buttonPressed(Mouse.LEFT)) {
+            if (tile_map.contains(mouse_world)) {
+                tile_map.addBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
             }
+        } else if (mouse.buttonPressed(Mouse.RIGHT)) {
+            if (tile_map.contains(mouse_world)) {
+                tile_map.removeBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
+            }
+        } else if (mouse.justClicked(Mouse.WHEEL)) {
+            PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_world.x,mouse_world.y);
+            body.setFriction(0.1f);
+            body.setRestitution(0.2f);
+            body.setAngularDamping(4.0f);
+            bodies.add(body);
         }
 
         {   // APPLY FORCES
@@ -157,40 +159,37 @@ public class PhysicsTest extends Game {
                             CommonForces.applySpringForce(body,player.position(vec),2,200);
                         }
                     }
-                    CommonForces.applyDrag(body,10);
-
-                    if (body != player) {
-                        CommonForces.applyDownwardsGravity(body,9.81f);
-                    } else CommonForces.applyFriction(body,200);
-
+                    //CommonForces.applyDrag(body,20);
+                    //CommonForces.applyFriction(body,300);
+                    CommonForces.applyDownwardsGravity(body,9.81f);
                 } body.update(delta_time);
             } U.pushVec2();
         }
 
-
         {   // COLLISION
             int num_bodies = bodies.size();
-            BodyContact contact = new BodyContact();
+            BodyContact body_contact = new BodyContact();
+            GeometryContact geometry_contact = new GeometryContact();
             for (int i = 0; i < num_bodies; i++) {
                 PhysicsBody bodyA = bodies.get(i);
                 for (int j = i + 1; j < num_bodies; j++) {
                     PhysicsBody bodyB = bodies.get(j);
-                    if (CollisionDetection.bodyBody(bodyA,bodyB,contact)) {
-                        contact.resolveCollision();
+                    if (CollisionDetection.bodyBody(bodyA,bodyB,body_contact)) {
+                        body_contact.resolveCollision();
                     }
                 }
-                for (int j = 0; j < surfaces.size(); j++) {
-                    Surface surface = surfaces.get(j);
-                    if (CollisionDetection.bodySurface(bodyA,surface,surface_contact)) {
-                        surface_contact.resolveCollision();
+                for (PhysicsGeometry geom : geometry) {
+                    if (CollisionDetection.bodyGeometry(bodyA,geom,geometry_contact)) {
+                        geometry_contact.resolveCollision();
                     }
+                }
+                if(tile_map.bodyCollision(bodyA,geometry_contact)) {
+                    geometry_contact.resolveCollision();
                 }
 
             }
         }
-
         hitbox_list.update(player.position(new Vector2f()),player.rotation());
-
     }
 
     public void render() {
@@ -198,63 +197,21 @@ public class PhysicsTest extends Game {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         background.draw(camera);
+        sprite_batch.enableLayers(false);
+        sprite_batch.begin(camera);
+        tile_map.renderBlocks(sprite_batch, camera.frustum);
+        sprite_batch.end();
         line_batch.begin(camera);
-        int color;
+        DebugUtils.drawHitBox(hitbox_list,line_batch);
         for (PhysicsBody body : bodies) {
-            if (body.colliding()) color = 0xFF0000FF;
-            else color = 0xFF00FF00;
-            if (body.shape() instanceof Circle circle) {
-                Vector2f position = body.position(U.popVec2());
-                line_batch.drawCircle(position,circle.radius(),32,color);
-                line_batch.drawLine(position,body.rotation(),circle.radius(),color);
-                U.pushVec2();
-            } else if (body.shape() instanceof PolygonShape box) {
-                Vector2f[] vertices = box.vertices();
-                for (int i = 0; i < vertices.length; i++) {
-                    Vector2f v0 = vertices[i];
-                    Vector2f v1 = vertices[((i + 1) % vertices.length)];
-                    line_batch.drawLine(v0,v1,color);
-                }
-            }
-        }
-
-        //for (HitBox hitbox : hitbox_list) {
-        //    if (hitbox.shape() instanceof Circle circle) {
-        //        line_batch.drawCircle(hitbox.position(),circle.radius(),32,0xFFFF0000);
-        //    } else if (hitbox.shape() instanceof PolygonShape polygon) {
-        //        Vector2f[] vertices = polygon.vertices();
-        //        for (int i = 0; i < vertices.length; i++) {
-        //            Vector2f v0 = vertices[i];
-        //            Vector2f v1 = vertices[((i + 1) % vertices.length)];
-        //            line_batch.drawLine(v0,v1,0xFFFF0000);
-        //        }
-        //    }
-        //}
-
-        {
-
-            for (Surface surface : surfaces) {
-                line_batch.drawLine(
-                        surface.segment.x0,
-                        surface.segment.y0,
-                        surface.segment.x1,
-                        surface.segment.y1,
-                        0xFF00FF00
-                );
-            }
-        }
-
-
-        //line_batch.drawLine(player.position(new Vector2f()),mouse_world,0xFFFFFF00);
-
+            DebugUtils.drawBody(body,line_batch);
+        } for (PhysicsGeometry geom : geometry) {
+            DebugUtils.drawGeometry(geom,line_batch);
+        }//line_batch.drawLine(player.position(new Vector2f()),mouse_world,0xFFFFFF00);
         line_batch.end();
-
     }
 
     public void exit() {
-        Disposable.dispose(
-                line_batch,
-                background);
-        ShaderProgram.deleteAllPrograms(); // Todo: should be in engine
+        Disposable.dispose(line_batch, sprite_batch, tile_map, background);
     }
 }

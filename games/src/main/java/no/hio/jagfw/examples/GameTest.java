@@ -3,7 +3,6 @@ package no.hio.jagfw.examples;
 import io.github.heathensoft.jagfw.core.*;
 import io.github.heathensoft.jagfw.core.Disposable;
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
-import io.github.heathensoft.jagfw.core.gfx.ShaderProgram;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.utils.Camera2D;
 import io.github.heathensoft.jagfw.utils.Color;
@@ -86,7 +85,6 @@ public class GameTest extends Game {
                 sprite_batch,
                 line_batch,
                 background);
-        ShaderProgram.deleteAllPrograms();
     }
 
     private boolean camera_currently_zooming = false;

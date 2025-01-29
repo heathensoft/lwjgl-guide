@@ -1,5 +1,6 @@
 package io.github.heathensoft.jagfw.physics.shape;
 
+import io.github.heathensoft.jagfw.utils.LineSegment;
 import org.joml.Vector2f;
 import org.joml.primitives.Rectanglef;
 
@@ -41,6 +42,15 @@ public abstract class PolygonShape extends Shape {
         Vector2f v0 = vertices[index % len];
         Vector2f v1 = vertices[(index + 1) % len];
         return dst.set(v1).sub(v0);
+    }
+
+    public LineSegment edgeSegment(int index, LineSegment dst) {
+        Vector2f[] vertices = vertices();
+        int len = vertices.length;
+        Vector2f v0 = vertices[index % len];
+        Vector2f v1 = vertices[(index + 1) % len];
+        dst.set(v0,v1);
+        return dst;
     }
 
     /**
