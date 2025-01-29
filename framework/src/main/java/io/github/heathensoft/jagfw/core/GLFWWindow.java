@@ -316,6 +316,7 @@ public final class GLFWWindow {
     public void restore() { glfwRestoreWindow(window); }
     public void toggleVsync(boolean enable) { vsync_enabled = enable; }
     public void useWindowViewport() { glViewport(viewport_x,viewport_y,viewport_w,viewport_h); }
+    public void setGLViewport(int x, int y, int w, int h) { glViewport(x,y,w,h); }
     public void showCursor(boolean show) {
         if (cursor_visible &! show) {
             glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_HIDDEN);

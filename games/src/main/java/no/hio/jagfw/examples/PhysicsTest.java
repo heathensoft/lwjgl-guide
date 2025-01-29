@@ -1,6 +1,8 @@
 package no.hio.jagfw.examples;
 
 import io.github.heathensoft.jagfw.core.*;
+import io.github.heathensoft.jagfw.core.gfx.Bitmap;
+import io.github.heathensoft.jagfw.core.gfx.Framebuffer;
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.physics.*;
@@ -112,6 +114,12 @@ public class PhysicsTest extends Game {
             }
         }
         U.pushVec2();
+
+        if (keys.justPressed(GLFW_KEY_F1)) {
+            Bitmap bitmap = Framebuffer.screenshot();
+            bitmap.compressToDisk("screenshot.png",true);
+            bitmap.dispose();
+        }
 
         Mouse mouse = Engine.get().window().mouse();
         mouse_world.set(mouse.position());
