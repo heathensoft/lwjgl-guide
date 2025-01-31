@@ -29,6 +29,11 @@ public class Camera2D {
     public final Rectanglef frustum = new Rectanglef(); // visible world area
     public float zoom = 1.0f; // zoom (used to expand or contract the frustum, making the scene appear smaller / larger)
 
+    private float follow_velocity_x = 0.0f;
+    private float follow_velocity_y = 0.0f;
+    public float follow_bias_term = 0.5f; // 0 - 1
+    public float follow_damping = 0.1f;   // 0 - 1
+
     public Camera2D(Resolution resolution) {
         viewport.set(resolution.width(),resolution.height());
         position.set(viewport).div(2);
@@ -45,6 +50,19 @@ public class Camera2D {
         viewport.set(resolution.width()/tile_size,resolution.height()/tile_size);
         position.set(viewport).div(2);
         refresh();
+    }
+
+
+    public void follow(Vector2f target, float dt) {
+        final float dx = position.x - target.x;
+        final float dy = position.y - target.y;
+        final float bias = -(follow_bias_term / dt);
+        follow_velocity_x += bias * dx;
+        follow_velocity_y += bias * dy;
+        follow_velocity_x *= follow_damping;
+        follow_velocity_y *= follow_damping;
+        position.x += follow_velocity_x * dt;
+        position.y += follow_velocity_y * dt;
     }
 
     /**

@@ -237,6 +237,39 @@ public class U {
         return a.lerp(b,t,dst);
     }
 
+    /**
+     * Reflect vector on surface normal
+     * (Bouncing on the surface)
+     * @param normal normal vector of length 1
+     * @param dst vector to reflect
+     * @return dst
+     */
+    public static Vector2f reflect(Vector2f normal, Vector2f dst) {
+        // I - 2.0 * dot(N, I) * N
+        float dot = normal.dot(dst);
+        dst.x -= (2 * dot * normal.x);
+        dst.y -= (2 * dot * normal.y);
+        return dst;
+    }
+
+    public static boolean lineCircleContact(float px, float py, float r, float x0, float y0, float x1, float y1, Vector2f dst) {
+        Vector2f p = closestPointOnSegment(px, py, x0, y0, x1, y1, dst);
+        float a = p.x - px;
+        float b = p.y - py;
+        float l2 = a * a + b * b;
+        float r2 = r * r;
+        if (l2 == r2) {
+          return true;
+        } if (l2 < r2) {
+          float h = Math.sqrt(r2 - l2);
+          float c = x0 - p.x;
+          float d = y0 - p.y;
+          float invLen = Math.invsqrt(c * c + d * d);
+          dst.add(c * invLen * h,d * invLen * h);
+          return true;
+        } return false;
+    }
+
     public static Vector2f closestPointOnSegment(float px, float py, float x0, float y0, float x1, float y1, Vector2f dst) {
         final float a = px - x0;
         final float b = py - y0;

@@ -20,6 +20,8 @@ import static org.lwjgl.opengl.GL32.GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS;
 import static org.lwjgl.opengl.GL32.glFramebufferTexture;
 
 /**
+ * A framebuffer is a render target.
+ *
  * Frederik Dahl 1/29/2025
  */
 public class Framebuffer implements Disposable {

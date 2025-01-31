@@ -8,6 +8,7 @@ import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.physics.*;
 import io.github.heathensoft.jagfw.physics.shape.*;
 import io.github.heathensoft.jagfw.utils.Camera2D;
+import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
 
@@ -39,6 +40,7 @@ public class PhysicsTest extends Game {
 
     PhysicsBody player;
     HitBoxCluster hitbox_list = HitBoxCluster.pillbox(1,2,new Vector2f(0,0.0f));
+    LineSegment ray = new LineSegment();
     Vector2f mouse_world = new Vector2f();
 
     public void configure(BootConfiguration boot_config, String[] args) {
@@ -83,6 +85,7 @@ public class PhysicsTest extends Game {
 
         player = new PhysicsBody(new Circle(0.5f),100,6,10);
         player.setRotatable(false);
+
         bodies.add(player);
     }
 
@@ -141,6 +144,9 @@ public class PhysicsTest extends Game {
             //}
         }
 
+        ray.set(player.posX(),player.posY(),
+                mouse_world.x,mouse_world.y);
+
         // Block Placement
         if (mouse.buttonPressed(Mouse.LEFT)) {
             if (tile_map.contains(mouse_world)) {
@@ -151,7 +157,7 @@ public class PhysicsTest extends Game {
                 tile_map.removeBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
             }
         } else if (mouse.justClicked(Mouse.WHEEL)) {
-            PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_world.x,mouse_world.y);
+            PhysicsBody body = new PhysicsBody(new Circle(1.5f),100,mouse_world.x,mouse_world.y);
             body.setFriction(0.1f);
             body.setRestitution(0.2f);
             body.setAngularDamping(4.0f);
@@ -167,9 +173,9 @@ public class PhysicsTest extends Game {
                             CommonForces.applySpringForce(body,player.position(vec),2,200);
                         }
                     }
-                    //CommonForces.applyDrag(body,20);
-                    //CommonForces.applyFriction(body,300);
-                    CommonForces.applyDownwardsGravity(body,9.81f);
+                    CommonForces.applyDrag(body,20);
+                    CommonForces.applyFriction(body,300);
+                    //CommonForces.applyDownwardsGravity(body,9.81f);
                 } body.update(delta_time);
             } U.pushVec2();
         }
@@ -197,6 +203,50 @@ public class PhysicsTest extends Game {
 
             }
         }
+
+        {
+            int num_bodies = bodies.size();
+            Vector2f contact_normal = U.popVec2();
+            Vector2f contact_point = U.popVec2();
+            Vector2f origin_to_point = U.popVec2();
+            for (int i = 0; i < num_bodies; i++) {
+                PhysicsBody body = bodies.get(i);
+                if (body != player) {
+                    Shape shape = body.shape();
+                    if (shape instanceof PolygonShape polygon) {
+                        if (CollisionDetection.rayPolygon(ray,polygon,contact_point,contact_normal)) {
+                            origin_to_point.set(contact_point).sub(ray.x0,ray.y0);
+                            if (origin_to_point.lengthSquared() < ray.lengthSquared()) {
+                                ray.setP1(contact_point);
+                            }
+                        }
+                    } else if (shape instanceof Circle circle) {
+
+                        if (CollisionDetection.rayCircle(ray,body.position(new Vector2f()),circle.radius(),contact_point,contact_normal)) {
+                            origin_to_point.set(contact_point).sub(ray.x0,ray.y0);
+                            if (origin_to_point.lengthSquared() < ray.lengthSquared()) {
+                                ray.setP1(contact_point);
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            for (PhysicsGeometry geometry : geometry) {
+                if (CollisionDetection.rayGeometry(ray,geometry,contact_point,contact_normal)) {
+                    origin_to_point.set(contact_point).sub(ray.x0,ray.y0);
+                    if (origin_to_point.lengthSquared() < ray.lengthSquared()) {
+                        ray.setP1(contact_point);
+                    }
+                }
+            }
+
+            U.pushVec2(3);
+        }
+
+
+
         hitbox_list.update(player.position(new Vector2f()),player.rotation());
     }
 
@@ -215,7 +265,9 @@ public class PhysicsTest extends Game {
             DebugUtils.drawBody(body,line_batch);
         } for (PhysicsGeometry geom : geometry) {
             DebugUtils.drawGeometry(geom,line_batch);
-        }//line_batch.drawLine(player.position(new Vector2f()),mouse_world,0xFFFFFF00);
+        }
+        line_batch.drawLine(ray,0xFFFFFF00);
+        //line_batch.drawLine(player.position(new Vector2f()),mouse_world,0xFFFFFF00);
         line_batch.end();
     }
 

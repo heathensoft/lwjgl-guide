@@ -14,7 +14,7 @@ public class PhysicsGeometry {
     public final Vector2f[] vertices;
     public final Vector2f offset;
     public final LineSegment segment;
-    public float restitution = 0.5f;
+    public float restitution = 0.4f;
     public float friction = 0.0f;
     public boolean sleeping;
     public boolean polygon;

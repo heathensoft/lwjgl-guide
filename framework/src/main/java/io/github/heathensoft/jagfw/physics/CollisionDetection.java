@@ -17,7 +17,8 @@ public class CollisionDetection {
 
     private static final PhysicsGeometry[][] block_geometry_map;
 
-    public static boolean bodyBody(PhysicsBody A, PhysicsBody B, BodyContact contact) {
+
+    public static boolean bodyBody(final PhysicsBody A, final PhysicsBody B, BodyContact contact) {
         if (!(A.isStatic() && B.isStatic())) {
             boolean ap = A.shape instanceof PolygonShape;
             boolean bp = B.shape instanceof PolygonShape;
@@ -30,17 +31,16 @@ public class CollisionDetection {
         } return false;
     }
 
-    public static boolean bodyGeometry(PhysicsBody body, PhysicsGeometry geometry, GeometryContact contact) {
+    public static boolean bodyGeometry(final PhysicsBody body, final PhysicsGeometry geometry, GeometryContact contact) {
         if (body.isStatic()) return false;
         if (body.shape instanceof Circle) return circleGeometry(body,geometry,contact);
         if (body.shape instanceof PolygonShape) return polyGeometry(body,geometry,contact);
         return false;
     }
 
-    // TODO: it's possible to collide with multiple blocks. save max depth, or sort by dist before. this should be private
-    public static boolean bodyBlock(PhysicsBody body, int x, int y, int block_mask, GeometryContact contact) {
-        if (body.isStatic() || block_mask < 0x0 || block_mask >= 0xF) return false;
-        PhysicsGeometry[] block_geometry_list = block_geometry_map[block_mask];
+    public static boolean bodyBlock(final PhysicsBody body, int x, int y, int block_type, GeometryContact contact) {
+        if (body.isStatic() || block_type < 0x0 || block_type >= 0xF) return false;
+        PhysicsGeometry[] block_geometry_list = block_geometry_map[block_type];
         for (PhysicsGeometry geometry : block_geometry_list) {
             geometry.offset.set(x, y);
             if (body.shape instanceof Circle) {
@@ -54,6 +54,90 @@ public class CollisionDetection {
             }
         } return false;
     }
+
+
+    public static boolean rayCircle(final LineSegment ray, final Vector2f center, float radius, Vector2f point_of_contact, Vector2f contact_normal) {
+        if (ray.isValid() && radius != 0) {
+            if (U.lineCircleContact(
+                    center.x,center.y,radius,
+                    ray.x0,ray.y0,ray.x1,ray.y1,
+                    point_of_contact)) {
+                contact_normal.set(point_of_contact);
+                contact_normal.sub(center).normalize();
+                return true;
+            }
+        } return false;
+    }
+
+    public static boolean rayPolygon(final LineSegment ray, final PolygonShape polygon, Vector2f point_of_contact, Vector2f contact_normal) {
+        if (ray.isValid()) {
+            Vector2f[] vertices = polygon.vertices();
+            Vector2f ray_direction = ray.direction(U.popVec2());
+            LineSegment poly_edge = U.popLine();
+            for (int i = 0; i < vertices.length; i++) {
+                Vector2f p0 = vertices[i];
+                Vector2f p1 = vertices[(i + 1) % vertices.length];
+                contact_normal.set(p1).sub(p0);
+                contact_normal.perpendicular();
+                float dot = contact_normal.dot(ray_direction);
+                if (dot < 0) {
+                    poly_edge.set(p0,p1);
+                    if (poly_edge.intersects(ray,point_of_contact)) {
+                        contact_normal.normalize();
+                        U.pushVec2();
+                        U.pushLine();
+                        return true;
+                    }
+                }
+            } U.pushVec2();
+            U.pushLine();
+        } return false;
+    }
+
+    public static boolean rayGeometry(final LineSegment ray, final PhysicsGeometry geometry, Vector2f point_of_contact, Vector2f contact_normal) {
+        if (ray.isValid()) {
+            Vector2f[] vertices = geometry.vertices();
+            Vector2f ray_direction = ray.direction(U.popVec2());
+            LineSegment geometry_edge = U.popLine();
+            int num_segments = geometry.numSegments();
+            float min_dist2 = Float.POSITIVE_INFINITY;
+            for (int i = 0; i < num_segments; i++) {
+                Vector2f p0 = vertices[i];
+                Vector2f p1 = vertices[(i + 1) % vertices.length];
+                contact_normal.set(p1).sub(p0);
+                contact_normal.perpendicular();
+                float dot = contact_normal.dot(ray_direction);
+                if (dot < 0) {
+                    geometry_edge.set(p0,p1);
+                    if (geometry_edge.intersects(ray,point_of_contact)) {
+                        Vector2f origin_to_point = U.popVec2();
+                        origin_to_point.set(point_of_contact).sub(ray.x0,ray.y0);
+                        float len2 = origin_to_point.lengthSquared();
+                        if (len2 < min_dist2) {
+                            contact_normal.normalize();
+                            min_dist2 = len2;
+                        } U.pushVec2();
+                    }
+                } else if (!geometry.one_way_collision) {
+                    geometry_edge.set(p0,p1);
+                    if (geometry_edge.intersects(ray,point_of_contact)) {
+                        Vector2f origin_to_point = U.popVec2();
+                        origin_to_point.set(point_of_contact).sub(ray.x0,ray.y0);
+                        float len2 = origin_to_point.lengthSquared();
+                        if (len2 < min_dist2) {
+                            contact_normal.negate();
+                            contact_normal.normalize();
+                            min_dist2 = len2;
+                        } U.pushVec2();
+                    }
+                }
+            }
+            U.pushVec2();
+            U.pushLine();
+            return min_dist2 < Float.POSITIVE_INFINITY;
+        } return false;
+    }
+
 
     private static boolean polyGeometry(PhysicsBody body, PhysicsGeometry geometry, GeometryContact contact) {
         PolygonShape polygon = (PolygonShape) body.shape();
@@ -460,8 +544,8 @@ public class CollisionDetection {
             }
         }{
             Vector2f a_point = popVec2();
-            Vector2f b_point = popVec2();
             Vector2f a_edge_normal = popVec2();
+            Vector2f b_point = popVec2();
             Vector2f b_edge_normal = popVec2();
             float ab_separation = satFindMinSeparation(a_poly,b_poly,a_edge_normal,a_point);
             if (ab_separation >= 0) {
@@ -473,8 +557,7 @@ public class CollisionDetection {
                 pushVec2(4);
                 return false;
             }
-            contact.A = A;
-            contact.B = B;
+
             if (ab_separation >= ba_separation) {
                 // best separation was from polygon a to polygon b
                 // the penetration was bigger, (the b vertex corner inside a)
