@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;
@@ -426,7 +426,150 @@ public class Collision {
     }
 
     private static boolean bodyPolyGeom(final Body body, final Geometry geom, GeomContact contact) {
-        // TODO
+        // Todo: Buggy
+        Polygon polygon = (Polygon) body.shape;
+        int num_segments = geom.numSegments();
+        if (num_segments >= 1) {
+            int s0;
+            int s1;
+            if (num_segments == 1) {
+                s0 = 0;
+                s1 = 0;
+            } else {
+                int closest_vertex = geom.closestVertex(body.position);
+                if (geom.isPolygon()) {
+                    s0 = closest_vertex - 1;
+                    s1 = closest_vertex;
+                } else {
+                    if (closest_vertex == 0) {
+                        s0 = 0;
+                        s1 = 0;
+                    } else if (closest_vertex == num_segments) {
+                        s0 = closest_vertex - 1;
+                        s1 = closest_vertex - 1;
+                    } else {
+                        s0 = closest_vertex - 1;
+                        s1 = closest_vertex;
+                    }
+                }
+            } // need to save the deepest penetration and closest point
+            // need to save the deepest penetration and closest point
+            float DEPTH = Float.NEGATIVE_INFINITY;
+            Vector2f POINT = new Vector2f();
+            Vector2f NORMAL = new Vector2f();
+            for (int s = s0; s <= s1; s++) {
+                LineSegment segment = geom.segment(s, s + 1);
+                Vector2f segment_normal = segment.normal();
+                if (segment.isValid()) {
+                    // check one way collision
+                    if (geom.one_way_collision) {
+                        if (segment_normal.dot(body.velocity) > 0) {
+                            continue;
+                        }
+                    }
+                }
+                // If the body has gone through the surface
+                // in one frame (high velocities)
+                // Adjust the body position to previous position
+                LineSegment position_delta = new LineSegment();
+                position_delta.set(body.position_previous,body.position); // velocity dir
+                if (position_delta.lengthSquared() > 1e-5f) {
+                    Vector2f intersection = new Vector2f();
+                    if (position_delta.intersects(segment,intersection)) {
+                        body.position.set(body.position_previous);
+                    }
+                }
+                float min_projection = Float.POSITIVE_INFINITY;
+                float max_projection = Float.NEGATIVE_INFINITY;
+                int index_min = -1;
+                int index_max = -1;
+                Vector2f[] vertices = polygon.vertices();
+                for (int i = 0; i < vertices.length; i++) {
+                    Vector2f v = vertices[i];
+                    Vector2f pv = new Vector2f(v).sub(segment.x0,segment.y0);
+                    float projection = segment_normal.dot(pv);
+                    if (projection < min_projection) {
+                        min_projection = projection;
+                        index_min = i;
+                    }
+                    if (projection > max_projection) {
+                        max_projection = projection;
+                        index_max = i;
+                    }
+                }
+                if (max_projection + min_projection < max_projection) {
+                    // potential overlap
+                    Vector2f intersection = new Vector2f();
+                    Vector2f seg_vertex = new Vector2f();
+                    int num_intersections = 0;
+                    for (int i = 0; i < vertices.length; i++) {
+                        LineSegment edge = polygon.edgeSegment(i);
+                        if (num_intersections == 0) {
+                            if (edge.intersects(segment,intersection)) {
+                                float dist_p0 = segment.p0(seg_vertex).sub(body.position).lengthSquared();
+                                float dist_p1 = segment.p1(seg_vertex).sub(body.position).lengthSquared();
+                                if (dist_p0 < dist_p1) {
+                                    segment.p0(seg_vertex);
+                                } else segment.p1(seg_vertex);
+                                num_intersections++;
+                            }
+                        } else {
+                            if (edge.intersects(segment,intersection)) {
+                                num_intersections++;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (num_intersections > 0) {
+                        int index;
+                        float depth;
+                        float abs_depth;
+                        if (geom.one_way_collision) {
+                            index = index_min;
+                            depth = min_projection; // negative depth
+                            abs_depth = abs(min_projection);
+                        } else {
+                            abs_depth = abs(min_projection);
+                            if (max_projection > abs_depth) {
+                                index = index_min;
+                                depth = min_projection; // negative depth
+                            } else {
+                                index = index_max;
+                                depth = max_projection;
+                                abs_depth = max_projection;
+                            }
+                        }
+                        if (abs_depth > DEPTH) {
+                            if (num_intersections == 1) {
+                                POINT.set(seg_vertex);
+                                NORMAL.set(intersection).sub(seg_vertex);
+                                DEPTH = NORMAL.length();
+                                NORMAL.normalize();
+                            } else  { // 2
+                                POINT.set(vertices[index]);
+                                DEPTH = abs_depth;
+                                NORMAL.set(segment_normal);
+                                if (depth <= 0) {
+                                    NORMAL.negate();
+                                }
+                            }
+                        }
+                    }
+
+
+                }
+
+            }
+            if (DEPTH > Float.NEGATIVE_INFINITY) {
+                contact.depth = DEPTH;
+                contact.point.set(POINT);
+                contact.normal.set(NORMAL);
+                contact.body = body;
+                contact.geometry = geom;
+                return true;
+            }
+        }
         return false;
     }
 
@@ -465,11 +608,9 @@ public class Collision {
         } return false;
     }
 
-
-
     public static boolean intersectionRayCircle(final LineSegment ray, final Circle circle, Vector2f dst) {
         // If origin is inside the circle we ignore it.
-        if (!testPointCircle(circle, ray.x0, ray.y1)) {
+        if (!testPointCircle(circle, ray.x0, ray.y0)) {
             Vector2f p = ray.closestPoint(circle.position,dst);
             final float r2 = U.square(circle.radius);
             final float a = p.x - circle.position.x;

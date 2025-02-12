@@ -1,5 +1,6 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold;
 
+import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
 
 import static io.github.heathensoft.jagfw.utils.U.cross;
@@ -8,16 +9,17 @@ import static io.github.heathensoft.jagfw.utils.U.cross;
  * Container for Body / Body - collision information
  * After a collision has occurred, the collision needs to be resolved.
  * Collisions are resolved by first moving the body out of collision.
- * Then based on various factors like collision depth, normal, friction etc.
- * each body is applied an appropriate impulse (instant change in velocity(.
+ * Then based on various factors like collision depth, normal, frictions etc.
+ * Each body is applied an appropriate impulse (instant change in velocity(.
  * Frederik Dahl 1/23/2025
  */
 public class BodyContact {
 
-    public Body A, B;
-    public final Vector2f normal = new Vector2f();
+    public PhysicsBody A;
+    public PhysicsBody B;
     public final Vector2f start = new Vector2f();
     public final Vector2f end = new Vector2f();
+    public final Vector2f normal = new Vector2f();
     public float depth;
 
     /**
@@ -25,9 +27,17 @@ public class BodyContact {
      * use this to resolve that collision.
      */
     public void resolveCollision() {
+        // impulse, impulse along normal, impulse along tangent
+        A.colliding = true;
+        B.colliding = true;
         Vector2f j, jn, jt;
-        Vector2f ra = new Vector2f(end).sub(A.position);
-        Vector2f rb = new Vector2f(start).sub(B.position);
+        Vector2f tmp0 = U.popVec2();
+        Vector2f tmp1 = U.popVec2();
+        Vector2f tmp2 = U.popVec2();
+        Vector2f tmp3 = U.popVec2();
+        Vector2f tmp4 = U.popVec2();
+        Vector2f ra = tmp0.set(end).sub(A.position);
+        Vector2f rb = tmp1.set(start).sub(B.position);
         if (!normal.isFinite()) normal.zero();
         resolvePenetration(); // modifies position directly
         // Define elasticity (coefficient of restitution e) and friction
@@ -35,11 +45,11 @@ public class BodyContact {
         float e = (A.restitution + B.restitution) * 0.5f;
         // linear + angular velocity of a -> a.v + w x ra
         // linear + angular velocity of b -> b.v + w x rb
-        Vector2f va = new Vector2f(-A.angular_velocity * ra.y, A.angular_velocity * ra.x).add(A.velocity);
-        Vector2f vb = new Vector2f(-B.angular_velocity * rb.y, B.angular_velocity * rb.x).add(B.velocity);
+        Vector2f va = tmp2.set(-A.angular_velocity * ra.y, A.angular_velocity * ra.x).add(A.velocity);
+        Vector2f vb = tmp3.set(-B.angular_velocity * rb.y, B.angular_velocity * rb.x).add(B.velocity);
         // relative velocity is the linear + angular velocity of body a
         // minus the linear + angular velocity of body b
-        Vector2f relative_velocity = new Vector2f(va).sub(vb);
+        Vector2f relative_velocity = tmp4.set(va).sub(vb);
         { // impulse along the collision normal
             // the relative velocity along the collision normal
             float dot_normal = relative_velocity.dot(normal);
@@ -51,9 +61,10 @@ public class BodyContact {
             denominator += (ra_cross_nor * ra_cross_nor) * A.moi_inverse;
             denominator += (rb_cross_nor * rb_cross_nor) * B.moi_inverse;
             float impulse_magnitude = numerator / denominator;
-            jn = va.set(normal).mul(impulse_magnitude);
-        } { // collision impulse along the tangent (including friction)
-            Vector2f tangent = vb.set(normal).perpendicular();
+            jn = tmp2.set(normal).mul(impulse_magnitude);
+        }
+        { // collision impulse along the tangent (including friction)
+            Vector2f tangent = tmp3.set(normal).perpendicular();
             // the relative velocity along the collision normal
             float dot_tangent = relative_velocity.dot(tangent);
             // calculating impulse magnitude
@@ -65,9 +76,11 @@ public class BodyContact {
             denominator += (rb_cross_tan * rb_cross_tan) * B.moi_inverse;
             float impulse_magnitude = numerator / denominator;
             jt = tangent.mul(impulse_magnitude);
-        } j = jn.add(jt);
+        }
+        j = jn.add(jt);
         A.applyImpulse(j,ra);
         B.applyImpulse(j.negate(),rb);
+        U.pushVec2(5);
     }
 
     /**
@@ -84,4 +97,5 @@ public class BodyContact {
         B.position.x += normal.x * db;
         B.position.y += normal.y * db;
     }
+
 }

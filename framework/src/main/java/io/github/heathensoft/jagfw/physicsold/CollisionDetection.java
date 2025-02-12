@@ -1,7 +1,7 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physicsold;
 
-import io.github.heathensoft.jagfw.physics.shape.Circle;
-import io.github.heathensoft.jagfw.physics.shape.PolygonShape;
+import io.github.heathensoft.jagfw.physicsold.shape.Circle;
+import io.github.heathensoft.jagfw.physicsold.shape.PolygonShape;
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;

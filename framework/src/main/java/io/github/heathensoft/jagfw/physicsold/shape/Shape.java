@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.shape;
+package io.github.heathensoft.jagfw.physicsold.shape;
 
 import org.joml.Vector2f;
 

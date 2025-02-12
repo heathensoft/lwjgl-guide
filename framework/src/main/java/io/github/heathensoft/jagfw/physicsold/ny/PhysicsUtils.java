@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.utils.LineSegment;
@@ -43,7 +43,7 @@ public class PhysicsUtils {
         }
     }
 
-    public void drawRay(LineSegment ray, LineBatch batch) {
+    public static void drawRay(LineSegment ray, LineBatch batch) {
         batch.drawLine(ray,COLOR_RAY);
     }
 

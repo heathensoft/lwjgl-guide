@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
@@ -42,7 +42,7 @@ public class PolygonX extends Polygon {
     public void update(Vector2f position, float rotation) {
         rotation %= Math.PI_TIMES_2_f;
         if (rotation < 0) rotation += Math.PI_TIMES_2_f;
-        if (rotation == this.rotation) {
+        if (rotation == 0) {
             for (int i = 0; i < vertices_world.length; i++) {
                 Vector2f vertex = vertices_world[i];
                 vertex.set(vertices_local[i]).add(position); }

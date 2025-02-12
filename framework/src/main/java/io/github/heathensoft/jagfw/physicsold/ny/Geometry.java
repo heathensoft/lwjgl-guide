@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;

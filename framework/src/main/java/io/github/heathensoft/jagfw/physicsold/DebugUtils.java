@@ -1,7 +1,7 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physicsold;
 
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
-import io.github.heathensoft.jagfw.physics.shape.*;
+import io.github.heathensoft.jagfw.physicsold.shape.*;
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import org.joml.Vector2f;
 

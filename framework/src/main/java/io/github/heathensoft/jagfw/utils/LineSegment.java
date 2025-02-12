@@ -126,6 +126,10 @@ public class LineSegment {
         return dst;
     }
 
+    public Vector2f closestPoint(float px, float py, Vector2f dst) {
+        return closestPoint(this, px, py, dst);
+    }
+
     public Vector2f closestPoint(Vector2f point, Vector2f dst) {
         return closestPoint(this, point.x, point.y, dst);
     }

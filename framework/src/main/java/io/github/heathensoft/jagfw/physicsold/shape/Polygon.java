@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.shape;
+package io.github.heathensoft.jagfw.physicsold.shape;
 
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;

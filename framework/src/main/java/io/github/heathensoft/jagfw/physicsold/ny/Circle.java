@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
 import org.joml.Vector2f;
 import org.joml.primitives.Rectanglef;

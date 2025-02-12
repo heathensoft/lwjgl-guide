@@ -1,15 +1,13 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
-import io.github.heathensoft.jagfw.physics.shape.Shape;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 
 /**
- *
- * Frederik Dahl 1/22/2025
+ * Frederik Dahl 1/30/2025
  */
-public class PhysicsBody {
+public class Body {
 
     public static final float DEFAULT_ROTATION = 0f;
     public static final float DEFAULT_LINEAR_DAMPING = 1.0f;
@@ -17,32 +15,29 @@ public class PhysicsBody {
     public static final float DEFAULT_RESTITUTION = 0.5f;
     public static final float DEFAULT_FRICTION = 0.25f;
 
-    protected Shape shape;
-    protected Vector2f position = new Vector2f();
-    protected Vector2f position_previous = new Vector2f();
-    protected Vector2f velocity = new Vector2f();
-    protected Vector2f acceleration = new Vector2f();
-    protected Vector2f sum_forces = new Vector2f();
-    protected float rotation = DEFAULT_ROTATION;
-    protected float rotation_previous = DEFAULT_ROTATION;
-    protected float angular_velocity;
-    protected float angular_acceleration;
-    protected float sum_torque;
-    protected float mass;
-    protected float mass_inverse;
-    protected float moi; // moment of inertia
-    protected float moi_inverse;
-    protected float linear_damping;
-    protected float angular_damping;
-    protected float restitution;
-    protected float friction;
-    protected boolean sleeping;
-    protected boolean colliding;
-    protected boolean rotatable;
-    protected boolean moved_manually;
+    public Shape shape;
+    public final Vector2f position_previous = new Vector2f();
+    public final Vector2f position = new Vector2f();
+    public final Vector2f velocity = new Vector2f();
+    public final Vector2f acceleration = new Vector2f();
+    public final Vector2f sum_forces = new Vector2f();
+    public float rotation = DEFAULT_ROTATION;
+    public float rotation_previous = DEFAULT_ROTATION;
+    public float angular_velocity;
+    public float angular_acceleration;
+    public float sum_torque;
+    public float mass;
+    public float mass_inverse;
+    public float moi; // moment of inertia
+    public float moi_inverse;
+    public float linear_damping;
+    public float angular_damping;
+    public float restitution;
+    public float friction;
+    public boolean sleeping;
+    public boolean rotatable;
 
-
-    public PhysicsBody(Shape shape, float mass, float x, float y) {
+    public Body(Shape shape, float mass, float x, float y) {
         reset(shape,mass, x,y);
     }
 
@@ -73,13 +68,11 @@ public class PhysicsBody {
         this.moi = shape.calculateMomentOfInertia(mass);
         this.moi_inverse = moi == 0 ? 0 : 1 / moi;
         this.shape = shape;
-        this.shape.updateVertices(position, rotation);
+        this.shape.update(position, rotation);
         this.rotatable = true;
         this.sleeping = false;
-        this.colliding = false;
-        this.moved_manually = false;
-
     }
+
     public void reset(Shape shape, float mass, float x, float y) {
         reset(shape,mass,x,y,DEFAULT_RESTITUTION,DEFAULT_FRICTION,
                 DEFAULT_LINEAR_DAMPING,DEFAULT_ANGULAR_DAMPING);
@@ -94,8 +87,7 @@ public class PhysicsBody {
         rotation_previous = rotation % Math.PI_TIMES_2_f;
         if (rotation_previous < 0) {
             rotation_previous += Math.PI_TIMES_2_f;
-        } colliding = false;
-        if (isStatic()) {
+        } if (isStatic()) {
             velocity.x = 0f;
             velocity.y = 0f;
             acceleration.x = 0f;
@@ -105,21 +97,15 @@ public class PhysicsBody {
         } else { integrateLinear(dt);
             if (rotatable) {
                 integrateAngular(dt);
-            } else { angular_velocity = 0f;
+            } else {
+                angular_velocity = 0f;
                 angular_acceleration = 0f;
             }
         }
         sum_torque = 0f;
         sum_forces.x = 0f;
         sum_forces.y = 0f;
-        if (moved_manually || bodyMoved()) {
-            shape.updateVertices(position, rotation);
-            moved_manually = false;
-        }
-    }
-
-    public Shape shape() {
-        return shape;
+        shape.update(position, rotation);
     }
 
     public void addForce(Vector2f force) {
@@ -158,6 +144,35 @@ public class PhysicsBody {
         angular_velocity += U.cross(r,j) * moi_inverse;
     }
 
+    public void setMass(float mass) {
+        this.mass = mass;
+        this.mass_inverse = mass == 0 ? 0 : 1 / mass;
+        this.moi = shape.calculateMomentOfInertia(mass);
+        this.moi_inverse = moi == 0 ? 0 : 1 / moi;
+    }
+
+    public void setRestitution(float restitution) {
+        this.restitution = U.clamp(restitution);
+    }
+
+    public void setFriction(float friction) {
+        this.friction = U.clamp(friction);
+    }
+
+    public void setRotation(float rotation) {
+        rotation = rotation % org.joml.Math.PI_TIMES_2_f;
+        if (rotation < 0) rotation += Math.PI_TIMES_2_f;
+        this.rotation = rotation;
+    }
+
+    public float interpolateRotation(float t) {
+        return U.lerp(rotation_previous, rotation,t);
+    }
+
+    public float rotationDelta() {
+        return rotation - rotation_previous;
+    }
+
     /**
      * Get position at a specific time of the frame.
      * for t = 0 returns the position before the last call to update.
@@ -170,66 +185,16 @@ public class PhysicsBody {
         return U.lerp(position_previous, position,t,dst);
     }
 
+    public Vector2f interpolatedPosition(float t) {
+        return interpolatedPosition(t, new Vector2f());
+    }
+
     public Vector2f positionDelta(Vector2f dst) {
         return dst.set(position).sub(position_previous);
     }
 
-    public void setPosition(float x, float y) {
-        this.position.set(x,y);
-        this.position_previous.set(x,y);
-        this.moved_manually = true;
-    }
-
-    public void setPosition(Vector2f position) {
-        this.position.set(position);
-        this.position_previous.set(position);
-        this.moved_manually = true;
-    }
-
-    public Vector2f position(Vector2f dst) {
-        return dst.set(position);
-    }
-
-    public float posX() {
-        return position.x;
-    }
-
-    public float posY() {
-        return position.y;
-    }
-
-    public Vector2f velocity() {
-        return velocity;
-    }
-
-    public Vector2f acceleration() {
-        return acceleration;
-    }
-
-    public float interpolateRotation(float t) {
-        return U.lerp(rotation_previous, rotation,t);
-    }
-
-    public float rotationDelta() {
-        return rotation - rotation_previous;
-    }
-
-    public float rotation() {
-        return rotation;
-    }
-
-    public void setRotation(float rotation) {
-        rotation = rotation % org.joml.Math.PI_TIMES_2_f;
-        if (rotation < 0) rotation += Math.PI_TIMES_2_f;
-        this.rotation = rotation;
-    }
-
-    public float angularVelocity() {
-        return angular_velocity;
-    }
-
-    public float angularAcceleration() {
-        return angular_acceleration;
+    public Vector2f positionDelta() {
+        return positionDelta(new Vector2f());
     }
 
     /**
@@ -240,73 +205,6 @@ public class PhysicsBody {
      */
     public boolean isStatic() {
         return mass == 0;
-    }
-
-    public float mass() {
-        return mass;
-    }
-
-    public float massInverse() {
-        return mass_inverse;
-    }
-
-    public void setMass(float mass) {
-        this.mass = mass;
-        this.mass_inverse = mass == 0 ? 0 : 1 / mass;
-        this.moi = shape.calculateMomentOfInertia(mass);
-        this.moi_inverse = moi == 0 ? 0 : 1 / moi;
-    }
-
-    public void setAngularDamping(float damping) {
-        angular_damping = damping;
-    }
-
-    public void setLinearDamping(float damping) {
-        linear_damping = damping;
-    }
-
-    public float linearDamping() {
-        return linear_damping;
-    }
-
-    public float restitution() {
-        return restitution;
-    }
-
-    public void setRestitution(float restitution) {
-        this.restitution = U.clamp(restitution);
-    }
-
-    public float friction() {
-        return friction;
-    }
-
-    public void setFriction(float friction) {
-        this.friction = U.clamp(friction);
-    }
-
-    public float angularDamping() {
-        return angular_damping;
-    }
-
-    public void sleep(boolean enable) {
-        this.sleeping = enable;
-    }
-
-    public boolean isSleeping() {
-        return sleeping;
-    }
-
-    public boolean colliding() {
-        return colliding;
-    }
-
-    public void setRotatable(boolean enable) {
-        this.rotatable = enable;
-    }
-
-    public boolean isRotatable() {
-        return rotatable;
     }
 
     protected void integrateLinear(float dt) {
@@ -337,16 +235,5 @@ public class PhysicsBody {
         // Integrate the angular velocity to find the new rotation angle
         rotation = rotation_previous + angular_velocity * dt;
     }
-
-    protected boolean bodyMoved() {
-        if (rotation == rotation_previous) {
-            if (position.x == position_previous.x) {
-                if (position.y == position_previous.y) {
-                    return false;
-                }
-            }
-        } return true;
-    }
-
 
 }

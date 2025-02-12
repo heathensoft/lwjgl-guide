@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics;
+package io.github.heathensoft.jagfw.physicsold;
 
 import org.joml.Vector2f;
 

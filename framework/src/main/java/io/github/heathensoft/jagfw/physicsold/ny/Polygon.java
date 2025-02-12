@@ -1,4 +1,4 @@
-package io.github.heathensoft.jagfw.physics.ny;
+package io.github.heathensoft.jagfw.physicsold.ny;
 
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import org.joml.Math;
@@ -10,7 +10,6 @@ import org.joml.primitives.Rectanglef;
  */
 public abstract class Polygon extends Shape {
 
-    public float rotation;
 
     /** @return Vertices of Polygon in world coordinates */
     public abstract Vector2f[] vertices();
