@@ -1,4 +1,4 @@
-package no.hio.jagfw.examples;
+package no.hio.jagfw.testing;
 
 import io.github.heathensoft.jagfw.core.*;
 import io.github.heathensoft.jagfw.core.gfx.Bitmap;

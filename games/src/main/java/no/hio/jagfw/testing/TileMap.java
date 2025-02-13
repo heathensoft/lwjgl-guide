@@ -1,4 +1,4 @@
-package no.hio.jagfw.examples;
+package no.hio.jagfw.testing;
 
 import io.github.heathensoft.jagfw.core.Disposable;
 import io.github.heathensoft.jagfw.core.gfx.Bitmap;
@@ -15,7 +15,7 @@ import org.joml.primitives.Rectanglef;
 
 import java.util.*;
 
-import static no.hio.jagfw.examples.MapSize.CHUNK_SIZE;
+import static no.hio.jagfw.testing.MapSize.CHUNK_SIZE;
 import static org.lwjgl.opengl.GL11.*;
 
 /**

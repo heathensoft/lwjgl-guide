@@ -1,4 +1,4 @@
-package no.hio.jagfw.examples;
+package no.hio.jagfw.testing;
 
 /**
  * Frederik Dahl 12/31/2024

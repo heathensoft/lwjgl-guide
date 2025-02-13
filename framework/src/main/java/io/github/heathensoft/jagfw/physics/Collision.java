@@ -1,6 +1,5 @@
 package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.physicsold.ny.Circle;
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
@@ -13,9 +12,10 @@ import static io.github.heathensoft.jagfw.utils.U.lengthSquared;
  */
 public class Collision {
 
-    private static final GeomContact geom_contact_internal = new GeomContact();
+    private static final RayContact ray_c_0 = new RayContact();
+    private static final GeomContact geo_c_0 = new GeomContact();
 
-    public static boolean bodyBody(Body A, Body B, BodyContact contact) {
+    public static boolean bodyBody(final Body A, final Body B, BodyContact contact) {
         if (A.isStatic() && B.isStatic()) return false;
         final float dx = B.position.x - A.position.x;
         final float dy = B.position.y - A.position.y;
@@ -30,7 +30,7 @@ public class Collision {
         } return false;
     }
 
-    public static boolean bodyGeometry(Body body, Geometry geom, GeomContact contact) {
+    public static boolean bodyGeometry(final Body body, final Geometry geom, GeomContact contact) {
         if (body.isStatic()) return false;
         int num_segments = geom.numSegments();
         if (num_segments >= 1) {
@@ -104,8 +104,7 @@ public class Collision {
         } return false;
     }
 
-
-    public static boolean bodyBlock(Body body, int x, int y, int block_type, GeomContact contact) {
+    public static boolean bodyBlock(final Body body, int x, int y, int block_type, GeomContact contact) {
         if (body.isStatic() || block_type < 0x0 || block_type >= 0xF) return false;
         Geometry[] block_geom = Geometry.blockGeometry(block_type);
         if (block_geom.length == 0) return false;
@@ -116,11 +115,11 @@ public class Collision {
         } else { float MAX_DEPTH = Float.NEGATIVE_INFINITY;
             for (Geometry geom : block_geom) {
                 geom.translation.set(x,y);
-                if (bodyGeometry(body,geom,geom_contact_internal)) {
-                    float depth = geom_contact_internal.depth;
+                if (bodyGeometry(body,geom, geo_c_0)) {
+                    float depth = geo_c_0.depth;
                     if (depth > MAX_DEPTH) {
                         MAX_DEPTH = depth;
-                        contact.normal.set(geom_contact_internal.normal);
+                        contact.normal.set(geo_c_0.normal);
                         contact.geometry = geom;
                         contact.body = body;
                         contact.depth = depth;
@@ -130,10 +129,92 @@ public class Collision {
         }
     }
 
+    public static boolean rayBody(final LineSegment ray, final Body body, RayContact contact) {
+        if (!ray.isValid()) return false;
+        return rayCircle(ray,body.position.x,body.position.y,body.radius,contact);
+    }
 
 
 
-    public static boolean intersectionRayCircle(final LineSegment ray, Vector2f c, float cr, Vector2f dst) {
+
+    public static boolean rayGeom(final LineSegment ray, final Geometry geom, RayContact contact) {
+        if (ray.isValid()) {
+            Vector2f ray_dir = ray.direction();
+            Vector2f[] vertices = geom.vertices;
+            LineSegment geom_edge = new LineSegment();
+            int num_segments = geom.numSegments();
+            float min_dist2 = Float.POSITIVE_INFINITY;
+            for (int i = 0; i < num_segments; i++) {
+                Vector2f p0 = vertices[i];
+                Vector2f p1 = vertices[(i + 1) % vertices.length];
+                contact.normal.set(p1).sub(p0);
+                contact.normal.perpendicular();
+                float dot = contact.normal.dot(ray_dir);
+                if (dot < 0) {
+                    geom_edge.set(p0,p1);
+                    if (geom_edge.intersects(ray,contact.point)) {
+                        Vector2f origin_to_point = new Vector2f();
+                        origin_to_point.set(contact.point).sub(ray.x0,ray.y0);
+                        float len2 = origin_to_point.lengthSquared();
+                        if (len2 < min_dist2) {
+                            contact.ray = ray;
+                            contact.normal.normalize();
+                            min_dist2 = len2;
+                        }
+                    }
+                } else if (!geom.one_way_collision) {
+                    geom_edge.set(p0,p1);
+                    if (geom_edge.intersects(ray,contact.point)) {
+                        Vector2f origin_to_point = new Vector2f();
+                        origin_to_point.set(contact.point).sub(ray.x0,ray.y0);
+                        float len2 = origin_to_point.lengthSquared();
+                        if (len2 < min_dist2) {
+                            contact.ray = ray;
+                            contact.normal.negate();
+                            contact.normal.normalize();
+                            min_dist2 = len2;
+                        }
+                    }
+                }
+            } return min_dist2 < Float.POSITIVE_INFINITY;
+        } return false;
+    }
+
+    public static boolean rayBlock(final LineSegment ray, int x, int y, int block_type, RayContact contact) {
+        if (block_type < 0x0 || block_type >= 0xF) return false;
+        Geometry[] block_geom = Geometry.blockGeometry(block_type);
+        if (block_geom.length == 0) return false;
+        if (block_geom.length == 1) {
+            Geometry geom = block_geom[0];
+            geom.translation.set(x,y);
+            return rayGeom(ray,geom,contact);
+        } else { float MIN_LEN = Float.POSITIVE_INFINITY;
+            for (Geometry geom : block_geom) {
+                geom.translation.set(x,y);
+                if (rayGeom(ray,geom, ray_c_0)) {
+                    float len2 = ray_c_0.lengthSquared();
+                    if (len2 < MIN_LEN) {
+                        contact.normal.set(ray_c_0.normal);
+                        contact.ray.set(ray_c_0.ray);
+                        contact.point.set(ray_c_0.point);
+                        MIN_LEN = len2;
+                    }
+                }
+            } return MIN_LEN < Float.POSITIVE_INFINITY;
+        }
+    }
+
+    public static boolean rayCircle(final LineSegment ray, float cx, float cy, float cr, RayContact contact) {
+        if (cr != 0) {
+            if (intersectionRayCircle(ray,cx,cy,cr,contact.point)) {
+                contact.normal.set(contact.point);
+                contact.normal.sub(cx,cy).normalize();
+                contact.ray = ray;
+                return true; }
+        } return false;
+    }
+
+    public static boolean intersectionRayCircle(final LineSegment ray, final Vector2f c, float cr, Vector2f dst) {
         return intersectionRayCircle(ray,c.x,c.y,cr,dst);
     }
 
@@ -160,11 +241,11 @@ public class Collision {
         } return false;
     }
 
-    public static boolean testRayCircle(LineSegment ray, Vector2f c, float cr) {
+    public static boolean testRayCircle(final LineSegment ray, final Vector2f c, float cr) {
         return testRayCircle(ray,c.x,c.y,cr);
     }
 
-    public static boolean testRayCircle(LineSegment ray, float cx, float cy, float cr) {
+    public static boolean testRayCircle(final LineSegment ray, float cx, float cy, float cr) {
         // Will also return true if ray is inside the circle (contained)
         // All ray circle methods are meant for rays with origin outside the circle
         // Todo: This might not be ideal
@@ -175,7 +256,7 @@ public class Collision {
         return (a * a + b * b) <= U.square(cr);
     }
 
-    public static boolean testPointCircle(Vector2f p, Vector2f c, float cr) {
+    public static boolean testPointCircle(final Vector2f p, final Vector2f c, float cr) {
         return testPointCircle(p.x,p.y,c.x,c.y,cr);
     }
 
@@ -185,7 +266,7 @@ public class Collision {
         return ((a * a + b * b) <= U.square(cr));
     }
 
-    public static boolean testCircleCircle(Vector2f a, float ar, Vector2f b, float br) {
+    public static boolean testCircleCircle(final Vector2f a, float ar, final Vector2f b, float br) {
         return testCircleCircle(a.x,a.y,ar,b.x,b.y,br);
     }
 

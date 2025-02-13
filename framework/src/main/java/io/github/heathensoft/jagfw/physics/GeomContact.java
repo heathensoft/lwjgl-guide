@@ -22,4 +22,6 @@ public class GeomContact {
         float impulse_magnitude = -(1 + e) * dot_normal / body.mass_inverse;
         body.applyImpulse(body.velocity.x * impulse_magnitude,body.velocity.y * impulse_magnitude);
     }
+
+
 }
