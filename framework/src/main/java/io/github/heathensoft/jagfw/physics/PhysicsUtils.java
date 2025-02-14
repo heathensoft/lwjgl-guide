@@ -12,10 +12,10 @@ import static io.github.heathensoft.jagfw.utils.U.pushVec2;
  */
 public class PhysicsUtils {
 
-    private static final int CIRCLE_RESOLUTION = 32;
-    private static final int COLOR_RAY = 0xFF00FFF;
-    private static final int COLOR_STATIC = 0xFFFFF00;
-    private static final int COLOR_DYNAMIC = 0xFF00FF00;
+    public static int CIRCLE_RESOLUTION = 32;
+    public static int COLOR_RAY = 0xFF00FFF;
+    public static int COLOR_STATIC = 0xFFFFF00;
+    public static int COLOR_DYNAMIC = 0xFF00FF00;
     // <- hitbox color
 
 
@@ -37,8 +37,8 @@ public class PhysicsUtils {
         batch.drawLine(ray,COLOR_RAY);
     }
 
-    public static void applyDownwardsGravity(io.github.heathensoft.jagfw.physicsold.ny.Body body, float gravity) {
-        body.addForce(0,-gravity * body.mass);
+    public static void applyDownwardsGravity(Body body, float gravity) {
+        body.addForce(0,-gravity * body.mass());
     }
 
     /**
@@ -48,7 +48,7 @@ public class PhysicsUtils {
      * @param body body
      * @param k drag coefficient
      */
-    public static void applyDrag(io.github.heathensoft.jagfw.physicsold.ny.Body body, float k) {
+    public static void applyDrag(Body body, float k) {
         /*  p = fluid/gas density
             Kd = Drag coefficient
             A = cross-sectional area (Airplane wing)
@@ -73,7 +73,7 @@ public class PhysicsUtils {
      * @param body body
      * @param k friction coefficient
      */
-    public static void applyFriction(io.github.heathensoft.jagfw.physicsold.ny.Body body, float k) {
+    public static void applyFriction(Body body, float k) {
         // Calculate the drag direction (inverse of velocity unit vector)
         if (body.velocity.x == 0 && body.velocity.y == 0) return;
         Vector2f velocity_normalized = popSetVec2(body.velocity);
@@ -90,7 +90,7 @@ public class PhysicsUtils {
      * @param rest_len length of spring at rest
      * @param k "spring stiffness"
      */
-    public static void applySpringForce(io.github.heathensoft.jagfw.physicsold.ny.Body body, Vector2f anchor, float rest_len, float k) {
+    public static void applySpringForce(Body body, Vector2f anchor, float rest_len, float k) {
         // Calculate the distance between the anchor and the object
         Vector2f anchor_to_body = popSetVec2(body.position).sub(anchor);
         // Find the spring displacement considering the rest length
@@ -111,7 +111,7 @@ public class PhysicsUtils {
      * @param rest_len length of spring at rest
      * @param k "spring stiffness"
      */
-    public static void applySpringForce(io.github.heathensoft.jagfw.physicsold.ny.Body A, io.github.heathensoft.jagfw.physicsold.ny.Body B, float rest_len, float k) {
+    public static void applySpringForce(Body A, Body B, float rest_len, float k) {
         // Calculate the distance between the anchor and the object
         Vector2f ba = popSetVec2(A.position).sub(B.position);
         // Find the spring displacement considering the rest length

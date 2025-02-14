@@ -1,16 +1,17 @@
 package io.github.heathensoft.jagfw.physics;
 
 import io.github.heathensoft.jagfw.utils.LineSegment;
+import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 
 /**
- * Contact between a Ray and the environment
+ * Contact info between Ray and the Environment
  * Frederik Dahl 1/31/2025
  */
 public class RayContact {
 
-    public LineSegment ray;
+    public final LineSegment ray = new LineSegment();
     public final Vector2f point = new Vector2f();
     public final Vector2f normal = new Vector2f();
 
@@ -82,6 +83,14 @@ public class RayContact {
      */
     public float length() {
         return Math.sqrt(lengthSquared());
+    }
+
+    public int contactTileCoordinateX() {
+        return U.floor(point.x);
+    }
+
+    public int contactTileCoordinateY() {
+        return U.floor(point.y);
     }
 
 }

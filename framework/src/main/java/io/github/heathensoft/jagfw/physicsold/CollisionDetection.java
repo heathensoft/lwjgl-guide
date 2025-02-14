@@ -561,12 +561,16 @@ public class CollisionDetection {
             if (ab_separation >= ba_separation) {
                 // best separation was from polygon a to polygon b
                 // the penetration was bigger, (the b vertex corner inside a)
+                contact.A = A;
+                contact.B = B;
                 contact.depth = -ab_separation;
                 contact.normal.set(a_edge_normal);
                 contact.start.set(a_point);
                 contact.end.set(a_edge_normal).mul(contact.depth);
                 contact.end.add(contact.start);
             } else {
+                contact.A = A;
+                contact.B = B;
                 contact.depth = -ba_separation;
                 contact.normal.set(b_edge_normal).negate();
                 contact.end.set(b_point);

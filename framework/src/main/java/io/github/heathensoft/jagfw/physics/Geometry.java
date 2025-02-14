@@ -12,6 +12,10 @@ import java.util.List;
  * Frederik Dahl 1/30/2025
  */
 public class Geometry {
+
+    public static final float DEFAULT_FRICTION = 0.05f;
+    public static final float DEFAULT_RESTITUTION = 0.3f;
+
     /**
      * Polygon vertices in "local space" (untranslated)
      */
@@ -30,19 +34,16 @@ public class Geometry {
      */
     public boolean one_way_collision;
 
+    /**
+     * "Bounciness" of geometry (should be in the range of 0 to 1)
+     */
+    public float restitution = DEFAULT_RESTITUTION;
 
     /**
-     * Utility method for "tiled" games (Blocks).
-     * There are 16 configurations of geometry needed for a classical block based game.
-     * Instead of creating geometry for entire "tile maps" (taking up a huge amount of memory for larger worlds)
-     * figure out the block type for blocks close to the body and do collision check with surrounding blocks.
-     * (Translate the block geometry to the tile coordinates).
-     * @param block_type index between 0 and 15
-     * @return block geometry
+     * Friction of geometry (should be in the range of 0 to 1)
+     * (0 is like "ice")
      */
-    public static Geometry[] blockGeometry(int block_type) {
-        return block_geometry_map[block_type];
-    }
+    public float friction = DEFAULT_FRICTION;
 
     public Geometry(Vector2f[] vertices) {
         this.translation = new Vector2f();
@@ -166,178 +167,6 @@ public class Geometry {
                 } else return vertices.length - 1;
             } return 1;
         } return 0;
-    }
-
-    private static final Geometry[][] block_geometry_map;
-
-    static {
-        block_geometry_map = new Geometry[16][];
-        // ###################################################
-        // # # #
-        // #   #
-        // # # #
-        block_geometry_map[0] = new Geometry[1];
-        block_geometry_map[0][0] = new Geometry(4);
-        block_geometry_map[0][0].vertices[0].set(0,0);
-        block_geometry_map[0][0].vertices[1].set(1,0);
-        block_geometry_map[0][0].vertices[2].set(1,1);
-        block_geometry_map[0][0].vertices[3].set(0,1);
-        block_geometry_map[0][0].should_treat_as_polygon = true;
-        block_geometry_map[0][0].one_way_collision = true;
-        // ###################################################
-        // #   #
-        // #   #
-        // # # #
-        block_geometry_map[1] = new Geometry[1];
-        block_geometry_map[1][0] = new Geometry(4);
-        block_geometry_map[1][0].vertices[0].set(0,1);
-        block_geometry_map[1][0].vertices[1].set(0,0);
-        block_geometry_map[1][0].vertices[2].set(1,0);
-        block_geometry_map[1][0].vertices[3].set(1,1);
-        block_geometry_map[1][0].one_way_collision = true;
-        // ###################################################
-        // # # #
-        //     #
-        // # # #
-        block_geometry_map[2] = new Geometry[1];
-        block_geometry_map[2][0] = new Geometry(4);
-        block_geometry_map[2][0].vertices[0].set(0,0);
-        block_geometry_map[2][0].vertices[1].set(1,0);
-        block_geometry_map[2][0].vertices[2].set(1,1);
-        block_geometry_map[2][0].vertices[3].set(0,1);
-        block_geometry_map[2][0].one_way_collision = true;
-        // ###################################################
-        //     #
-        //     #
-        // # # #
-        block_geometry_map[3] = new Geometry[1];
-        block_geometry_map[3][0] = new Geometry(3);
-        block_geometry_map[3][0].vertices[0].set(0,0);
-        block_geometry_map[3][0].vertices[1].set(1,0);
-        block_geometry_map[3][0].vertices[2].set(1,1);
-        block_geometry_map[3][0].one_way_collision = true;
-        // ###################################################
-        // # # #
-        // #
-        // # # #
-        block_geometry_map[4] = new Geometry[1];
-        block_geometry_map[4][0] = new Geometry(4);
-        block_geometry_map[4][0].vertices[0].set(1,1);
-        block_geometry_map[4][0].vertices[1].set(0,1);
-        block_geometry_map[4][0].vertices[2].set(0,0);
-        block_geometry_map[4][0].vertices[3].set(1,0);
-        block_geometry_map[4][0].one_way_collision = true;
-        // ###################################################
-        // #
-        // #
-        // # # #
-        block_geometry_map[5] = new Geometry[1];
-        block_geometry_map[5][0] = new Geometry(3);
-        block_geometry_map[5][0].vertices[0].set(0,1);
-        block_geometry_map[5][0].vertices[1].set(0,0);
-        block_geometry_map[5][0].vertices[2].set(1,0);
-        block_geometry_map[5][0].one_way_collision = true;
-        // ###################################################
-        // # # #
-        //
-        // # # #
-        block_geometry_map[6] = new Geometry[2]; // 2
-        block_geometry_map[6][0] = new Geometry(2);
-        block_geometry_map[6][0].vertices[0].set(0,0);
-        block_geometry_map[6][0].vertices[1].set(1,0);
-        block_geometry_map[6][0].one_way_collision = true;
-        block_geometry_map[6][1] = new Geometry(2);
-        block_geometry_map[6][1].vertices[0].set(1,1);
-        block_geometry_map[6][1].vertices[1].set(0,1);
-        block_geometry_map[6][1].one_way_collision = true;
-        // ###################################################
-        //
-        //
-        // # # #
-        block_geometry_map[7] = new Geometry[1];
-        block_geometry_map[7][0] = new Geometry(2);
-        block_geometry_map[7][0].vertices[0].set(0,0);
-        block_geometry_map[7][0].vertices[1].set(1,0);
-        block_geometry_map[7][0].one_way_collision = true;
-        // ###################################################
-        // # # #
-        // #   #
-        // #   #
-        block_geometry_map[8] = new Geometry[1];
-        block_geometry_map[8][0] = new Geometry(4);
-        block_geometry_map[8][0].vertices[0].set(1,0);
-        block_geometry_map[8][0].vertices[1].set(1,1);
-        block_geometry_map[8][0].vertices[2].set(0,1);
-        block_geometry_map[8][0].vertices[3].set(0,0);
-        block_geometry_map[8][0].one_way_collision = true;
-        // ###################################################
-        // #   #
-        // #   #
-        // #   #
-        block_geometry_map[9] = new Geometry[2]; // 2
-        block_geometry_map[9][0] = new Geometry(2);
-        block_geometry_map[9][0].vertices[0].set(0,1);
-        block_geometry_map[9][0].vertices[1].set(0,0);
-        block_geometry_map[9][0].one_way_collision = true;
-        block_geometry_map[9][1] = new Geometry(2);
-        block_geometry_map[9][1].vertices[0].set(1,0);
-        block_geometry_map[9][1].vertices[1].set(1,1);
-        block_geometry_map[9][1].one_way_collision = true;
-        // ###################################################
-        // # # #
-        //     #
-        //     #
-        block_geometry_map[10] = new Geometry[1];
-        block_geometry_map[10][0] = new Geometry(3);
-        block_geometry_map[10][0].vertices[0].set(1,0);
-        block_geometry_map[10][0].vertices[1].set(1,1);
-        block_geometry_map[10][0].vertices[2].set(0,1);
-        block_geometry_map[10][0].one_way_collision = true;
-        // ###################################################
-        //     #
-        //     #
-        //     #
-        block_geometry_map[11] = new Geometry[1];
-        block_geometry_map[11][0] = new Geometry(2);
-        block_geometry_map[11][0].vertices[0].set(1,0);
-        block_geometry_map[11][0].vertices[1].set(1,1);
-        block_geometry_map[11][0].one_way_collision = true;
-        // ###################################################
-        // # # #
-        // #
-        // #
-        block_geometry_map[12] = new Geometry[1];
-        block_geometry_map[12][0] = new Geometry(3);
-        block_geometry_map[12][0].vertices[0].set(1,1);
-        block_geometry_map[12][0].vertices[1].set(0,1);
-        block_geometry_map[12][0].vertices[2].set(0,0);
-        block_geometry_map[12][0].one_way_collision = true;
-        // ###################################################
-        // #
-        // #
-        // #
-        block_geometry_map[13] = new Geometry[1];
-        block_geometry_map[13][0] = new Geometry(2);
-        block_geometry_map[13][0].vertices[0].set(0,1);
-        block_geometry_map[13][0].vertices[1].set(0,0);
-        block_geometry_map[13][0].one_way_collision = true;
-        // ###################################################
-        // # # #
-        //
-        //
-        block_geometry_map[14] = new Geometry[1];
-        block_geometry_map[14][0] = new Geometry(2);
-        block_geometry_map[14][0].vertices[0].set(1,1);
-        block_geometry_map[14][0].vertices[1].set(0,1);
-        block_geometry_map[14][0].one_way_collision = true;
-        // ###################################################
-        //
-        //
-        //
-        block_geometry_map[15] = new Geometry[1];
-        block_geometry_map[15][0] = new Geometry(0);
-        block_geometry_map[15][0].one_way_collision = true;
-        // ###################################################
     }
 
 }

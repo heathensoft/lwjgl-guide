@@ -78,9 +78,10 @@ public class PhysicsTest extends Game {
         borders.setPolygon(true);
         geometry.add(borders);
 
-        PhysicsGeometry line = new PhysicsGeometry(2);
-        line.vertices[0].set(8,8);
-        line.vertices[1].set(16,12);
+        PhysicsGeometry line = new PhysicsGeometry(3);
+        line.vertices[0].set(16,8);
+        line.vertices[1].set(20,12);
+        line.vertices[2].set(24,8);
         geometry.add(line);
 
         player = new PhysicsBody(new Circle(0.5f),100,6,10);
@@ -129,40 +130,40 @@ public class PhysicsTest extends Game {
         camera.unProjectPosition(mouse_world);
         {   // MOUSE INPUT
 
-            //if (mouse.justClicked(Mouse.LEFT)) {
-            //    PhysicsBody body = new PhysicsBody(new Circle(0.5f),50,mouse_world.x,mouse_world.y);
-            //    body.setFriction(0.2f);
-            //    body.setRestitution(0.8f);
-            //    //body.rotatable = false;
-            //    bodies.add(body);
-            //} else if (mouse.justClicked(Mouse.RIGHT)) {
-            //    PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_world.x,mouse_world.y);
-            //    body.setFriction(0.1f);
-            //    body.setRestitution(0.2f);
-            //    body.setAngularDamping(4.0f);
-            //    bodies.add(body);
-            //}
+            if (mouse.justClicked(Mouse.LEFT)) {
+                PhysicsBody body = new PhysicsBody(new Circle(0.5f),50,mouse_world.x,mouse_world.y);
+                body.setFriction(0.2f);
+                body.setRestitution(0.8f);
+                //body.rotatable = false;
+                bodies.add(body);
+            } else if (mouse.justClicked(Mouse.RIGHT)) {
+                PhysicsBody body = new PhysicsBody(new Box(1),100,mouse_world.x,mouse_world.y);
+                body.setFriction(0.1f);
+                body.setRestitution(0.2f);
+                body.setAngularDamping(4.0f);
+                bodies.add(body);
+            }
         }
 
         ray.set(player.posX(),player.posY(),
                 mouse_world.x,mouse_world.y);
 
         // Block Placement
-        if (mouse.buttonPressed(Mouse.LEFT)) {
-            if (tile_map.contains(mouse_world)) {
-                tile_map.addBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
-            }
-        } else if (mouse.buttonPressed(Mouse.RIGHT)) {
-            if (tile_map.contains(mouse_world)) {
-                tile_map.removeBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
-            }
-        } else if (mouse.justClicked(Mouse.WHEEL)) {
-            PhysicsBody body = new PhysicsBody(new Circle(1.5f),100,mouse_world.x,mouse_world.y);
-            body.setFriction(0.1f);
-            body.setRestitution(0.2f);
-            body.setAngularDamping(4.0f);
-            bodies.add(body);
-        }
+        //if (mouse.buttonPressed(Mouse.LEFT)) {
+        //    if (tile_map.contains(mouse_world)) {
+        //        tile_map.addBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
+        //    }
+        //} else if (mouse.buttonPressed(Mouse.RIGHT)) {
+        //    if (tile_map.contains(mouse_world)) {
+        //        tile_map.removeBlock(U.floor(mouse_world.x),U.floor(mouse_world.y));
+        //    }
+        //} else if (mouse.justClicked(Mouse.WHEEL)) {
+        //    PhysicsBody body = new PhysicsBody(new Circle(1.5f),100,mouse_world.x,mouse_world.y);
+        //    body.setFriction(0.1f);
+        //    body.setRestitution(0.2f);
+        //    body.setAngularDamping(4.0f);
+        //    bodies.add(body);
+        //}
 
         {   // APPLY FORCES
             Vector2f vec = U.popVec2();
@@ -174,8 +175,8 @@ public class PhysicsTest extends Game {
                         }
                     }
                     CommonForces.applyDrag(body,20);
-                    CommonForces.applyFriction(body,300);
-                    //CommonForces.applyDownwardsGravity(body,9.81f);
+                    //CommonForces.applyFriction(body,300);
+                    CommonForces.applyDownwardsGravity(body,9.81f);
                 } body.update(delta_time);
             } U.pushVec2();
         }
@@ -188,6 +189,7 @@ public class PhysicsTest extends Game {
                 PhysicsBody bodyA = bodies.get(i);
                 for (int j = i + 1; j < num_bodies; j++) {
                     PhysicsBody bodyB = bodies.get(j);
+
                     if (CollisionDetection.bodyBody(bodyA,bodyB,body_contact)) {
                         body_contact.resolveCollision();
                     }
@@ -260,13 +262,13 @@ public class PhysicsTest extends Game {
         tile_map.renderBlocks(sprite_batch, camera.frustum);
         sprite_batch.end();
         line_batch.begin(camera);
-        DebugUtils.drawHitBox(hitbox_list,line_batch);
+        //DebugUtils.drawHitBox(hitbox_list,line_batch);
         for (PhysicsBody body : bodies) {
             DebugUtils.drawBody(body,line_batch);
         } for (PhysicsGeometry geom : geometry) {
             DebugUtils.drawGeometry(geom,line_batch);
         }
-        line_batch.drawLine(ray,0xFFFFFF00);
+        //line_batch.drawLine(ray,0xFFFFFF00);
         //line_batch.drawLine(player.position(new Vector2f()),mouse_world,0xFFFFFF00);
         line_batch.end();
     }

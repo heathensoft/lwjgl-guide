@@ -10,9 +10,9 @@ import org.joml.Vector2f;
 public class Body {
 
 
-    public static final float DEFAULT_LINEAR_DAMPING = 1.0f;
-    public static final float DEFAULT_RESTITUTION = 0.5f;
-    public static final float DEFAULT_FRICTION = 0.25f;
+    public static final float DEFAULT_LINEAR_DAMPING = 2.0f;
+    public static final float DEFAULT_RESTITUTION = 0.25f;
+    public static final float DEFAULT_FRICTION = 0.15f;
 
     /**
      * Previous position of the Body (previous update).
