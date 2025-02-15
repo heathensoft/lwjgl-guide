@@ -5,10 +5,9 @@ import io.github.heathensoft.jagfw.core.gfx.Bitmap;
 import io.github.heathensoft.jagfw.core.gfx.Framebuffer;
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
-import io.github.heathensoft.jagfw.physics.Body;
-import io.github.heathensoft.jagfw.physics.Collision;
-import io.github.heathensoft.jagfw.physics.PhysicsUtils;
-import io.github.heathensoft.jagfw.physics.RayContact;
+import io.github.heathensoft.jagfw.physics.*;
+import io.github.heathensoft.jagfw.physics.hitbox.Hitbox;
+import io.github.heathensoft.jagfw.physics.hitbox.Pillbox;
 import io.github.heathensoft.jagfw.utils.Camera2D;
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;
@@ -34,10 +33,13 @@ public class Physics3 extends Game {
     public static final float tile_size = 32;
 
     Body player;
+    Hitbox player_hitbox;
+    LineSegment ray = new LineSegment();
+    Hitbox hitbox_test = new Pillbox(4,2);
+
     Camera2D camera;
     Background background;
     LineBatch line_batch;
-    LineSegment ray = new LineSegment();
     SpriteBatch sprite_batch;
     Vector2f mouse_pos = new Vector2f();
     ArrayList<Body> bodies = new ArrayList<>();
@@ -71,6 +73,9 @@ public class Physics3 extends Game {
         bodies.add(new Body(8,8,1,200));
         bodies.add(new Body(4,8,1,200));
         bodies.add(new Body(8,4,1,200));
+        player_hitbox = new Pillbox(1,2);
+        player_hitbox.offset.y += player.radius;
+        hitbox_test.update(new Vector2f(20,20),0,1);
 
     }
 
@@ -127,9 +132,14 @@ public class Physics3 extends Game {
         if (Collision.rayMap(ray,tilemap,contact)) {
             ray.setP1(contact.point);
         }
+        if (Collision.rayHitbox(ray,hitbox_test,contact)) {
+            ray.setP1(contact.point);
+        }
 
         applyForcesAndUpdate(delta_time);
         Collision.resolve(bodies,tilemap);
+        player_hitbox.update(player.position,0,1);
+
 
     }
 
@@ -138,6 +148,8 @@ public class Physics3 extends Game {
         Framebuffer.viewport();
         background.draw(camera);
         line_batch.begin(camera);
+        PhysicsUtils.drawHitbox(player_hitbox,line_batch);
+        PhysicsUtils.drawHitbox(hitbox_test,line_batch);
         for (Body body : bodies) {
             PhysicsUtils.drawBody(body,line_batch);
         } PhysicsUtils.drawRay(ray,line_batch);

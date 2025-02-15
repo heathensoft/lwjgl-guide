@@ -1,7 +1,10 @@
 package io.github.heathensoft.jagfw.physics;
 
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
+import io.github.heathensoft.jagfw.physics.hitbox.Hitbox;
+import io.github.heathensoft.jagfw.physics.hitbox.Pillbox;
 import io.github.heathensoft.jagfw.utils.LineSegment;
+import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Vector2f;
 
 import static io.github.heathensoft.jagfw.utils.U.popSetVec2;
@@ -13,10 +16,10 @@ import static io.github.heathensoft.jagfw.utils.U.pushVec2;
 public class PhysicsUtils {
 
     public static int CIRCLE_RESOLUTION = 32;
-    public static int COLOR_RAY = 0xFF00FFF;
-    public static int COLOR_STATIC = 0xFFFFF00;
+    public static int COLOR_RAY = 0xFF00FFFF;
+    public static int COLOR_STATIC = 0xFFFFF000;
     public static int COLOR_DYNAMIC = 0xFF00FF00;
-    // <- hitbox color
+    public static int COLOR_HURT_BOX = 0xFFFF00FF;
 
 
     public static void drawBody(Body body, LineBatch batch) {
@@ -30,6 +33,58 @@ public class PhysicsUtils {
             Vector2f v0 = geometry.vertices[i];
             Vector2f v1 = geometry.vertices[(i + 1) % geometry.vertices.length];
             batch.drawLine(v0,v1,COLOR_STATIC);
+        }
+    }
+
+    public static void drawHitbox(Hitbox hitbox, LineBatch batch) {
+        if (hitbox.isValid()) {
+            if (hitbox instanceof Pillbox pill) {
+                Vector2f center = U.popVec2();
+                if (pill.isCircle()) {
+                    pill.circleCenter0(center);
+                    batch.drawCircle(center,pill.radius,CIRCLE_RESOLUTION,COLOR_HURT_BOX);
+                } else { LineSegment edge = U.popLine();
+                    pill.edge0(edge);
+                    batch.drawLine(edge,COLOR_HURT_BOX);
+                    pill.edge1(edge);
+                    batch.drawLine(edge,COLOR_HURT_BOX);
+                    pill.circleCenter0(center);
+                    batch.drawCircle(center,pill.radius,CIRCLE_RESOLUTION,COLOR_HURT_BOX);
+                    pill.circleCenter1(center);
+                    batch.drawCircle(center,pill.radius,CIRCLE_RESOLUTION,COLOR_HURT_BOX);
+                    U.pushLine();
+                } U.pushVec2();
+            }
+        }
+    }
+
+    public static void drawHurtBoxOld(HurtBox hurtbox, LineBatch batch) {
+        if (hurtbox.isValid()) {
+            LineSegment edge = U.popLine();
+            if (hurtbox.rounded) {
+                float radius = hurtbox.circleCollidersRadius();
+                if (hurtbox.width == hurtbox.height) {
+                    // all vertices are centered for circle boxes
+                    Vector2f pos = hurtbox.vertices[0];
+                    batch.drawCircle(pos,radius,CIRCLE_RESOLUTION,COLOR_HURT_BOX);
+                } else {
+                    Vector2f center = U.popVec2();
+                    for (int i = 0; i < 4; i++) {
+                        if (hurtbox.isActiveColliderEdge(i)) {
+                            edge = hurtbox.colliderEdge(i,edge);
+                            batch.drawLine(edge,COLOR_HURT_BOX);
+                        } else {
+                            center = hurtbox.circleColliderCenter(i,center);
+                            batch.drawCircle(center,radius,CIRCLE_RESOLUTION,COLOR_HURT_BOX);
+                        }
+                    } U.pushVec2();
+                }
+            } else {
+                for (int i = 0; i < 4; i++) {
+                    edge = hurtbox.colliderEdge(i,edge);
+                    batch.drawLine(edge,COLOR_HURT_BOX);
+                }
+            } U.pushLine();
         }
     }
 

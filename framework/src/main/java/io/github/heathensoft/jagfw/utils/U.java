@@ -252,6 +252,27 @@ public class U {
         return dst;
     }
 
+    public static boolean testPointCircle(final Vector2f p, final Vector2f c, float cr) {
+        return testPointCircle(p.x,p.y,c.x,c.y,cr);
+    }
+
+    public static boolean testPointCircle(float px, float py, float cx, float cy, float cr) {
+        final float a = cx - px;
+        final float b = cy - py;
+        return ((a * a + b * b) <= square(cr));
+    }
+
+    public static boolean testCircleCircle(final Vector2f a, float ar, final Vector2f b, float br) {
+        return testCircleCircle(a.x,a.y,ar,b.x,b.y,br);
+    }
+
+    public static boolean testCircleCircle(float ax, float ay, float ar, float bx, float by, float br) {
+        final float dx = bx - ax;
+        final float dy = by - ay;
+        final float r = ar + br;
+        return  (dx * dx + dy * dy) <= (r * r);
+    }
+
     public static boolean lineCircleContact(float px, float py, float r, float x0, float y0, float x1, float y1, Vector2f dst) {
         Vector2f p = closestPointOnSegment(px, py, x0, y0, x1, y1, dst);
         float a = p.x - px;

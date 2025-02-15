@@ -33,8 +33,6 @@ public class LineSegment {
     }
 
     public void set(float x0, float y0, float x1, float y1) {
-        Vector4f v = new Vector4f();
-
         this.x0 = x0;
         this.y0 = y0;
         this.x1 = x1;
@@ -73,6 +71,7 @@ public class LineSegment {
         y0 = y1;
         y1 = tmp;
     }
+
 
     public Vector2f p0(Vector2f dst) {
         return dst.set(x0,y0);

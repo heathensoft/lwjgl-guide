@@ -1,5 +1,7 @@
 package io.github.heathensoft.jagfw.physics;
 
+import io.github.heathensoft.jagfw.physics.hitbox.Hitbox;
+import io.github.heathensoft.jagfw.physics.hitbox.Pillbox;
 import io.github.heathensoft.jagfw.utils.LineSegment;
 import io.github.heathensoft.jagfw.utils.U;
 import org.joml.Math;
@@ -143,12 +145,82 @@ public class Collision {
         }
     }
 
+    public static boolean rayHitbox(final LineSegment ray, final Hitbox hitbox, RayContact contact) {
+        if (!(ray.isValid() && hitbox.isValid())) return false;
+        if (hitbox instanceof Pillbox pillbox) {
+            // If ray origin is inside the hitbox we return false
+            if (pillbox.contains(ray.x0,ray.y0)) return false;
+            if (pillbox.isCircle()) {
+                Vector2f center = pillbox.circleCenter0(U.popVec2());
+                U.pushVec2();
+                return rayCircle(ray,center.x,center.y,pillbox.radius,contact);
+            }
+            float MIN_LEN = Float.POSITIVE_INFINITY;
+            {   // check pillbox circles
+                Vector2f center = pillbox.circleCenter0(U.popVec2());
+                if (rayCircle(ray,center.x,center.y,pillbox.radius,RAY_CONTACT)) {
+                    MIN_LEN = RAY_CONTACT.lengthSquared();
+                    contact.ray.set(RAY_CONTACT.ray);
+                    contact.normal.set(RAY_CONTACT.normal);
+                    contact.point.set(RAY_CONTACT.point);
+                } pillbox.circleCenter1(center);
+                if (rayCircle(ray,center.x,center.y,pillbox.radius,RAY_CONTACT)) {
+                    float len = RAY_CONTACT.lengthSquared();
+                    if (len < MIN_LEN) {
+                        MIN_LEN = len;
+                        contact.ray.set(RAY_CONTACT.ray);
+                        contact.normal.set(RAY_CONTACT.normal);
+                        contact.point.set(RAY_CONTACT.point);
+                    }
+                } U.pushVec2();
+            }
+            {
+                // check pillbox edges
+                LineSegment edge = pillbox.edge0(U.popLine());
+                Vector2f ray_dir = ray.direction(U.popVec2());
+                Vector2f edge_normal = edge.normal(U.popVec2());
+                Vector2f point = U.popVec2();
+                float dot = edge_normal.dot(ray_dir);
+                if (dot < 0 && edge.intersects(ray,point)) {
+                    float dx = point.x - ray.x0;
+                    float dy = point.y - ray.y0;
+                    float len = dx * dx + dy * dy;
+                    if (len < MIN_LEN) {
+                        contact.ray.set(ray);
+                        contact.normal.set(edge_normal);
+                        contact.point.set(point);
+                    }
+                }
+                pillbox.edge1(edge);
+                // since the two edge normals point in the opposite dir
+                // we can just negate the dot product
+                if (-dot < 0 && edge.intersects(ray,point)) {
+                    float dx = point.x - ray.x0;
+                    float dy = point.y - ray.y0;
+                    float len = dx * dx + dy * dy;
+                    if (len < MIN_LEN) {
+                        contact.ray.set(ray);
+                        contact.normal.set(edge_normal.negate());
+                        contact.point.set(point);
+                    }
+                } U.pushLine();
+                U.pushVec2(3);
+            } return MIN_LEN < Float.POSITIVE_INFINITY;
+        } return false;
+    }
+
     public static boolean rayMap(final LineSegment ray, final BlockLayout layout, RayContact contact) {
         // https://lodev.org/cgtutor/raycasting.html
         // https://til.zimventures.com/GameMaker/dda
         if (ray.isValid()) {
             int tile_x = U.floor(ray.x0);
             int tile_y = U.floor(ray.y0);
+            if (layout.contains(tile_x,tile_y)) {
+                if (layout.isBlock(tile_x,tile_y)) {
+                    // if inside a block, ignore ray collisions
+                    return false;
+                }
+            }
             if (tile_x == U.floor(ray.x1) && tile_y == U.floor(ray.y1)) {
                 // Don't check if the ray is entirely inside a single tile
                 return false;
@@ -366,26 +438,6 @@ public class Collision {
         return (a * a + b * b) <= U.square(cr);
     }
 
-    public static boolean testPointCircle(final Vector2f p, final Vector2f c, float cr) {
-        return testPointCircle(p.x,p.y,c.x,c.y,cr);
-    }
-
-    public static boolean testPointCircle(float px, float py, float cx, float cy, float cr) {
-        final float a = cx - px;
-        final float b = cy - py;
-        return ((a * a + b * b) <= U.square(cr));
-    }
-
-    public static boolean testCircleCircle(final Vector2f a, float ar, final Vector2f b, float br) {
-        return testCircleCircle(a.x,a.y,ar,b.x,b.y,br);
-    }
-
-    public static boolean testCircleCircle(float ax, float ay, float ar, float bx, float by, float br) {
-        final float dx = bx - ax;
-        final float dy = by - ay;
-        final float r = ar + br;
-        return  (dx * dx + dy * dy) <= (r * r);
-    }
 
     private static boolean bodyGeometry(final Body body, final Geometry geometry, GeomContact contact) {
         if (body.isStatic()) return false;
