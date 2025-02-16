@@ -1,6 +1,6 @@
 package io.github.heathensoft.jagfw.core;
 
-import io.github.heathensoft.jagfw.utils.IntQueue;
+import io.github.heathensoft.jagfw.core.utils.IntQueue;
 
 import java.util.ArrayList;
 import java.util.List;

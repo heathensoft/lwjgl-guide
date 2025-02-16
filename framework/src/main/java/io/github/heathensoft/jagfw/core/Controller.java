@@ -1,6 +1,6 @@
 package io.github.heathensoft.jagfw.core;
 
-import io.github.heathensoft.jagfw.utils.U;
+import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFWGamepadState;

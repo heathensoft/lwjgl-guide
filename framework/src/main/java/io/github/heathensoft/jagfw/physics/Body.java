@@ -1,6 +1,6 @@
 package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.utils.U;
+import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Vector2f;
 
 /**

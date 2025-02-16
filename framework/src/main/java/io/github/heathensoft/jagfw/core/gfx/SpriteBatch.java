@@ -1,6 +1,9 @@
 package io.github.heathensoft.jagfw.core.gfx;
 
-import io.github.heathensoft.jagfw.utils.*;
+import io.github.heathensoft.jagfw.core.utils.Camera2D;
+import io.github.heathensoft.jagfw.core.utils.Color;
+import io.github.heathensoft.jagfw.core.utils.Resources;
+import io.github.heathensoft.jagfw.core.utils.U;
 import io.github.heathensoft.jagfw.core.Disposable;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;

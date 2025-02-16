@@ -1,12 +1,12 @@
 package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.utils.LineSegment;
-import io.github.heathensoft.jagfw.utils.U;
+import io.github.heathensoft.jagfw.core.utils.LineSegment;
+import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
 
 /**
- * Contact info between Ray and the Environment
+ * Contact info between Ray and Environment
  * Frederik Dahl 1/31/2025
  */
 public class RayContact {
@@ -21,6 +21,9 @@ public class RayContact {
      * of the original length before the contact.
      * (It's shorter than the original)
      * Could be useful for bouncing bullets, lightning bolts etc.
+     * <p>Be careful with infinite reflections. This could occur if the ray origin lays inside
+     * the body or hitbox you tested for. If the length (or length squared) of this is 0,
+     * the contact point == ray origin. The reflection would then have the same origin nad length as this.</p>
      * @return new Ray
      */
     public LineSegment reflect() {
@@ -31,8 +34,10 @@ public class RayContact {
      * Reflect the Ray of the contact surface.
      * The new Ray length is the remainder
      * of the original length before the contact.
-     * (It's shorter than the original)
      * Could be useful for bouncing bullets, lightning bolts etc.
+     * <p>Be careful with infinite reflections. This could occur if the ray origin lays inside
+     * the body or hitbox you tested for. If the length (or length squared) of this is 0,
+     * the contact point == ray origin. The reflection would then have the same origin nad length as this.</p>
      * @param dst resulting reflection
      * @return dst
      */

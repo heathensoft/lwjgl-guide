@@ -1,7 +1,7 @@
 package io.github.heathensoft.jagfw.core.gfx;
 
 import io.github.heathensoft.jagfw.core.Disposable;
-import io.github.heathensoft.jagfw.utils.Color;
+import io.github.heathensoft.jagfw.core.utils.Color;
 import org.joml.Math;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
@@ -10,7 +10,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import static io.github.heathensoft.jagfw.utils.U.*;
+import static io.github.heathensoft.jagfw.core.utils.U.*;
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.stb.STBImageWrite.stbi_flip_vertically_on_write;
 import static org.lwjgl.stb.STBImageWrite.stbi_write_png;

@@ -1,16 +1,14 @@
 package io.github.heathensoft.jagfw.physics;
 
-import io.github.heathensoft.jagfw.physics.hitbox.Hitbox;
-import io.github.heathensoft.jagfw.physics.hitbox.Pillbox;
-import io.github.heathensoft.jagfw.utils.LineSegment;
-import io.github.heathensoft.jagfw.utils.U;
+import io.github.heathensoft.jagfw.core.utils.LineSegment;
+import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Math;
 import org.joml.Vector2f;
+import org.joml.primitives.Rectanglef;
 
 import java.util.List;
 
-import static io.github.heathensoft.jagfw.utils.U.*;
-import static io.github.heathensoft.jagfw.utils.U.cross;
+import static io.github.heathensoft.jagfw.core.utils.U.*;
 
 /**
  * Main class for collision detection.
@@ -89,7 +87,6 @@ public class Collision {
         }
     }
 
-
     /**
      * Checks whether a Body is colliding with a tile map (blocks).
      * Only immediately surrounding tiles are checked.
@@ -145,70 +142,6 @@ public class Collision {
         }
     }
 
-    public static boolean rayHitbox(final LineSegment ray, final Hitbox hitbox, RayContact contact) {
-        if (!(ray.isValid() && hitbox.isValid())) return false;
-        if (hitbox instanceof Pillbox pillbox) {
-            // If ray origin is inside the hitbox we return false
-            if (pillbox.contains(ray.x0,ray.y0)) return false;
-            if (pillbox.isCircle()) {
-                Vector2f center = pillbox.circleCenter0(U.popVec2());
-                U.pushVec2();
-                return rayCircle(ray,center.x,center.y,pillbox.radius,contact);
-            }
-            float MIN_LEN = Float.POSITIVE_INFINITY;
-            {   // check pillbox circles
-                Vector2f center = pillbox.circleCenter0(U.popVec2());
-                if (rayCircle(ray,center.x,center.y,pillbox.radius,RAY_CONTACT)) {
-                    MIN_LEN = RAY_CONTACT.lengthSquared();
-                    contact.ray.set(RAY_CONTACT.ray);
-                    contact.normal.set(RAY_CONTACT.normal);
-                    contact.point.set(RAY_CONTACT.point);
-                } pillbox.circleCenter1(center);
-                if (rayCircle(ray,center.x,center.y,pillbox.radius,RAY_CONTACT)) {
-                    float len = RAY_CONTACT.lengthSquared();
-                    if (len < MIN_LEN) {
-                        MIN_LEN = len;
-                        contact.ray.set(RAY_CONTACT.ray);
-                        contact.normal.set(RAY_CONTACT.normal);
-                        contact.point.set(RAY_CONTACT.point);
-                    }
-                } U.pushVec2();
-            }
-            {
-                // check pillbox edges
-                LineSegment edge = pillbox.edge0(U.popLine());
-                Vector2f ray_dir = ray.direction(U.popVec2());
-                Vector2f edge_normal = edge.normal(U.popVec2());
-                Vector2f point = U.popVec2();
-                float dot = edge_normal.dot(ray_dir);
-                if (dot < 0 && edge.intersects(ray,point)) {
-                    float dx = point.x - ray.x0;
-                    float dy = point.y - ray.y0;
-                    float len = dx * dx + dy * dy;
-                    if (len < MIN_LEN) {
-                        contact.ray.set(ray);
-                        contact.normal.set(edge_normal);
-                        contact.point.set(point);
-                    }
-                }
-                pillbox.edge1(edge);
-                // since the two edge normals point in the opposite dir
-                // we can just negate the dot product
-                if (-dot < 0 && edge.intersects(ray,point)) {
-                    float dx = point.x - ray.x0;
-                    float dy = point.y - ray.y0;
-                    float len = dx * dx + dy * dy;
-                    if (len < MIN_LEN) {
-                        contact.ray.set(ray);
-                        contact.normal.set(edge_normal.negate());
-                        contact.point.set(point);
-                    }
-                } U.pushLine();
-                U.pushVec2(3);
-            } return MIN_LEN < Float.POSITIVE_INFINITY;
-        } return false;
-    }
-
     public static boolean rayMap(final LineSegment ray, final BlockLayout layout, RayContact contact) {
         // https://lodev.org/cgtutor/raycasting.html
         // https://til.zimventures.com/GameMaker/dda
@@ -258,7 +191,7 @@ public class Collision {
                     if (distance < ray_len) {
                         if (layout.contains(tile_x,tile_y)) {
                             if (layout.isBlock(tile_x,tile_y)) {
-                                LineSegment edge = U.popLine();
+                                LineSegment edge = popLine();
                                 if (step_x > 0) {
                                     edge.x0 = tile_x;
                                     edge.y0 = tile_y + 1;
@@ -288,7 +221,7 @@ public class Collision {
                         if (layout.contains(tile_x,tile_y)) {
                             if (layout.isBlock(tile_x,tile_y)) {
                                 if (layout.isBlock(tile_x,tile_y)) {
-                                    LineSegment edge = U.popLine();
+                                    LineSegment edge = popLine();
                                     if (step_y > 0) {
                                         edge.x0 = tile_x;
                                         edge.y0 = tile_y;
@@ -322,8 +255,7 @@ public class Collision {
                 contact.ray.set(RAY_CONTACT.ray);
                 contact.normal.set(RAY_CONTACT.normal);
                 contact.point.set(RAY_CONTACT.point);
-                RAY_INTERNAL.setP1(contact.point);
-            }
+                RAY_INTERNAL.setP1(contact.point); }
         } return RAY_INTERNAL.lengthSquared() < ray.lengthSquared();
     }
 
@@ -386,58 +318,148 @@ public class Collision {
         return rayCircle(ray,body.position.x,body.position.y,body.radius,contact);
     }
 
+    public static boolean rayConvexPolygon(final LineSegment ray, final Vector2f[] vertices, RayContact contact) {
+        if (ray.isValid() && vertices.length > 2) {
+            Vector2f ray_dir = ray.direction();
+            LineSegment edge = new LineSegment();
+            boolean intersect_from_inside = false;
+            for (int i = 0; i < vertices.length; i++) {
+                Vector2f p0 = vertices[i];
+                Vector2f p1 = vertices[(i + 1) % vertices.length];
+                edge.set(p0,p1);
+                if (edge.isValid()) {
+                    contact.normal.set(p1).sub(p0);
+                    contact.normal.perpendicular();
+                    if (edge.intersects(ray,contact.point)) {
+                        float dot = contact.normal.dot(ray_dir);
+                        if (dot < 0) {
+                            contact.ray.set(ray);
+                            contact.normal.normalize();
+                            U.pushLine();
+                            return true;
+                        } else intersect_from_inside = true;
+                    }
+                }
+            }
+            if (intersect_from_inside) {
+                // at this point we have intersected the polygon
+                // from the inside, but not from the outside.
+                // This means the ray origin is on the inside,
+                // and we set the collision point to ray origin.
+                // The normal is the ray direction negated.
+                // For this to work as intended it's important
+                // to:
+                // 1. order the polygon vertices in anti-clockwise order.
+                // 2. for the polygon to be convex.
+                contact.normal.set(ray_dir).negate();
+                contact.point.set(ray.x0,ray.y0);
+                contact.ray.set(ray);
+                return true;
+            }
+        } return false;
+    }
+
+    public static boolean rayCircle(final LineSegment ray, final Vector2f c, float cr, RayContact contact) {
+        return rayCircle(ray,c.x,c.y,cr,contact);
+    }
+
     public static boolean rayCircle(final LineSegment ray, float cx, float cy, float cr, RayContact contact) {
         if (ray.isValid() && cr > 0) {
             if (intersectionRayCircle(ray,cx,cy,cr,contact.point)) {
                 contact.normal.set(contact.point);
                 contact.normal.sub(cx,cy).normalize();
-                contact.ray.set(ray);
+                // if normal in NaN we set it to ray direction neg
+                // This happens if ray origin is inside the circle
+                if (!contact.normal.isFinite()) {
+                    ray.direction(contact.normal).negate();
+                } contact.ray.set(ray);
                 return true; }
         } return false;
     }
 
-    public static boolean intersectionRayCircle(final LineSegment ray, final Vector2f c, float cr, Vector2f dst) {
-        return intersectionRayCircle(ray,c.x,c.y,cr,dst);
-    }
-
-    public static boolean intersectionRayCircle(final LineSegment ray, float cx, float cy, float cr, Vector2f dst) {
-        // If ray origin is inside the circle we ignore it.
-        // All ray circle methods are meant for rays with origin outside the circle
-        // Todo: This might not be ideal
-        // The reason is that bodies might be "shooting a ray" from it's center (inside itself)
-        // And we don't want to intersect with the source of the ray.
-        if (!testPointCircle(ray.x0,ray.y0,cx,cy,cr)) {
-            Vector2f p = ray.closestPoint(cx,cy,dst);
-            final float r2 = U.square(cr);
-            final float a = p.x - cx;
-            final float b = p.y - cy;
-            final float l2 = a * a + b * b;
-            if (l2 < r2) {
-                final float c = ray.x0 - p.x;
-                final float d = ray.y0 - p.y;
-                final float h = Math.sqrt(r2 - l2);
-                final float invLen = Math.invsqrt(c * c + d * d);
-                dst.add(c * invLen * h,d * invLen * h);
+    public static boolean rayBox(final LineSegment ray, final Rectanglef rect, RayContact contact) {
+        if (ray.isValid() && rect.isValid()) {
+            if (rect.containsPoint(ray.x0,ray.y0)) {
+                ray.p0(contact.point);
+                ray.direction(contact.normal).negate();
+                contact.ray.set(ray);
                 return true;
-            } return l2 == r2;
+            } else try {
+                LineSegment edge = popLine();
+                Vector2f edge_normal = U.popVec2();
+                Vector2f ray_dir = ray.direction(U.popVec2());
+                Vector2f point = U.popVec2();
+                // v0 -> v1
+                edge.x0 = rect.minX;
+                edge.y0 = rect.maxY;
+                edge.x1 = rect.minX;
+                edge.y1 = rect.minY;
+                edge.normal(edge_normal);
+                float dot = edge_normal.dot(ray_dir);
+                if (dot < 0 && edge.intersects(ray,point)) {
+                    contact.ray.set(ray);
+                    contact.normal.set(edge_normal);
+                    contact.point.set(point);
+                    return true;
+                }
+                // v2 -> v3
+                edge.x0 = rect.maxX;
+                edge.y0 = rect.minY;
+                edge.x1 = rect.maxX;
+                edge.y1 = rect.maxY;
+                if (-dot < 0 && edge.intersects(ray,point)) {
+                    contact.ray.set(ray);
+                    contact.normal.set(edge_normal);
+                    contact.normal.negate();
+                    contact.point.set(point);
+                    return true;
+                }
+                // v1 -> v2
+                edge.x0 = rect.minX;
+                edge.y0 = rect.minY;
+                edge.x1 = rect.maxX;
+                edge.y1 = rect.minY;
+                edge.normal(edge_normal);
+                dot = edge_normal.dot(ray_dir);
+                if (dot < 0 && edge.intersects(ray,point)) {
+                    contact.ray.set(ray);
+                    contact.normal.set(edge_normal);
+                    contact.point.set(point);
+                    return true;
+                }
+                // v3 -> v0
+                edge.x0 = rect.maxX;
+                edge.y0 = rect.maxY;
+                edge.x1 = rect.minX;
+                edge.y1 = rect.maxY;
+                if (-dot < 0 && edge.intersects(ray,point)) {
+                    contact.ray.set(ray);
+                    contact.normal.set(edge_normal);
+                    contact.normal.negate();
+                    contact.point.set(point);
+                    return true;
+                }
+            } finally {
+                U.pushLine();
+                U.pushVec2(3);
+            }
         } return false;
     }
 
-    public static boolean testRayCircle(final LineSegment ray, final Vector2f c, float cr) {
+
+    private static boolean testRayCircle(final LineSegment ray, final Vector2f c, float cr) {
         return testRayCircle(ray,c.x,c.y,cr);
     }
 
-    public static boolean testRayCircle(final LineSegment ray, float cx, float cy, float cr) {
+    private static boolean testRayCircle(final LineSegment ray, float cx, float cy, float cr) {
         // Will also return true if ray is inside the circle (contained)
         // All ray circle methods are meant for rays with origin outside the circle
-        // Todo: This might not be ideal
         Vector2f p = ray.closestPoint(cx,cy,U.popVec2());
         U.pushVec2();
         final float a = p.x - cx;
         final float b = p.y - cy;
         return (a * a + b * b) <= U.square(cr);
     }
-
 
     private static boolean bodyGeometry(final Body body, final Geometry geometry, GeomContact contact) {
         if (body.isStatic()) return false;
@@ -509,6 +531,31 @@ public class Collision {
                 contact.restitution = geometry.restitution;
                 return true;
             }
+        } return false;
+    }
+
+    private static boolean intersectionRayCircle(final LineSegment ray, final Vector2f c, float cr, Vector2f dst) {
+        return intersectionRayCircle(ray,c.x,c.y,cr,dst);
+    }
+
+    private static boolean intersectionRayCircle(final LineSegment ray, float cx, float cy, float cr, Vector2f dst) {
+        if (ray.isValid()) {
+            if (U.testPointCircle(ray.x0,ray.y0,cx,cy,cr)) {
+                dst.set(ray.x0,ray.y0);
+                return true;
+            } Vector2f p = ray.closestPoint(cx,cy,dst);
+            final float r2 = U.square(cr);
+            final float a = p.x - cx;
+            final float b = p.y - cy;
+            final float l2 = a * a + b * b;
+            if (l2 < r2) {
+                final float c = ray.x0 - p.x;
+                final float d = ray.y0 - p.y;
+                final float h = Math.sqrt(r2 - l2);
+                final float invLen = Math.invsqrt(c * c + d * d);
+                dst.add(c * invLen * h,d * invLen * h);
+                return true;
+            } return l2 == r2;
         } return false;
     }
 

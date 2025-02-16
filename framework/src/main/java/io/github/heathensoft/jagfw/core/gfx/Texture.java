@@ -1,7 +1,7 @@
 package io.github.heathensoft.jagfw.core.gfx;
 
 import io.github.heathensoft.jagfw.core.Disposable;
-import io.github.heathensoft.jagfw.utils.U;
+import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Math;
 import org.joml.Vector2i;
 import org.joml.Vector3i;

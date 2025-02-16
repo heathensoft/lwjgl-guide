@@ -1,45 +1,19 @@
-package io.github.heathensoft.jagfw.physics;
+package no.hio.jagfw.testing.physicsold.ny;
 
-import io.github.heathensoft.jagfw.core.gfx.LineBatch;
-import io.github.heathensoft.jagfw.core.utils.LineSegment;
-import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Vector2f;
 
 import static io.github.heathensoft.jagfw.core.utils.U.popSetVec2;
 import static io.github.heathensoft.jagfw.core.utils.U.pushVec2;
 
 /**
- * Frederik Dahl 1/31/2025
+ * Frederik Dahl 1/24/2025
  */
-public class PhysicsUtils {
-
-    public static int CIRCLE_RESOLUTION = 32;
-    public static int COLOR_RAY = 0xFF00FFFF;
-    public static int COLOR_STATIC = 0xFFFFF000;
-    public static int COLOR_DYNAMIC = 0xFF00FF00;
-    public static int COLOR_HURT_BOX = 0xFFFF00FF;
+public class CommonForces {
 
 
-    public static void drawBody(Body body, LineBatch batch) {
-        int color = body.isStatic() ? COLOR_STATIC : COLOR_DYNAMIC;
-        batch.drawCircle(body.position,body.radius,CIRCLE_RESOLUTION,color);
-    }
-
-    public static void drawGeometry(Geometry geometry, LineBatch batch) {
-        int num_segments = geometry.numSegments();
-        for (int i = 0; i < num_segments; i++) {
-            Vector2f v0 = geometry.vertices[i];
-            Vector2f v1 = geometry.vertices[(i + 1) % geometry.vertices.length];
-            batch.drawLine(v0,v1,COLOR_STATIC);
-        }
-    }
-
-    public static void drawRay(LineSegment ray, LineBatch batch) {
-        batch.drawLine(ray,COLOR_RAY);
-    }
 
     public static void applyDownwardsGravity(Body body, float gravity) {
-        body.addForce(0,-gravity * body.mass());
+        body.addForce(0,-gravity * body.mass);
     }
 
     /**
@@ -126,5 +100,4 @@ public class PhysicsUtils {
         B.addForce(-ba.x,-ba.y);
         pushVec2();
     }
-
 }

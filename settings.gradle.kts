@@ -1,7 +1,8 @@
 rootProject.name = "lwjgl-guide"
 
 include("framework")
-include("games")
+include("game")
+include("testing")
 //include("chapter00")
 //include("chapter01")
 //include("chapter02")

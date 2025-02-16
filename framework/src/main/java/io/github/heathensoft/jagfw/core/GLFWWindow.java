@@ -1,6 +1,6 @@
 package io.github.heathensoft.jagfw.core;
 
-import io.github.heathensoft.jagfw.utils.OS;
+import io.github.heathensoft.jagfw.core.utils.OS;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.*;
