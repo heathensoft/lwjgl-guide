@@ -76,6 +76,7 @@ public class Engine {
             }
             try {
                 time.start();
+                double alpha;
                 double fixed_time_step;
                 double time_accumulator = 0.0;
                 while (!window.shouldClose()) {
@@ -94,10 +95,16 @@ public class Engine {
                         if (!window.isMinimized()) {
                             window.processInput((float)fixed_time_step);
                         }
-                        game.update((float) fixed_time_step);
+                        game.update((float)fixed_time_step);
                         time.incrementUpsCounter();
                         time_accumulator -= fixed_time_step;
                     }
+                    // alpha: how close we were to the next game update
+                    // We can use alpha when rendering, by projecting positions
+                    // into the future based on current velocity
+                    // As far as I know, this is not a very common technique
+                    // But it can optionally be applied to help smoothen rendering
+                    alpha = time_accumulator / fixed_time_step;
                     game.state = RENDERING;
                     if (!window.isMinimized()) {
                         if (window.shouldChangeGameResolution()) {
@@ -112,7 +119,7 @@ public class Engine {
                          *  Game render
                          * Todo: "alpha" as argument to game.render()
                          */
-                        game.render();
+                        game.render((float)alpha);
 
                         /*
                          *  Swap the back and the front buffers in order to display

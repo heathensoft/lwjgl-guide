@@ -2,7 +2,6 @@ package io.github.heathensoft.jagfw.physics;
 
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.core.utils.LineSegment;
-import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Vector2f;
 
 import static io.github.heathensoft.jagfw.core.utils.U.popSetVec2;

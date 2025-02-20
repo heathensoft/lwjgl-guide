@@ -135,7 +135,7 @@ public class Physics3 extends Game {
 
     }
 
-    protected void render() {
+    protected void render(float alpha) {
         Framebuffer.bindDefault();
         Framebuffer.viewport();
         background.draw(camera);

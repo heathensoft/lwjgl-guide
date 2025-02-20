@@ -10,12 +10,10 @@ import static java.lang.Math.min;
  *
  * Utility class for converting between color spaces:
  * <a href="https://www.easyrgb.com/en/math.php">EasyRGB</a>
- *
  * IntColor:
  * -------------------------
  * MSB | a | b | g | r | LSB
  * -------------------------
- *
  * Frederik Dahl 12/9/2024
  */
 public class Color {

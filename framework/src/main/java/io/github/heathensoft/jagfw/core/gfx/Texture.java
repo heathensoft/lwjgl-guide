@@ -26,18 +26,14 @@ import static org.lwjgl.opengl.GL43.glTextureView;
  * @see <a href="https://www.khronos.org/opengl/wiki/Texture">Texture</a>
  * @see <a href="https://www.khronos.org/opengl/wiki/Pixel_Transfer">Pixel Transfer Operations</a>
  * @see <a href="https://stackoverflow.com/questions/8866904/differences-and-relationship-between-glactivetexture-and-glbindtexture">Bind/Actives</a>
- *
  * Generate -> allocate -> upload -> generate mipmap
- *
  * On Packing / unpacking:
  * Pixel transfers can either go from user memory to OpenGL memory,
  * or from OpenGL memory to user memory (the user memory can be client memory or buffer objects).
  * Pixel data in user memory is said to be packed.
  * Therefore, transfers to OpenGL memory are called unpack operations,
  * and transfers from OpenGL memory are called pack operations.
- *
  * Valid targets:
- *
  *  0 - GL_TEXTURE_1D,
  *  1 - GL_TEXTURE_2D,
  *  2 - GL_TEXTURE_3D,

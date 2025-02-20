@@ -11,7 +11,6 @@ import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 /**
  * The keyboard object consumes glfw key and character callbacks.
  * use to query keyboard input. Input is processed once each frame.
- *
  * <a href="https://www.glfw.org/docs/3.3/input_guide.html#input_key">glfw key input</a>
  * <a href="https://www.glfw.org/docs/3.3/group__keys.html">glfw key layout</a>
  * <a href="https://learn.parallax.com/support/reference/ascii-table-0-127">ascii table</a>

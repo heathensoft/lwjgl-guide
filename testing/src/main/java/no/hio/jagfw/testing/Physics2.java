@@ -103,7 +103,7 @@ public class Physics2 extends Game {
         //rayCasting(list_of_rays, player);
     }
 
-    protected void render() {
+    protected void render(float alpha) {
         Framebuffer.bindDefault();
         Framebuffer.viewport();
         background.draw(camera);

@@ -42,7 +42,7 @@ public abstract class Game {
 
     protected abstract void update(float delta_time);
 
-    protected abstract void render();
+    protected abstract void render(float alpha);
 
     protected abstract void exit();
 }
