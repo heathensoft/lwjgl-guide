@@ -12,8 +12,6 @@ import static java.lang.Long.numberOfTrailingZeros;
  */
 public class ECS {
 
-    // todo: system timers
-
     public static final int MIN_COMPONENT_TYPES = 16;
     public static final int MAX_COMPONENT_TYPES = 256;
     public static final int MIN_ENTITY_CAPACITY = 128;
@@ -24,7 +22,7 @@ public class ECS {
     private final List<ComponentMask> system_denied_masks;
     private final List<ComponentMask> entity_component_masks;
     private final Object[][] entity_components;
-    private final EntityHandles entity_handles;
+    private final EntityPool entity_handles;
     private Object shared_context;
 
     public ECS(int entity_capacity, int component_type_capacity) {
@@ -37,7 +35,7 @@ public class ECS {
         system_denied_masks = new ArrayList<>(64);
         entity_component_masks = new ArrayList<>(entity_capacity);
         entity_components = new Object[entity_capacity][component_type_capacity];
-        entity_handles = new EntityHandles(entity_capacity);
+        entity_handles = new EntityPool(entity_capacity);
         for (int i = 0; i < entity_capacity; i++) {
             entity_component_masks.add(new ComponentMask(component_type_capacity));
         }
@@ -46,18 +44,37 @@ public class ECS {
     public void update(float dt) {
         int num_systems = system_pipeline.size();
         for (int s = 0; s < num_systems; s++) {
-            ECSystem pipeline_next = system_pipeline.get(s);
-            if (!pipeline_next.isPaused()) {
-                if (pipeline_next instanceof ProcessSystem system) {
+            ECSystem next = system_pipeline.get(s);
+            if (!next.isPaused()) {
+                if (next instanceof ProcessSystem system) {
                     system.preProcessing(this,dt);
                     boolean[] entity_array = entity_handles.array();
-                    int peak = entity_handles.peak();
+                    final int peak = entity_handles.peak();
                     for (int i = 0; i < peak; i++) {
                         if (entity_array[i]) {
                             if (entityMemberOf(i,s))
                                 system.process(this,i,dt);}
                     } system.postProcessing(this,dt);
-                } else pipeline_next.processSystem(this,dt);
+                } else next.processSystem(this,dt);
+            }
+        }
+    }
+
+    public void render(float alpha) {
+        int num_systems = system_pipeline.size();
+        for (int s = 0; s < num_systems; s++) {
+            ECSystem next = system_pipeline.get(s);
+            if (!next.isPaused()) {
+                if (next instanceof RenderSystem system) {
+                    system.preRender(this,alpha);
+                    boolean[] entity_array = entity_handles.array();
+                    final int peak = entity_handles.peak();
+                    for (int i = 0; i < peak; i++) {
+                        if (entity_array[i]) {
+                            if (entityMemberOf(i,s))
+                                system.render(this,i,alpha); }
+                    } system.postRender(this,alpha);
+                } else next.renderSystem(this,alpha);
             }
         }
     }
@@ -65,8 +82,7 @@ public class ECS {
     public void addSystemToPipeline(ECSystem system) {
         Class<? extends ECSystem> system_class = system.getClass();
         ECSystem existing = system_class_to_system.putIfAbsent(system_class,system);
-        if(existing == null) {
-            List<Class<?>> required_components = new LinkedList<>();
+        if(existing == null) { List<Class<?>> required_components = new LinkedList<>();
             List<Class<?>> blocking_components = new LinkedList<>();
             ComponentMask access_mask = new ComponentMask(componentTypeLimit());
             ComponentMask denied_mask = new ComponentMask(componentTypeLimit());
@@ -180,7 +196,7 @@ public class ECS {
         return ComponentMask.checkRequirements(entity_mask,system_access,system_denied);
     }
 
-    private static final class EntityHandles {
+    private static final class EntityPool {
 
         private int peak;
         private int gaps;
@@ -188,7 +204,7 @@ public class ECS {
         private final int cap;
         private final boolean[] slots;
 
-        EntityHandles(int capacity) {
+        EntityPool(int capacity) {
             peak = -1;
             cap = capacity;
             slots = new boolean[cap];
