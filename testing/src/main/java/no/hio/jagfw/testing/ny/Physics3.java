@@ -97,11 +97,7 @@ public class Physics3 extends Game {
                 player.applyImpulse(v);
             }
         }
-        if (keys.justPressed(GLFW_KEY_F1)) {
-            Bitmap bitmap = Framebuffer.screenshot();
-            bitmap.compressToDisk("screenshot.png",true);
-            bitmap.dispose();
-        }
+
 
         camera.follow(player.position,delta_time);
         camera.refresh();

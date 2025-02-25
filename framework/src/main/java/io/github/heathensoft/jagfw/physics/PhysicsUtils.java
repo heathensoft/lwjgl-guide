@@ -2,6 +2,7 @@ package io.github.heathensoft.jagfw.physics;
 
 import io.github.heathensoft.jagfw.core.gfx.LineBatch;
 import io.github.heathensoft.jagfw.core.utils.LineSegment;
+import io.github.heathensoft.jagfw.core.utils.U;
 import org.joml.Vector2f;
 
 import static io.github.heathensoft.jagfw.core.utils.U.popSetVec2;
@@ -22,6 +23,9 @@ public class PhysicsUtils {
     public static void drawBody(Body body, LineBatch batch) {
         int color = body.isStatic() ? COLOR_STATIC : COLOR_DYNAMIC;
         batch.drawCircle(body.position,body.radius,CIRCLE_RESOLUTION,color);
+        Vector2f v = U.popSetVec2(body.facing_direction).mul(body.radius).add(body.position);
+        batch.drawLine(body.position,v,PhysicsUtils.COLOR_DYNAMIC);
+        U.pushVec2();
     }
 
     public static void drawGeometry(Geometry geometry, LineBatch batch) {
@@ -49,22 +53,24 @@ public class PhysicsUtils {
      * @param k drag coefficient
      */
     public static void applyDrag(Body body, float k) {
-        /*  p = fluid/gas density
+        if (!body.isStatic()) {
+             /*  p = fluid/gas density
             Kd = Drag coefficient
             A = cross-sectional area (Airplane wing)
             Fd = [(1/2) * p * Kd * A] * |v|^2 * -v =>
             Fd = [k] * |v|^2 * -v */
-        float mag_squared = body.velocity.lengthSquared();
-        if (mag_squared > 0) {
-            // Calculate the drag direction (inverse of velocity unit vector)
-            Vector2f drag_force = popSetVec2(body.velocity);
-            drag_force.normalize().mul(-1.0f);
-            // Calculate the drag magnitude, k * |v|^2
-            float dragMagnitude = k * mag_squared;
-            // Generate the final drag force with direction and magnitude
-            drag_force.mul(dragMagnitude);
-            body.addForce(drag_force);
-            pushVec2();
+            float mag_squared = body.velocity.lengthSquared();
+            if (mag_squared > 0) {
+                // Calculate the drag direction (inverse of velocity unit vector)
+                Vector2f drag_force = popSetVec2(body.velocity);
+                drag_force.normalize().mul(-1.0f);
+                // Calculate the drag magnitude, k * |v|^2
+                float dragMagnitude = k * mag_squared;
+                // Generate the final drag force with direction and magnitude
+                drag_force.mul(dragMagnitude);
+                body.addForce(drag_force);
+                pushVec2();
+            }
         }
     }
 
@@ -74,13 +80,15 @@ public class PhysicsUtils {
      * @param k friction coefficient
      */
     public static void applyFriction(Body body, float k) {
-        // Calculate the drag direction (inverse of velocity unit vector)
-        if (body.velocity.x == 0 && body.velocity.y == 0) return;
-        Vector2f velocity_normalized = popSetVec2(body.velocity);
-        velocity_normalized.normalize().mul(-1.0f);
-        if (velocity_normalized.lengthSquared() < body.acceleration.lengthSquared()) {
-            body.addForce(velocity_normalized.mul(k));
-        } pushVec2();
+        if (!body.isStatic()) {
+            // Calculate the drag direction (inverse of velocity unit vector)
+            if (body.velocity.lengthSquared() > 0.001f) {
+                Vector2f velocity_normalized = popSetVec2(body.velocity);
+                velocity_normalized.normalize().mul(-1.0f);
+                body.addForce(velocity_normalized.mul(k));
+                pushVec2();
+            }
+        }
     }
 
     /**
@@ -91,17 +99,19 @@ public class PhysicsUtils {
      * @param k "spring stiffness"
      */
     public static void applySpringForce(Body body, Vector2f anchor, float rest_len, float k) {
-        // Calculate the distance between the anchor and the object
-        Vector2f anchor_to_body = popSetVec2(body.position).sub(anchor);
-        // Find the spring displacement considering the rest length
-        float displacement = anchor_to_body.length() - rest_len;
-        // Calculate the magnitude of the spring force
-        float spring_magnitude = -k * displacement;
-        // Calculate the direction of the spring force
-        // and the final resulting spring force vector
-        anchor_to_body.normalize().mul(spring_magnitude);
-        body.addForce(anchor_to_body);
-        pushVec2();
+        if (!body.isStatic()) {
+            // Calculate the distance between the anchor and the object
+            Vector2f anchor_to_body = popSetVec2(body.position).sub(anchor);
+            // Find the spring displacement considering the rest length
+            float displacement = anchor_to_body.length() - rest_len;
+            // Calculate the magnitude of the spring force
+            float spring_magnitude = -k * displacement;
+            // Calculate the direction of the spring force
+            // and the final resulting spring force vector
+            anchor_to_body.normalize().mul(spring_magnitude);
+            body.addForce(anchor_to_body);
+            pushVec2();
+        }
     }
 
     /**
