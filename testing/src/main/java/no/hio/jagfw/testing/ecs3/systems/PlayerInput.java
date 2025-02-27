@@ -1,4 +1,4 @@
-package no.hio.jagfw.testing.ecs2.systems;
+package no.hio.jagfw.testing.ecs3.systems;
 
 import io.github.heathensoft.jagfw.core.Controller;
 import io.github.heathensoft.jagfw.core.Engine;
@@ -8,19 +8,52 @@ import io.github.heathensoft.jagfw.core.gfx.Bitmap;
 import io.github.heathensoft.jagfw.core.gfx.Framebuffer;
 import io.github.heathensoft.jagfw.ecs.ECS;
 import io.github.heathensoft.jagfw.ecs.ECSystem;
-import no.hio.jagfw.testing.ecs2.Context;
+import no.hio.jagfw.testing.ecs3.Global;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
-
 import static io.github.heathensoft.jagfw.core.Controller.*;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 
 /**
- * Frederik Dahl 2/25/2025
+ * Frederik Dahl 2/27/2025
  */
-public class InputRead extends ECSystem {
+public class PlayerInput extends ECSystem {
 
+    public final Vector2f mouse_position = new Vector2f();
+    public final Vector2f move_direction = new Vector2f(0,-1);
+    public final Vector2f aim_direction = new Vector2f(0,-1);
+    public float aim_magnitude = 0.0f;
+    public float move_magnitude = 0.0f;
+    public float zoom_amount = 0.0f;    // R2 / L2 / + / -
+
+    public boolean action;              // Cross / Space
+    public boolean cancel;              // Circle / Escape
+    public boolean interact;            // Triangle / R
+
+    public boolean fire_default;        // R1 / Mouse Left
+    public boolean fire_special;        // L1 / Mouse Right
+    public boolean reload;              // Right Stick / Mouse Right
+    public boolean next_weapon;         // UP / Mouse Scroll Up
+    public boolean prev_weapon;         // DOWN / Mouse Scroll Down
+
+    public boolean toggle_menu;         // Start / Escape
+    public boolean toggle_editor;       // Select / B
+
+    public boolean use_item;            // Square / E
+    public boolean next_item;           // RIGHT / Q
+    public boolean prev_item;           // LEFT / N/A
+    public boolean use_item_1;          // 1
+    public boolean use_item_2;          // 2
+    public boolean use_item_3;          // 3
+    public boolean use_item_4;          // 4
+
+    public boolean menu_select;         // Square / Enter
+    public boolean menu_down;           // DOWN / S
+    public boolean menu_up;             // DOWN / W
+    public boolean menu_left;           // DOWN / A
+    public boolean menu_right;          // DOWN / D
 
     protected void processSystem(ECS ecs, float dt) {
         Keyboard keys = Engine.get().window().keys();
@@ -35,16 +68,18 @@ public class InputRead extends ECSystem {
             bitmap.compressToDisk("screenshot.png",true);
             bitmap.dispose();
         }
-        Context context = ecs.getSharedContext(Context.class);
-        Context.PlayerInput input = context.player_input;
 
-        Vector2f mouse_position = context.player_input.mouse_position;
+        WorldCamera world_camera = ecs.getSystem(WorldCamera.class);
+        Global global = ecs.getSharedContext(Global.class);
+        PlayerInput input = this;
+
+        Vector2f mouse_position = input.mouse_position;
         mouse_position.set(mouse.position());
-        context.world_cam.camera.unProjectPosition(mouse_position);
+        world_camera.camera.unProjectPosition(mouse_position);
 
         controller.isConnected(0);
         if (controller.isConnected()) {
-            context.global_flags.controller_connected = true;
+            global.controller_connected = true;
             input.action = controller.buttonJustPressed(BUTTON_CROSS);
             input.cancel = controller.buttonJustPressed(BUTTON_CIRCLE);
             input.interact = controller.buttonJustPressed(BUTTON_TRIANGLE);
@@ -62,13 +97,13 @@ public class InputRead extends ECSystem {
             input.prev_item = controller.buttonJustPressed(BUTTON_DPAD_LEFT);
 
             if (controller.leftStickPushed()) {
-                input.move_strength = controller.leftStickMagnitude();
+                input.move_magnitude = controller.leftStickMagnitude();
                 input.move_direction.set(controller.leftStickDirection());
-            } else input.move_strength = 0f;
+            } else input.move_magnitude = 0f;
             if (controller.rightStickPushed()) {
-                input.aim_strength = controller.rightStickMagnitude();
+                input.aim_magnitude = controller.rightStickMagnitude();
                 input.aim_direction.set(controller.rightStickDirection());
-            } else input.aim_strength = 0f;
+            } else input.aim_magnitude = 0f;
             input.zoom_amount = 0f;
             if (controller.rightTriggerPressed()) {
                 input.zoom_amount += controller.rightTriggerMagnitude();
@@ -77,7 +112,7 @@ public class InputRead extends ECSystem {
             }
 
         } else {
-            context.global_flags.controller_connected = false;
+            global.controller_connected = false;
             input.action = keys.justPressed(GLFW_KEY_SPACE);
             input.cancel = keys.justPressed(GLFW_KEY_ESCAPE);
             input.interact = keys.justPressed(GLFW_KEY_R);
@@ -111,31 +146,32 @@ public class InputRead extends ECSystem {
             if (keys.pressed(GLFW_KEY_D)) movement_x += 1;
             if (keys.pressed(GLFW_KEY_W)) movement_y += 1;
             if (movement_x == 0 && movement_y == 0) {
-                input.move_strength = 0f;
+                input.move_magnitude = 0f;
             } else {
-                input.move_strength = 1f;
+                input.move_magnitude = 1f;
                 input.move_direction.set(movement_x,movement_y);
                 input.move_direction.normalize();
             }
 
             input.aim_direction.set(mouse_position);
-            input.aim_direction.sub(context.world_cam.desired_position);
+            input.aim_direction.sub(world_camera.target_position);
             input.aim_direction.normalize();
             if (input.aim_direction.isFinite()) {
-                input.aim_strength = 1.0f;
+                input.aim_magnitude = 1.0f;
             } else {
                 input.aim_direction.zero();
-                input.aim_strength = 0.0f;
+                input.aim_magnitude = 0.0f;
             }
         }
         if (input.toggle_menu) {
-            context.global_flags.menu_mode = !context.global_flags.menu_mode;
+            global.menu_mode = !global.menu_mode;
         }
-        if (!context.global_flags.menu_mode) {
+        if (!global.menu_mode) {
             if (input.toggle_editor) {
-                context.global_flags.editor_mode = !context.global_flags.editor_mode;
+                global.editor_mode = !global.editor_mode;
             }
         }
 
     }
+
 }

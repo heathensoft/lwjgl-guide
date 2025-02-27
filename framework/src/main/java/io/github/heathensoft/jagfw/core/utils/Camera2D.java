@@ -27,12 +27,19 @@ public class Camera2D {
     public final Vector2f position  = new Vector2f(0,0); // camera position (eye)
     public final Vector2f viewport  = new Vector2f(1,1); // size of visible area in world units (for zoom == 1)
     public final Rectanglef frustum = new Rectanglef(); // visible world area
-    public float zoom = 1.0f; // zoom (used to expand or contract the frustum, making the scene appear smaller / larger)
 
     private float follow_velocity_x = 0.0f;
     private float follow_velocity_y = 0.0f;
     public float follow_bias_term = 0.5f; // 0 - 1
     public float follow_damping = 0.1f;   // 0 - 1
+
+    // zoom (used to expand or contract the frustum, making the scene appear smaller / larger)
+    private float zoom = 0.0f;
+    private float zoom_velocity = 0.0f;
+    public float zoom_bias_term = 0.5f;
+    public float zoom_damping = 0.1f;
+    public float zoom_min = -2.0f;
+    public float zoom_max = 4.0f;
 
     public Camera2D(Resolution resolution) {
         viewport.set(resolution.width(),resolution.height());
@@ -52,6 +59,31 @@ public class Camera2D {
         refresh();
     }
 
+    public void updateViewport(float aspect_ratio, float width_in_tiles) {
+        viewport.set(width_in_tiles, width_in_tiles / aspect_ratio);
+    }
+
+    public void updateViewport(Resolution resolution, float tile_size) {
+        viewport.set(resolution.width()/tile_size,resolution.height()/tile_size);
+    }
+
+    public void setZoom(float zoom) {
+        this.zoom = U.clamp(zoom,zoom_min,zoom_max);
+    }
+
+    public float getZoom() {
+        return zoom;
+    }
+
+    public void zoom(float target, float dt) {
+        target = U.clamp(target,zoom_min,zoom_max);
+        final float d = zoom - target;
+        final float bias = -(zoom_bias_term / dt);
+        zoom_velocity += bias * d;
+        zoom_velocity *= zoom_damping;
+        zoom += zoom_velocity * dt;
+        zoom = U.clamp(zoom,zoom_min,zoom_max);
+    }
 
     public void follow(Vector2f target, float dt) {
         final float dx = position.x - target.x;
@@ -69,10 +101,11 @@ public class Camera2D {
      * recalculates the projection and view matrices
      */
     public void refresh() {
+        final float scale = U.pow(2, zoom);
         final float x = position.x;
         final float y = position.y;
-        final float r = viewport.x / 2f * zoom;
-        final float t = viewport.y / 2f * zoom;
+        final float r = viewport.x / 2f * scale;
+        final float t = viewport.y / 2f * scale;
         view.identity().lookAt(x,y,POS_Z,x,y,DIR_Z,UP_X,UP_Y,UP_Z);
         projection.identity().ortho(-r,r,-t,t,NEAR,FAR);
         combined.set(projection).mul(view);
@@ -86,7 +119,7 @@ public class Camera2D {
      * @param vector vector to convert
      */
     public void unProjectVector(Vector2f vector) {
-        vector.mul(viewport).mul(zoom);
+        vector.mul(viewport).mul(U.pow(2, zoom));
     }
 
     /**

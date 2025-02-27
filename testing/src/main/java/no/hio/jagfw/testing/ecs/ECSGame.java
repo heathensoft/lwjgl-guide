@@ -60,15 +60,14 @@ public class ECSGame extends Game {
         ecs.addComponent(player,new PlayerTag(),true);
         ecs.addComponent(player,new AimingDirection(),true);
 
-        int player2 = ecs.newEntity();
-        ecs.addComponent(player2,new Body(2,2,0.5f,100),true);
-        ecs.addComponent(player2,new PlayerTag(),true);
-        ecs.addComponent(player2,new AimingDirection(),true);
-
-        int player3 = ecs.newEntity();
-        ecs.addComponent(player3,new Body(0,2,0.5f,100),true);
-        ecs.addComponent(player3,new PlayerTag(),true);
-        ecs.addComponent(player3,new AimingDirection(),true);
+        //int player2 = ecs.newEntity();
+        //ecs.addComponent(player2,new Body(2,2,0.5f,100),true);
+        //ecs.addComponent(player2,new PlayerTag(),true);
+        //ecs.addComponent(player2,new AimingDirection(),true);
+        //int player3 = ecs.newEntity();
+        //ecs.addComponent(player3,new Body(0,2,0.5f,100),true);
+        //ecs.addComponent(player3,new PlayerTag(),true);
+        //ecs.addComponent(player3,new AimingDirection(),true);
     }
 
     protected void resize(Resolution resolution) {

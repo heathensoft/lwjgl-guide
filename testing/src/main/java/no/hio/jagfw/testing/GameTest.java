@@ -92,6 +92,17 @@ public class GameTest extends Game {
     private float camera_target_zoom;
     private final Vector2f camera_drag_origin = new Vector2f();
 
+    private float ZOOM = 0.0f;
+    private void zoomTest(Camera2D camera, float dt) {
+        GLFWWindow window = Engine.get().window();
+        Mouse mouse = window.mouse();
+        if (mouse.scrolled()) {
+            ZOOM -= mouse.scrollValue();
+            ZOOM = U.clamp(ZOOM,camera.zoom_min,camera.zoom_max);
+        }
+        camera.zoom(ZOOM,dt);
+    }
+
     private void controls(Camera2D camera, TileMap tile_map, float delta_time) {
         GLFWWindow window = Engine.get().window();
         Keyboard keys = window.keys();
@@ -136,47 +147,47 @@ public class GameTest extends Game {
             camera.position.add(velocity);
         } U.pushVec2();
 
-        if (mouse.scrolled()) {
-            float scroll_value = mouse.scrollValue();
-            if (camera_currently_zooming) {
-                if (scroll_value > 0.0) { // scroll in
-                    if ((camera_current_zoom > camera_target_zoom) && camera_zoom_timer < 0.3) {
-                        camera_target_zoom -= scroll_value;
-                        camera_target_zoom = Math.max(camera_target_zoom,zoom_min);
-                    } else camera_zoom_accumulator -= scroll_value;
-                } else { // scroll out
-                    if ((camera_current_zoom < camera_target_zoom) && camera_zoom_timer < 0.3) {
-                        camera_target_zoom -= scroll_value;
-                        camera_target_zoom = Math.min(camera_target_zoom,zoom_max);
-                    } else camera_zoom_accumulator -= scroll_value;
-                }
-            } else {
-                camera_target_zoom = camera_current_zoom - scroll_value;
-                camera_target_zoom = U.clamp(camera_target_zoom,zoom_min,zoom_max);
-                if (camera_current_zoom != camera_target_zoom) {
-                    camera_currently_zooming = true;
-                    camera_zoom_timer = 0.0f;
-                }
-            }
-        }
-
-        if (camera_currently_zooming) {
-            camera_zoom_timer += delta_time * zoom_speed;
-            if (camera_zoom_timer >= 1.0f) {
-                camera_current_zoom = camera_target_zoom;
-                camera.zoom = U.pow(2, camera_current_zoom);
-                if (camera_zoom_accumulator != 0.0) {
-                    camera_target_zoom = camera_current_zoom + camera_zoom_accumulator;
-                    camera_target_zoom = U.clamp(camera_target_zoom,zoom_min,zoom_max);
-                    camera_zoom_accumulator = 0.0f;
-                } else camera_currently_zooming = false;
-                camera_zoom_timer = 0.0f;
-            } else {
-                float t = U.smooth(camera_zoom_timer);
-                float zoom = U.lerp(camera_current_zoom, camera_target_zoom,t);
-                camera.zoom = U.pow(2,zoom);
-            }
-        }
+        zoomTest(camera,delta_time);
+        //if (mouse.scrolled()) {
+        //    float scroll_value = mouse.scrollValue();
+        //    if (camera_currently_zooming) {
+        //        if (scroll_value > 0.0) { // scroll in
+        //            if ((camera_current_zoom > camera_target_zoom) && camera_zoom_timer < 0.9) {
+        //                camera_target_zoom -= scroll_value;
+        //                camera_target_zoom = Math.max(camera_target_zoom,zoom_min);
+        //            } else camera_zoom_accumulator -= scroll_value;
+        //        } else { // scroll out
+        //            if ((camera_current_zoom < camera_target_zoom) && camera_zoom_timer < 0.9) {
+        //                camera_target_zoom -= scroll_value;
+        //                camera_target_zoom = Math.min(camera_target_zoom,zoom_max);
+        //            } else camera_zoom_accumulator -= scroll_value;
+        //        }
+        //    } else {
+        //        camera_target_zoom = camera_current_zoom - scroll_value;
+        //        camera_target_zoom = U.clamp(camera_target_zoom,zoom_min,zoom_max);
+        //        if (camera_current_zoom != camera_target_zoom) {
+        //            camera_currently_zooming = true;
+        //            camera_zoom_timer = 0.0f;
+        //        }
+        //    }
+        //}
+        //if (camera_currently_zooming) {
+        //    camera_zoom_timer += delta_time * zoom_speed;
+        //    if (camera_zoom_timer >= 1.0f) {
+        //        camera_current_zoom = camera_target_zoom;
+        //        camera.zoom = U.pow(2, camera_current_zoom);
+        //        if (camera_zoom_accumulator != 0.0) {
+        //            camera_target_zoom = camera_current_zoom + camera_zoom_accumulator;
+        //            camera_target_zoom = U.clamp(camera_target_zoom,zoom_min,zoom_max);
+        //            camera_zoom_accumulator = 0.0f;
+        //        } else camera_currently_zooming = false;
+        //        camera_zoom_timer = 0.0f;
+        //    } else {
+        //        float t = U.smooth(camera_zoom_timer);
+        //        float zoom = U.lerp(camera_current_zoom, camera_target_zoom,t);
+        //        camera.zoom = U.pow(2,zoom);
+        //    }
+        //}
 
         if (mouse.isDragging(Mouse.WHEEL)) {
             if (mouse.justStartedDrag(Mouse.WHEEL)) {

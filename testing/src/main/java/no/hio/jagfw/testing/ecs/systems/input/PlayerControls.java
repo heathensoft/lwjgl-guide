@@ -79,7 +79,9 @@ public class PlayerControls extends ProcessSystem {
                 player_move_direction.add(1,0);
             } if (keys.pressed(GLFW_KEY_W)) {
                 player_move_direction.add(0,1);
-            } if (player_move_direction.lengthSquared() > 0) {
+            }
+
+            if (player_move_direction.lengthSquared() > 0) {
                 player_movement_magnitude = 1.0f;
                 player_move_direction.normalize();
                 if (keys.justPressed(GLFW_KEY_SPACE)) {
