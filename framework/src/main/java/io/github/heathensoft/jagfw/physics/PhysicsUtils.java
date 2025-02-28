@@ -28,6 +28,13 @@ public class PhysicsUtils {
         U.pushVec2();
     }
 
+    public static void drawBody(Body body, LineBatch batch, int color) {
+        batch.drawCircle(body.position,body.radius,CIRCLE_RESOLUTION,color);
+        Vector2f v = U.popSetVec2(body.facing_direction).mul(body.radius).add(body.position);
+        batch.drawLine(body.position,v,color);
+        U.pushVec2();
+    }
+
     public static void drawGeometry(Geometry geometry, LineBatch batch) {
         int num_segments = geometry.numSegments();
         for (int i = 0; i < num_segments; i++) {
@@ -37,8 +44,21 @@ public class PhysicsUtils {
         }
     }
 
+    public static void drawGeometry(Geometry geometry, LineBatch batch, int color) {
+        int num_segments = geometry.numSegments();
+        for (int i = 0; i < num_segments; i++) {
+            Vector2f v0 = geometry.vertices[i];
+            Vector2f v1 = geometry.vertices[(i + 1) % geometry.vertices.length];
+            batch.drawLine(v0,v1,color);
+        }
+    }
+
     public static void drawRay(LineSegment ray, LineBatch batch) {
         batch.drawLine(ray,COLOR_RAY);
+    }
+
+    public static void drawRay(LineSegment ray, LineBatch batch, int color) {
+        batch.drawLine(ray,color);
     }
 
     public static void applyDownwardsGravity(Body body, float gravity) {

@@ -5,6 +5,7 @@ import io.github.heathensoft.jagfw.core.gfx.Shader;
 import io.github.heathensoft.jagfw.core.gfx.ShaderProgram;
 import io.github.heathensoft.jagfw.core.utils.Camera2D;
 import io.github.heathensoft.jagfw.core.utils.Resources;
+import org.joml.Vector2f;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.*;
@@ -22,11 +23,12 @@ import static org.lwjgl.opengl.GL30.*;
  */
 public class Background implements Disposable {
 
+    public final Vector2f map_size;
     private final int vertex_attrib_array;
     private final int vertex_buffer_object;
     private final ShaderProgram shader_program;
 
-    public Background() throws Exception {
+    public Background(int width, int height) throws Exception {
 
         // Loading shader source code files from the project "resources folder"
         String vert_shader_source = Resources.asString("checkered-bg.vert");
@@ -37,7 +39,7 @@ public class Background implements Disposable {
         Shader frag_shader = new Shader(frag_shader_source, Shader.Type.FRAG_SHADER);
         shader_program = new ShaderProgram("checkered-background",vert_shader,frag_shader);
         shader_program.detachShaders(true);
-
+        map_size = new Vector2f(width,height);
 
         final float[] vertices = new float[] {
                 /*{ V0 }*/-1, 1,/*position (xy)*/
@@ -61,6 +63,7 @@ public class Background implements Disposable {
     public void draw(Camera2D camera) {
         ShaderProgram.useProgram(shader_program);
         ShaderProgram.setUniform("u_combined_inv",camera.combined_inv);
+        ShaderProgram.setUniform("u_map_size",map_size);
         glDisable(GL_DEPTH_TEST);
         glBindVertexArray(vertex_attrib_array);
         glDrawArrays(GL_TRIANGLES,0,6);

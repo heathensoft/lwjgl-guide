@@ -77,7 +77,7 @@ public class PlayerInput extends ECSystem {
         mouse_position.set(mouse.position());
         world_camera.camera.unProjectPosition(mouse_position);
 
-        controller.isConnected(0);
+        controller.setActiveSlot(0);
         if (controller.isConnected()) {
             global.controller_connected = true;
             input.action = controller.buttonJustPressed(BUTTON_CROSS);
@@ -104,11 +104,12 @@ public class PlayerInput extends ECSystem {
                 input.aim_magnitude = controller.rightStickMagnitude();
                 input.aim_direction.set(controller.rightStickDirection());
             } else input.aim_magnitude = 0f;
+
             input.zoom_amount = 0f;
-            if (controller.rightTriggerPressed()) {
-                input.zoom_amount += controller.rightTriggerMagnitude();
-            } if (controller.leftTriggerPressed()) {
-                input.zoom_amount -= controller.leftTriggerMagnitude();
+            if (controller.buttonJustPressed(BUTTON_DPAD_DOWN)) {
+                input.zoom_amount += 1.0f;
+            } if (controller.buttonJustPressed(BUTTON_DPAD_UP)) {
+                input.zoom_amount -= 1.0f;
             }
 
         } else {
@@ -162,6 +163,14 @@ public class PlayerInput extends ECSystem {
                 input.aim_direction.zero();
                 input.aim_magnitude = 0.0f;
             }
+
+            input.zoom_amount = 0f;
+            if (keys.justPressed(GLFW_KEY_KP_ADD)) {
+                input.zoom_amount += 1.0f;
+            } if (keys.justPressed(GLFW_KEY_KP_SUBTRACT)) {
+                input.zoom_amount -= 1.0f;
+            }
+
         }
         if (input.toggle_menu) {
             global.menu_mode = !global.menu_mode;

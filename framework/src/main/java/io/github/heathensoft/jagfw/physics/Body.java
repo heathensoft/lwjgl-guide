@@ -120,6 +120,15 @@ public class Body {
         sum_forces.zero();
     }
 
+    public void setPosition(Vector2f position) {
+        setPosition(position.x,position.y);
+    }
+
+    public void setPosition(float x, float y) {
+        position.set(x,y);
+        position_previous.set(x,y);
+    }
+
     public void addForce(Vector2f force) {
         sum_forces.add(force);
     }

@@ -61,7 +61,7 @@ public class Physics2 extends Game {
         list_of_rays = new ArrayList<>();
         list_of_bodies = new ArrayList<>();
         list_of_geometry = new ArrayList<>();
-        background = new Background();
+        background = new Background(128,128);
         camera = new Camera2D(resolution,tile_size);
         line_batch = new LineBatch(512);
         line_batch.enableSmoothLines(true);

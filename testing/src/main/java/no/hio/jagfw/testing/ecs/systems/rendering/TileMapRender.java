@@ -14,12 +14,13 @@ public class TileMapRender extends ECSystem {
     private final Background background;
 
     public TileMapRender() throws Exception {
-        background = new Background();
+        background = new Background(128,128);
     }
 
     protected void renderSystem(ECS ecs, float alpha) {
         Context context = ecs.getSharedContext(Context.class);
         if (context != null) {
+
             background.draw(context.camera);
             context.sprite_batch.begin(context.camera);
             context.tilemap.render(context.sprite_batch);

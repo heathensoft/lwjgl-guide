@@ -6,7 +6,6 @@ import io.github.heathensoft.jagfw.ecs.RenderSystem;
 import io.github.heathensoft.jagfw.physics.Body;
 import io.github.heathensoft.jagfw.physics.PhysicsUtils;
 import no.hio.jagfw.testing.ecs.Context;
-import org.joml.Vector2f;
 
 import java.util.List;
 

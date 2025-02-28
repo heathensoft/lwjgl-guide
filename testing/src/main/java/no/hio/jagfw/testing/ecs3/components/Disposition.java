@@ -1,4 +1,4 @@
-package no.hio.jagfw.testing.ecs3;
+package no.hio.jagfw.testing.ecs3.components;
 
 /**
  * Frederik Dahl 2/27/2025

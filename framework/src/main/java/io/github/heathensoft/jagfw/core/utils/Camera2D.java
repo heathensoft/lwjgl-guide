@@ -39,7 +39,7 @@ public class Camera2D {
     public float zoom_bias_term = 0.5f;
     public float zoom_damping = 0.1f;
     public float zoom_min = -2.0f;
-    public float zoom_max = 4.0f;
+    public float zoom_max = 3.0f;
 
     public Camera2D(Resolution resolution) {
         viewport.set(resolution.width(),resolution.height());

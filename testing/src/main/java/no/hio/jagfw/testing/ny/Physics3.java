@@ -59,7 +59,7 @@ public class Physics3 extends Game {
         Framebuffer.bindDefault();
         Framebuffer.setClearColor(0xFF000000);
         Framebuffer.setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        background = new Background();
+        background = new Background(128,128);
         line_batch = new LineBatch(512);
         line_batch.enableSmoothLines(true);
         line_batch.setLineWidth(2);

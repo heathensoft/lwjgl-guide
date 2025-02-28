@@ -57,7 +57,7 @@ public class PhysicsTest extends Game {
         bodies = new ArrayList<>();
         geometry = new ArrayList<>();
         camera = new Camera2D(resolution,tile_size);
-        background = new Background();
+        background = new Background(128,128);
         line_batch = new LineBatch(512);
         line_batch.setLineWidth(1f);
         line_batch.enableSmoothLines(true);

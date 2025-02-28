@@ -131,19 +131,19 @@ public class Controller implements Disposable {
 
     public boolean buttonPressed(int button) {
         if (isConnected() && isValidButton(button)) {
-            return gamepads[button].currentlyPressed(button);
+            return gamepads[active_slot].currentlyPressed(button);
         } return false;
     }
 
     public boolean buttonJustPressed(int button) {
         if (isConnected() && isValidButton(button)) {
-            return gamepads[button].justPressed(button);
+            return gamepads[active_slot].justPressed(button);
         } return false;
     }
 
     public boolean buttonJustReleased(int button) {
         if (isConnected() && isValidButton(button)) {
-            return gamepads[button].justReleased(button);
+            return gamepads[active_slot].justReleased(button);
         } return false;
     }
 

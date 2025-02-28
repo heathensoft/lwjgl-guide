@@ -37,7 +37,7 @@ public class ECSGame extends Game {
         boot_config.windowed_mode_width = game_res_w;
         boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
-        boot_config.vsync_enabled = true;
+        boot_config.vsync_enabled = false;
         boot_config.target_ups = 120;
     }
 

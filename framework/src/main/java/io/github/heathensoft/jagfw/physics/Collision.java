@@ -61,6 +61,17 @@ public class Collision {
         }
     }
 
+    public static void resolve(List<Body> bodies) {
+        int num_bodies = bodies.size();
+        for (int i = 0; i < num_bodies; i++) {
+            Body A = bodies.get(i);
+            for (int j = i + 1; j < num_bodies; j++) {
+                Body B = bodies.get(j);
+                resolveBodyBody(A,B);
+            }
+        }
+    }
+
     /**
      * Checks whether two bodies are colliding.
      * If a collision has occurred, the collision is resolved:

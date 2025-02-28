@@ -48,7 +48,7 @@ public class GameTest extends Game {
         camera_hud = new Camera2D(resolution.aspectRatio(),16f);
         tile_map = new TileMap(MapSize.SMALL);
         sprite_batch = new SpriteBatch(512);
-        background = new Background();
+        background = new Background(tile_map.widthTiles(),tile_map.heightTiles());
         line_batch = new LineBatch(256);
         line_batch.setLineWidth(2f);
         line_batch.enableSmoothLines(true);

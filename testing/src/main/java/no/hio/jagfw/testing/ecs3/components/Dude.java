@@ -1,17 +1,16 @@
 package no.hio.jagfw.testing.ecs3.components;
 
 import io.github.heathensoft.jagfw.physics.Body;
-import no.hio.jagfw.testing.ecs3.Disposition;
 
 /**
  * Frederik Dahl 2/27/2025
  */
-public class Dude {
+public class Dude extends Body {
 
-    private static Dude PLAYER = null;
-
-    public Disposition disposition = Disposition.NEUTRAL;
-    public Body body;
+    public static Dude PLAYER = null;
+    public Disposition disposition;
+    public PhysicsResolution resolution;
+    public boolean dying;
     public boolean flying;
     public boolean invisible;
     public boolean invulnerable;
@@ -22,7 +21,15 @@ public class Dude {
     public float base_armor_multiplier = 1.0f;
     public float base_damage_multiplier = 1.0f;
     public float base_health_multiplier = 1.0f;
-    public int level;
+    public float base_movement_force = 1000f;
+    public float base_dodge_impulse = 2000f;
+
+
+    public Dude(float x, float y, float radius, float mass, Disposition disposition) {
+        super(x, y, radius, mass);
+        this.disposition = disposition;
+        this.resolution = PhysicsResolution.HIGH;
+    }
 
     public boolean isPlayer() {
         return PLAYER == this;
