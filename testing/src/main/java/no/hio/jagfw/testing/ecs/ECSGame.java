@@ -3,14 +3,12 @@ package no.hio.jagfw.testing.ecs;
 import io.github.heathensoft.jagfw.core.*;
 import io.github.heathensoft.jagfw.core.gfx.Framebuffer;
 import io.github.heathensoft.jagfw.ecs.ECS;
-import io.github.heathensoft.jagfw.physics.Body;
-import no.hio.jagfw.testing.ecs.components.AimingDirection;
-import no.hio.jagfw.testing.ecs.components.PlayerTag;
-import no.hio.jagfw.testing.ecs.systems.input.*;
-import no.hio.jagfw.testing.ecs.systems.rendering.AimingVisualized;
-import no.hio.jagfw.testing.ecs.systems.rendering.BodyRenderer;
-import no.hio.jagfw.testing.ecs.systems.rendering.TileMapRender;
-import no.hio.jagfw.testing.ecs.systems.update.PhysicsUpdate;
+import io.github.heathensoft.jagfw.tiles.MapSize;
+import no.hio.jagfw.testing.ecs.components.Disposition;
+import no.hio.jagfw.testing.ecs.components.Dude;
+import no.hio.jagfw.testing.ecs.systems.*;
+import no.hio.jagfw.testing.ecs.systems.dude.*;
+import org.joml.Vector2f;
 
 /**
  * Frederik Dahl 2/23/2025
@@ -22,13 +20,12 @@ public class ECSGame extends Game {
     }
 
     public static final int component_type_capacity = 32;
-    public static final int entity_capacity = 256;
+    public static final int entity_capacity = 1024;
     public static final int game_res_w = 1280;
     public static final int game_res_h = 720;
-    public static final float tile_size = 32;
 
     private ECS ecs; // entity component system
-    private Context ecs_context; // shared system variables
+    private Global ecs_global;
 
     protected void configure(BootConfiguration boot_config, String[] args) {
         boot_config.window_title = "physics";
@@ -42,32 +39,34 @@ public class ECSGame extends Game {
     }
 
     protected void start(Resolution resolution) throws Exception {
-        ecs_context = new Context();
-        ecs = new ECS(ecs_context,entity_capacity, component_type_capacity);
-        ecs.addSystemToPipeline(new InputControl());
-        ecs.addSystemToPipeline(new EditorInput());
-        ecs.addSystemToPipeline(new PlayerControls());
-        ecs.addSystemToPipeline(new CameraRefresh());
-        ecs.addSystemToPipeline(new MouseUpdate());
-        ecs.addSystemToPipeline(new PhysicsUpdate());
-        ecs.addSystemToPipeline(new TileMapRender());
-        ecs.addSystemToPipeline(new BodyRenderer());
-        ecs.addSystemToPipeline(new AimingVisualized());
-
+        Vector2f start_position = new Vector2f(4,4);
+        ecs_global = new Global(MapSize.SMALL);
+        ecs = new ECS(ecs_global,entity_capacity,component_type_capacity);
+        ecs.addSystemToPipeline(new PlayerInput());
+        ecs.addSystemToPipeline(new Editor());
+        ecs.addSystemToPipeline(new DudeSpawner());
+        ecs.addSystemToPipeline(new DudeTree());
+        ecs.addSystemToPipeline(new DudeResolution());
+        ecs.addSystemToPipeline(new DudeInfo());
+        ecs.addSystemToPipeline(new DudeMovement());
+        ecs.addSystemToPipeline(new CollisionResolver());
+        ecs.addSystemToPipeline(new WorldCamera(start_position));
+        ecs.addSystemToPipeline(new DyingDudes());
+        ecs.addSystemToPipeline(new TileRenderer());
+        ecs.addSystemToPipeline(new DudeRenderer());
 
         int player = ecs.newEntity();
-        ecs.addComponent(player,new Body(0,0,0.5f,100),true);
-        ecs.addComponent(player,new PlayerTag(),true);
-        ecs.addComponent(player,new AimingDirection(),true);
-
-        //int player2 = ecs.newEntity();
-        //ecs.addComponent(player2,new Body(2,2,0.5f,100),true);
-        //ecs.addComponent(player2,new PlayerTag(),true);
-        //ecs.addComponent(player2,new AimingDirection(),true);
-        //int player3 = ecs.newEntity();
-        //ecs.addComponent(player3,new Body(0,2,0.5f,100),true);
-        //ecs.addComponent(player3,new PlayerTag(),true);
-        //ecs.addComponent(player3,new AimingDirection(),true);
+        Dude dude = new Dude(
+                start_position.x,
+                start_position.y,
+                0.5f,
+                100, Disposition.FRIENDLY);
+        dude.base_health = 100f;
+        dude.base_max_health = 100f;
+        dude.base_movement_force = 4000f;
+        dude.base_dodge_impulse = 6000f;
+        dude.setPlayer();
+        ecs.addComponent(player,dude,true);
     }
 
     protected void resize(Resolution resolution) {
@@ -87,6 +86,6 @@ public class ECSGame extends Game {
     }
 
     protected void exit() {
-        Disposable.dispose(ecs,ecs_context);
+        Disposable.dispose(ecs,ecs_global);
     }
 }

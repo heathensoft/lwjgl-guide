@@ -79,6 +79,7 @@ public class Engine {
                 double alpha;
                 double fixed_time_step;
                 double time_accumulator = 0.0;
+                boolean updated_once = false;
                 while (!window.shouldClose()) {
                     /*
                      *  Main Loop. Synced up with monitor refresh rate if v-sync is enabled.
@@ -98,38 +99,42 @@ public class Engine {
                         game.update((float)fixed_time_step);
                         time.incrementUpsCounter();
                         time_accumulator -= fixed_time_step;
+                        updated_once = true;
                     }
-                    // alpha: how close we were to the next game update
-                    // We can use alpha when rendering, by projecting positions
-                    // into the future based on current velocity
-                    // As far as I know, this is not a very common technique
-                    // But it can optionally be applied to help smoothen rendering
-                    alpha = time_accumulator / fixed_time_step;
-                    game.state = RENDERING;
-                    if (!window.isMinimized()) {
-                        if (window.shouldChangeGameResolution()) {
+                    if (updated_once) {
+                        // alpha: how close we were to the next game update
+                        // We can use alpha when rendering, by projecting positions
+                        // into the future based on current velocity
+                        // As far as I know, this is not a very common technique
+                        // But it can optionally be applied to help smoothen rendering
+                        alpha = time_accumulator / fixed_time_step;
+                        game.state = RENDERING;
+                        if (!window.isMinimized()) {
+                            if (window.shouldChangeGameResolution()) {
+                                /*
+                                 *  Window found a better suited Game resolution.
+                                 *  Can only be one of the provided resolutions
+                                 *  (From BootConfiguration)
+                                 */
+                                game.resize(window.gameResolution());
+                            }
                             /*
-                             *  Window found a better suited Game resolution.
-                             *  Can only be one of the provided resolutions
-                             *  (From BootConfiguration)
+                             *  Game render
+                             * Todo: "alpha" as argument to game.render()
                              */
-                            game.resize(window.gameResolution());
+                            game.render((float)alpha);
+
+                            /*
+                             *  Swap the back and the front buffers in order to display
+                             *  what has been rendered and begin rendering a new frame.
+                             */
+                            window.swapRenderBuffers();
                         }
                         /*
-                         *  Game render
-                         * Todo: "alpha" as argument to game.render()
+                         *  GLFW polls for any user events, triggering callbacks
                          */
-                        game.render((float)alpha);
-
-                        /*
-                         *  Swap the back and the front buffers in order to display
-                         *  what has been rendered and begin rendering a new frame.
-                         */
-                        window.swapRenderBuffers();
                     }
-                    /*
-                     *  GLFW polls for any user events, triggering callbacks
-                     */
+
                     window.pollUserEvents();
                     time.incrementFpsCounter();
                 }

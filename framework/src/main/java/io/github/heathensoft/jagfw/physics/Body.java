@@ -37,14 +37,7 @@ public class Body {
      */
     public final Vector2f sum_forces = new Vector2f();
     /**
-     * Sum of all "controlled forces" these are also added to sum_forces.
-     * The difference is that controlled forces are the only forces to determine the body facing direction.
-     * Example: Player movement is a "controlled" force, wind or friction etc. are not.
-     */
-    public final Vector2f controlled_forces = new Vector2f();
-    /**
-     * This is the direction of the acceleration.
-     * If the acceleration is zero then the direction is set to previous direction
+     * Not used for anything in physics
      * Default direction is "downwards" (-y)
      */
     public final Vector2f facing_direction = new Vector2f();
@@ -88,7 +81,6 @@ public class Body {
         this.velocity.zero();
         this.acceleration.zero();
         this.sum_forces.zero();
-        this.controlled_forces.zero();
         this.mass_inverse = mass == 0 ? 0 : 1 / mass;
         this.radius = radius;
         this.friction = friction;
@@ -102,10 +94,7 @@ public class Body {
             velocity.zero();
             acceleration.zero();
         } else { // Find the acceleration based on the
-            // forces that are being applied and the mass
-            if (controlled_forces.lengthSquared() > 1) {
-                facing_direction.set(controlled_forces).normalize();
-            } sum_forces.add(controlled_forces);
+            // forces that are being applied
             acceleration.set(sum_forces).mul(mass_inverse);
             // Integrate the acceleration to find the new velocity
             velocity.x += acceleration.x * dt;
@@ -116,17 +105,7 @@ public class Body {
             // Integrate the velocity to find the new position
             position.x = position_previous.x + velocity.x * dt;
             position.y = position_previous.y + velocity.y * dt;
-        } controlled_forces.zero();
-        sum_forces.zero();
-    }
-
-    public void setPosition(Vector2f position) {
-        setPosition(position.x,position.y);
-    }
-
-    public void setPosition(float x, float y) {
-        position.set(x,y);
-        position_previous.set(x,y);
+        } sum_forces.zero();
     }
 
     public void addForce(Vector2f force) {
@@ -136,12 +115,6 @@ public class Body {
     public void addForce(float fx, float fy) {
         sum_forces.add(fx,fy);
     }
-
-    /** This is the same as the regular add force, but only controlled forces affects the body direction*/
-    public void addForceControlled(Vector2f force) { controlled_forces.add(force); }
-
-    /** This is the same as the regular add force, but only controlled forces affects the body direction*/
-    public void addForceControlled(float fx, float fy) { controlled_forces.add(fx,fy); }
 
     public void clearForces() {
         sum_forces.zero();

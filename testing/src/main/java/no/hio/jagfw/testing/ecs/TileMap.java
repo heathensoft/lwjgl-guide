@@ -3,6 +3,7 @@ package no.hio.jagfw.testing.ecs;
 import io.github.heathensoft.jagfw.core.gfx.SpriteBatch;
 import io.github.heathensoft.jagfw.core.utils.U;
 import io.github.heathensoft.jagfw.physics.BlockLayout;
+import io.github.heathensoft.jagfw.tiles.MapSize;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;
 
@@ -14,11 +15,13 @@ public class TileMap implements BlockLayout {
     boolean[][] blocks;
     int width;
     int height;
+    MapSize size;
 
-    public TileMap(int width, int height) {
+    public TileMap(MapSize size) {
+        this.width = size.size_tiles;
+        this.height = size.size_tiles;
         this.blocks = new boolean[height][width];
-        this.width = width;
-        this.height = height;
+        this.size = size;
     }
 
     public void render(SpriteBatch batch) {
@@ -60,4 +63,6 @@ public class TileMap implements BlockLayout {
     public int height() {
         return height;
     }
+
+    public int size() { return size.size_tiles; }
 }
