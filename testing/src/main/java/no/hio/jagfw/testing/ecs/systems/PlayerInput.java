@@ -84,8 +84,8 @@ public class PlayerInput extends ECSystem {
             input.cancel = controller.buttonJustPressed(BUTTON_CIRCLE);
             input.interact = controller.buttonJustPressed(BUTTON_TRIANGLE);
 
-            input.fire_default = controller.buttonPressed(BUTTON_LEFT_BUMPER);
-            input.fire_special = controller.buttonPressed(BUTTON_RIGHT_BUMPER);
+            input.fire_default = controller.buttonPressed(BUTTON_RIGHT_BUMPER);
+            input.fire_special = controller.buttonPressed(BUTTON_LEFT_BUMPER);
             input.reload = controller.buttonJustPressed(BUTTON_RIGHT_THUMB);
             input.next_weapon = controller.buttonJustPressed(BUTTON_DPAD_UP);
             input.prev_weapon = controller.buttonJustPressed(BUTTON_DPAD_DOWN);

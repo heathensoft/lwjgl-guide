@@ -50,10 +50,12 @@ public class ECSGame extends Game {
         ecs.addSystemToPipeline(new DudeInfo());
         ecs.addSystemToPipeline(new DudeMovement());
         ecs.addSystemToPipeline(new CollisionResolver());
+        ecs.addSystemToPipeline(new ProjectileProcess());
         ecs.addSystemToPipeline(new WorldCamera(start_position));
         ecs.addSystemToPipeline(new DyingDudes());
         ecs.addSystemToPipeline(new TileRenderer());
         ecs.addSystemToPipeline(new DudeRenderer());
+        ecs.addSystemToPipeline(new ProjectileRenderer());
 
         int player = ecs.newEntity();
         Dude dude = new Dude(

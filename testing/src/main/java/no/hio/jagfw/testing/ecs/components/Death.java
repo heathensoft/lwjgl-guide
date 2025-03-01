@@ -5,6 +5,6 @@ package no.hio.jagfw.testing.ecs.components;
  */
 public class Death {
 
-    public float time_to_die;
+    public float time_to_die = 1f;
 
 }

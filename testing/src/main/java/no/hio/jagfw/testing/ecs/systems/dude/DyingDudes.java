@@ -16,7 +16,6 @@ public class DyingDudes extends ProcessSystem {
 
     protected void defineAccess(List<Class<?>> required_components, List<Class<?>> blocking_components) {
         required_components.add(Dude.class);
-        required_components.add(Death.class);
     }
 
     protected void process(ECS ecs, int entity, float dt) {
@@ -24,19 +23,26 @@ public class DyingDudes extends ProcessSystem {
         if (!(global.menu_mode || global.editor_mode)) {
             Dude dude = ecs.getComponent(entity, Dude.class);
             Death death = ecs.getComponent(entity, Death.class);
-            if (dude != null && death != null) {
-                death.time_to_die -= dt;
-                if (death.time_to_die <= 0) {
-                    if (dude.isPlayer()) {
-                        Dude.PLAYER = null;
-                        ecs.signalToExit();
-                        // how to handle exit? saving etc.
-                    } else {
-                        // span exp orbs
-                        global.player_state.experience_points += dude.base_experience_yield;
+            if (dude != null) {
+                if (death == null) {
+                    if (dude.base_health <= 0) {
+                        ecs.addComponent(entity,new Death(),false);
                     }
-                    ecs.deleteEntity(entity);
+                } else {
+                    death.time_to_die -= dt;
+                    if (death.time_to_die <= 0) {
+                        if (dude.isPlayer()) {
+                            Dude.PLAYER = null;
+                            ecs.signalToExit();
+                            // how to handle exit? saving etc.
+                        } else {
+                            // span exp orbs
+                            global.player_state.experience_points += dude.base_experience_yield;
+                        }
+                        ecs.deleteEntity(entity);
+                    }
                 }
+
             }
         }
 

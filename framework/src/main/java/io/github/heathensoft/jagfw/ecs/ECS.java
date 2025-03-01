@@ -23,7 +23,7 @@ public class ECS implements Disposable {
     private final List<BitSet> entity_component_masks;
     private final List<EntityArray> system_entities;
     private final Object[][] entity_components;
-    private final EntityPool entity_handles;
+    private final Entities entity_handles;
     private final Object shared_context;
     private boolean dirty_flag;
     private boolean processing;
@@ -41,7 +41,7 @@ public class ECS implements Disposable {
         system_entities = new ArrayList<>(64);
         entity_component_masks = new ArrayList<>(entity_capacity);
         entity_components = new Object[entity_capacity][component_type_capacity];
-        entity_handles = new EntityPool(entity_capacity);
+        entity_handles = new Entities(entity_capacity);
         for (int i = 0; i < entity_capacity; i++) {
             entity_component_masks.add(new BitSet(component_type_capacity));
         } shared_context = context;
@@ -80,8 +80,8 @@ public class ECS implements Disposable {
                     if (next instanceof ProcessSystem system) {
                         system.preProcessing(this,dt);
                         EntityArray entities = system_entities.get(s);
-                        for (int entity = 0; entity < entities.size; entity++) {
-                            system.process(this,entity,dt);
+                        for (int i = 0; i < entities.size; i++) {
+                            system.process(this,entities.array[i],dt);
                         } system.postProcessing(this,dt);
                     } else next.processSystem(this,dt);
                 } refresh();
@@ -101,8 +101,8 @@ public class ECS implements Disposable {
                     if (next instanceof RenderSystem system) {
                         system.preRender(this,alpha);
                         EntityArray entities = system_entities.get(s);
-                        for (int entity = 0; entity < entities.size; entity++) {
-                            system.render(this,entity,alpha);
+                        for (int i = 0; i < entities.size; i++) {
+                            system.render(this,entities.array[i],alpha);
                         } system.postRender(this,alpha);
                     } else next.renderSystem(this,alpha);
                 } refresh();
@@ -146,19 +146,18 @@ public class ECS implements Disposable {
     }
 
     public void deleteEntity(int entity) {
-        if (entity_handles.validate(entity)) {
+        if (entity_handles.free(entity)) {
             int num_types = numComponentTypes();
             BitSet entity_mask = entity_component_masks.get(entity);
             for (int i = 0; i < num_types; i++) {
                 if (entity_mask.get(i)) entity_components[entity][i] = null;
             } entity_mask.clear();
-            entity_handles.free(entity);
             dirty_flag = true;
         }
     }
 
     public void addComponent(int entity, Object component, boolean replace) {
-        if (component != null && entity_handles.validate(entity)) {
+        if (component != null && entity_handles.isActive(entity)) {
             int type = componentType(component.getClass());
             BitSet entity_mask = entity_component_masks.get(entity);
             if (entity_mask.get(type)) {
@@ -171,7 +170,7 @@ public class ECS implements Disposable {
     }
 
     public Object removeComponent(int entity, Class<?> component_class) {
-        if (component_class != null && entity_handles.validate(entity)) {
+        if (component_class != null && entity_handles.isActive(entity)) {
             int type = componentType(component_class);
             BitSet entity_mask = entity_component_masks.get(entity);
             if (entity_mask.get(type)) {
@@ -186,7 +185,7 @@ public class ECS implements Disposable {
     }
 
     public <T> T getComponent(int entity, Class<T> component_class) {
-        if (entity_handles.validate(entity)) {
+        if (entity_handles.isActive(entity)) {
             int type = componentType(component_class);
             return component_class.cast(entity_components[entity][type]);
         } return null;
@@ -209,7 +208,7 @@ public class ECS implements Disposable {
     }
 
     public int numEntities() {
-        return entity_handles.count();
+        return entity_handles.active.size;
     }
 
     public int componentTypeLimit() {
@@ -217,25 +216,24 @@ public class ECS implements Disposable {
     }
 
     public int entityCapacity() {
-        return entity_handles.capacity();
+        return entity_handles.cap;
     }
 
     private void refresh() {
         // rebuilds system entity arrays
-        if (dirty_flag) { dirty_flag = false;
+        if (dirty_flag) {
+            dirty_flag = false;
             int num_systems = system_pipeline.size();
             for (int s = 0; s < num_systems; s++) {
                 ECSystem system = system_pipeline.get(s);
                 if (system instanceof ProcessSystem || system instanceof RenderSystem) {
                     EntityArray entity_array = system_entities.get(s);
                     entity_array.clear();
-                    final boolean[] all_entities = entity_handles.array();
-                    final int peak = entity_handles.peak();
-                    for (int i = 0; i <= peak; i++) {
-                        if (all_entities[i]) {
-                            if (entityMemberOf(i,s)) {
-                                entity_array.add(i);
-                            }
+                    EntityArray all = entity_handles.active;
+                    for (int i = 0; i < all.size; i++) {
+                        int entity = all.array[i];
+                        if (entityMemberOf(entity,s)) {
+                            entity_array.add(entity);
                         }
                     }
                 }
@@ -260,8 +258,6 @@ public class ECS implements Disposable {
         return checkRequirements(entity_mask,system_access,system_denied);
     }
 
-
-
     private static boolean checkRequirements(BitSet entity, BitSet system_access, BitSet system_denied) {
         int words = system_access.mask.length;
         for (int i = 0; i < words; i++) {
@@ -271,8 +267,6 @@ public class ECS implements Disposable {
             if (((ew & sa) != sa) || (ew & sd) != 0) return false;
         } return true;
     }
-
-
 
     private static final class BitSet {
         final long[] mask;
@@ -300,9 +294,9 @@ public class ECS implements Disposable {
     }
 
     private static final class EntityArray {
-        private final int cap;
-        private int size;
-        private int[] array;
+        final int cap;
+        int size;
+        int[] array;
         EntityArray(int len, int max_len) {
             if (len < 0) throw new NegativeArraySizeException("argument length < 0");
             array = new int[len];
@@ -317,6 +311,8 @@ public class ECS implements Disposable {
                     array = new int[Math.min(size * 2,cap)];
                     System.arraycopy(tmp,0,array,0,size);}
             } array[size++] = entity;
+        } int pop() {
+            return array[--size];
         } boolean remove(int entity) {
             for (int i = 0; i < size; i++) {
                 if (array[i] == entity) {
@@ -328,59 +324,41 @@ public class ECS implements Disposable {
         }
     }
 
-    private static final class EntityPool {
-        private int peak;
-        private int gaps;
-        private int count;
-        private final int cap;
-        private final boolean[] slots;
-        EntityPool(int capacity) {
-            peak = -1;
-            cap = capacity;
-            slots = new boolean[cap];
-        } int peak() { return peak; }
-        int available() { return cap - count; }
-        int count() { return count; }
-        int capacity() { return cap; }
-        boolean[] array() { return slots; }
-        boolean validate(int e) {
-            return e >= 0 && e <= peak && slots[e];
-        } void clear() {
-            Arrays.fill(slots,false);
-            peak = -1;
-            count = 0;
-            gaps = 0;
-        } void free(int e) {
-            if (validate(e)) {
-                slots[e] = false;
-                count--;
-                gaps++;
-                if (e == peak) {
-                    for (int i = e; i >= 0; i--) {
-                        if (slots[i]) {
-                            break;
-                        } else {
-                            gaps--;
-                            peak--;
-                        }
-                    }
-                }
-            }
+    private static final class Entities {
+        int next;
+        final int cap;
+        final BitSet slots;
+        final EntityArray pool;
+        final EntityArray active;
+        Entities(final int capacity) {
+            cap = Math.max(capacity,MIN_ENTITY_CAPACITY);
+            pool = new EntityArray(MIN_ENTITY_CAPACITY,cap);
+            active = new EntityArray(MIN_ENTITY_CAPACITY,cap);
+            slots = new BitSet(cap);
         } int obtain() {
-            if (count < cap) {
-                if (gaps == 0) {
-                    slots[count] = true;
-                    peak = count;
-                    return count++;
-                } for (int e = 0; e < count; e++) {
-                    if (!slots[e]) {
-                        slots[e] = true;
-                        gaps--;
-                        count++;
-                        return e;
-                    }
-                }
-            } return -1;
+            int entity;
+            if (pool.size > 0) {
+                entity = pool.pop();
+                slots.set(entity);
+                active.add(entity);
+            } else if (next < cap) {
+                entity = next++;
+                slots.set(entity);
+                active.add(entity);
+            } else entity = -1;
+            return entity;
+        } boolean free(int entity) {
+            if (isActive(entity)) {
+                if (active.remove(entity)) {
+                    slots.unSet(entity);
+                    pool.add(entity);
+                    return true;
+                } else throw new RuntimeException("Should not happen");
+            } return false;
+        } boolean isActive(int e) {
+            return e >= 0 && e < cap && slots.get(e);
         }
+
     }
+
 }

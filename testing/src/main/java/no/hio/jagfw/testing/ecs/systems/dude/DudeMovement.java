@@ -4,13 +4,11 @@ import io.github.heathensoft.jagfw.core.utils.U;
 import io.github.heathensoft.jagfw.ecs.ECS;
 import io.github.heathensoft.jagfw.ecs.ProcessSystem;
 import io.github.heathensoft.jagfw.physics.PhysicsUtils;
-import no.hio.jagfw.testing.ecs.components.Disposition;
+import no.hio.jagfw.testing.ecs.components.*;
 import no.hio.jagfw.testing.ecs.Global;
-import no.hio.jagfw.testing.ecs.components.Death;
-import no.hio.jagfw.testing.ecs.components.Dude;
-import no.hio.jagfw.testing.ecs.components.PhysicsResolution;
 import no.hio.jagfw.testing.ecs.systems.PlayerInput;
 import no.hio.jagfw.testing.ecs.systems.WorldCamera;
+import org.joml.Math;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -67,6 +65,8 @@ public class DudeMovement extends ProcessSystem {
         }
     }
 
+    float rate_of_fire = 5 / 60f;
+    float accum = 0f;
     protected void playerMovement(ECS ecs, Dude player, float dt) {
         PlayerInput input = ecs.getSystem(PlayerInput.class);
         WorldCamera world_cam = ecs.getSystem(WorldCamera.class);
@@ -82,5 +82,32 @@ public class DudeMovement extends ProcessSystem {
                 player.applyImpulse(vec);
             } U.pushVec2();
         } world_cam.target_position.set(player.position);
+        if (input.fire_default) {
+            if (accum >= rate_of_fire) {
+                System.out.println(ecs.numEntities());
+                accum = 0f;
+                int num_projectiles = 1;
+                for (int i = 0; i < num_projectiles; i++) {
+                    int entity = ecs.newEntity();
+                    if (entity != -1) {
+                        Projectile projectile = new Projectile(new ProjectileEffect() {
+                            public void onHit(ECS ecs, int source, Dude target) {
+                                Projectile p = ecs.getComponent(source, Projectile.class);
+                                target.base_health -= 50;
+                                ecs.deleteEntity(source);
+                            }
+                        });
+
+                        projectile.velocity = 20f;
+                        projectile.direction.set(input.aim_direction);
+                        projectile.source_disposition = player.disposition;
+                        projectile.position.set(player.position);
+                        projectile.origin.set(player.position);
+                        ecs.addComponent(entity,projectile,true);
+                    }
+                }
+
+            }
+        } accum += dt;
     }
 }
