@@ -5,7 +5,6 @@ import io.github.heathensoft.jagfw.ecs.ECS;
 import io.github.heathensoft.jagfw.ecs.RenderSystem;
 import no.hio.jagfw.testing.ecs.Global;
 import no.hio.jagfw.testing.ecs.components.Projectile;
-import org.joml.Math;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;
 

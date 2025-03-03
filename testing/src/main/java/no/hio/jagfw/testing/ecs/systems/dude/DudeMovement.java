@@ -8,7 +8,6 @@ import no.hio.jagfw.testing.ecs.components.*;
 import no.hio.jagfw.testing.ecs.Global;
 import no.hio.jagfw.testing.ecs.systems.PlayerInput;
 import no.hio.jagfw.testing.ecs.systems.WorldCamera;
-import org.joml.Math;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -89,12 +88,10 @@ public class DudeMovement extends ProcessSystem {
                 for (int i = 0; i < num_projectiles; i++) {
                     int entity = ecs.newEntity();
                     if (entity != -1) {
-                        Projectile projectile = new Projectile(new ProjectileEffect() {
-                            public void onHit(ECS ecs, int source, Dude target) {
-                                Projectile p = ecs.getComponent(source, Projectile.class);
-                                target.base_health -= 50;
-                                ecs.deleteEntity(source);
-                            }
+                        Projectile projectile = new Projectile((ecs1, source, target) -> {
+                            Projectile p = ecs1.getComponent(source, Projectile.class);
+                            target.base_health -= 50;
+                            ecs1.deleteEntity(source);
                         });
 
                         projectile.velocity = 20f;

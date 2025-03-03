@@ -33,7 +33,7 @@ public class RectPacker {
         } open.sort(Comparator.naturalOrder());
 
         float width_height_ratio = 0;
-        int rect_h_max = open.get(0).h;
+        int rect_h_max = open.getFirst().h;
         int rect_h_min = open.get(num_rectangles - 1).h;
         int rect_w_min = Integer.MAX_VALUE;
         int rect_w_max = 0;
