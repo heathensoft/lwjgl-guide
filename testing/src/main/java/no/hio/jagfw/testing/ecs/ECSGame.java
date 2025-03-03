@@ -6,6 +6,7 @@ import io.github.heathensoft.jagfw.ecs.ECS;
 import io.github.heathensoft.jagfw.tiles.MapSize;
 import no.hio.jagfw.testing.ecs.components.Disposition;
 import no.hio.jagfw.testing.ecs.components.Dude;
+import no.hio.jagfw.testing.ecs.components.PlayerTag;
 import no.hio.jagfw.testing.ecs.systems.*;
 import no.hio.jagfw.testing.ecs.systems.dude.*;
 import org.joml.Vector2f;
@@ -34,7 +35,7 @@ public class ECSGame extends Game {
         boot_config.windowed_mode_width = game_res_w;
         boot_config.windowed_mode = true;
         boot_config.resizable_window = true;
-        boot_config.vsync_enabled = false;
+        boot_config.vsync_enabled = true;
         boot_config.target_ups = 120;
     }
 
@@ -68,7 +69,8 @@ public class ECSGame extends Game {
         dude.base_movement_force = 4000f;
         dude.base_dodge_impulse = 6000f;
         dude.setPlayer();
-        ecs.addComponent(player,dude,true);
+        ecs.addComponent(player,dude);
+        ecs.addComponent(player,new PlayerTag());
     }
 
     protected void resize(Resolution resolution) {

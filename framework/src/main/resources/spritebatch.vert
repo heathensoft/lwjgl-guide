@@ -13,6 +13,7 @@ out VS_TO_FS {
     vec4 color;
     vec2 uv;
     flat uint texture_slot;
+    bool pixel_art;
 } vs_out;
 
 uniform mat4 u_combined;
@@ -21,8 +22,9 @@ struct Bits {
     // LSB
     //---------------------------- 0
     uint tex_slot;  // 4 bit value
-    uint z_layer;   // 4 bit value
-    //---------------------------- 8
+    uint pixel_art; // 1 bit value
+    //uint z_layer;   // 4 bit value
+    //---------------------------- 9
 
     //---------------------------- 32
     // MSB
@@ -32,7 +34,8 @@ Bits unpackFloat(float float_data) {
     Bits result;
     uint integer = floatBitsToUint(float_data);
     result.tex_slot = integer & 0x0F;
-    result.z_layer = (integer >> 4) & 0x0F;
+    result.pixel_art = (integer >> 4) & 0x01;
+    //result.z_layer = (integer >> 4) & 0x0F;
     return result;
 }
 
@@ -48,14 +51,16 @@ void main() {
 
     // pass on the texture slot to the fragment shader
     vs_out.texture_slot = data.tex_slot;
+    vs_out.pixel_art = data.pixel_art == 1;
 
+    float z = 0;
     // calculate the z value based on the z layer
     // layer 0 is near, layer 15 is far
-    float z = -float(data.z_layer);
-    z /= ((FAR - NEAR) * (Z_LAYERS - 1.0));
+    //float z = -float(data.z_layer);
+    //z /= ((FAR - NEAR) * (Z_LAYERS - 1.0));
     // make sure far-layer won't get clipped
     // due to rounding errors
-    z *= 0.9999999;
+    //z *= 0.9999999;
     // atp. z will be a value between 0.0 (near) and -1.0 (far)
 
 

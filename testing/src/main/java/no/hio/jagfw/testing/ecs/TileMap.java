@@ -32,7 +32,7 @@ public class TileMap implements BlockLayout {
                 if (blocks[r][c]) {
                     rect.setMin(c,r);
                     rect.setMax(c+1,r+1);
-                    batch.draw(null,rect,uv,0x99FFF000,0);
+                    batch.draw(null,rect,uv,0x99FFF000);
                 }
             }
         }

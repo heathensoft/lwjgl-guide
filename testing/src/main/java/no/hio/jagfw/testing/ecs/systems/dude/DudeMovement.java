@@ -20,7 +20,7 @@ public class DudeMovement extends ProcessSystem {
 
     protected void defineAccess(List<Class<?>> required_components, List<Class<?>> blocking_components) {
         required_components.add(Dude.class);
-        blocking_components.add(Death.class);
+        //blocking_components.add(Death.class);
     }
 
     protected void process(ECS ecs, int entity, float dt) {
@@ -31,7 +31,7 @@ public class DudeMovement extends ProcessSystem {
                 Dude player = Dude.PLAYER;
                 if (player == dude) {
                     playerMovement(ecs, dude,dt);
-                } else {
+                } else if (ecs.getComponent(entity, Death.class) == null){
                     DudeInfo dude_info = ecs.getSystem(DudeInfo.class);
                     DudeTree dude_tree = ecs.getSystem(DudeTree.class);
                     Vector2f p = dude.position;
@@ -40,6 +40,7 @@ public class DudeMovement extends ProcessSystem {
                     if (surrounding < 4) {
                         if (dude.disposition == Disposition.HOSTILE) {
                             if (player != null) {
+
                                 Vector2f dude_to_player = U.popVec2();
                                 dude_to_player.set(player.position);
                                 dude_to_player.sub(dude.position);
@@ -55,11 +56,9 @@ public class DudeMovement extends ProcessSystem {
                             }
                         }
                     }
-
                 }
-
                 PhysicsUtils.applyDrag(dude,global.world.drag);
-                PhysicsUtils.applyFriction(dude,global.world.friction);
+                PhysicsUtils.applyFriction(dude,global.world.friction); // grounded dudes
                 dude.update(dt);
             }
         }

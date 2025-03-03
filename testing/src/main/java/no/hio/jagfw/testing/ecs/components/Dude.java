@@ -18,9 +18,6 @@ public class Dude extends Body {
     public float base_max_health;
     public float base_armour;
     public float base_experience_yield;
-    public float base_armor_multiplier = 1.0f;
-    public float base_damage_multiplier = 1.0f;
-    public float base_health_multiplier = 1.0f;
     public float base_movement_force = 1000f;
     public float base_dodge_impulse = 2000f;
 

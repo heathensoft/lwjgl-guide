@@ -6,6 +6,7 @@ import io.github.heathensoft.jagfw.core.utils.Resources;
 import io.github.heathensoft.jagfw.core.utils.U;
 import io.github.heathensoft.jagfw.core.Disposable;
 import org.joml.Vector4f;
+import org.joml.Math;
 import org.joml.primitives.Rectanglef;
 import org.lwjgl.system.MemoryUtil;
 
@@ -48,7 +49,8 @@ public class SpriteBatch implements Disposable {
     private int count;                      // num buffered sprites
     private int draw_calls;                 // draw calls between begin to end
     private boolean buffering;              // begin has been called
-    private boolean depth_enabled;          // enable depth layers
+    private boolean pixel_art;              // "pixel art antialiasing" (might look better. Try)
+    //private boolean depth_enabled;        // enable depth layers
 
 
     public SpriteBatch(int capacity) throws Exception {
@@ -105,23 +107,28 @@ public class SpriteBatch implements Disposable {
     }
 
     public void enableLayers(boolean enable) {
-        if (buffering) {
-            if (depth_enabled != enable) {
-                flush();
-                ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
-            }
-        } depth_enabled = enable;
+        //if (buffering) {
+        //    if (depth_enabled != enable) {
+        //        flush();
+        //        ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
+        //    }
+        //} depth_enabled = enable;
+    }
+
+    public void enablePixelArt(boolean enable) {
+        pixel_art = enable;
     }
 
     public void begin() {
         if (!buffering) {
             ShaderProgram.useProgram(program);
-            ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
-            if (depth_enabled) {
-                glEnable(GL_DEPTH_TEST);
-                glDepthFunc(GL_LEQUAL);
-            } else glDisable(GL_DEPTH_TEST);
+            //ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
+            //if (depth_enabled) {
+            //    glEnable(GL_DEPTH_TEST);
+            //    glDepthFunc(GL_LEQUAL);
+            //} else glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
+            glDisable(GL_DEPTH_TEST);
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
             buffering = true;
@@ -133,12 +140,13 @@ public class SpriteBatch implements Disposable {
         if (!buffering) {
             ShaderProgram.useProgram(program);
             ShaderProgram.setUniform("u_combined",camera.combined);
-            ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
-            if (depth_enabled) {
-                glEnable(GL_DEPTH_TEST);
-                glDepthFunc(GL_LEQUAL);
-            } else glDisable(GL_DEPTH_TEST);
+            //ShaderProgram.setUniform("u_depth_enabled", depth_enabled ? 1 : 0);
+            //if (depth_enabled) {
+            //    glEnable(GL_DEPTH_TEST);
+            //    glDepthFunc(GL_LEQUAL);
+            //} else glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
+            glDisable(GL_DEPTH_TEST);
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
             buffering = true;
@@ -175,7 +183,56 @@ public class SpriteBatch implements Disposable {
         if (ebo != 0) glDeleteBuffers(ebo);
     }
 
-    public void draw(Texture texture, Rectanglef quad, Vector4f uv, int color, int z_layer) {
+    public void draw(Texture texture, float x1, float y1, float x2, float y2, float u1, float v1, float u2, float v2, float rotation, int color) {
+        if (rotation == 0) draw(texture, x1, y1, x2, y2, u1, v1, u2, v2, color);
+        else { if (!buffering) throw new IllegalStateException("call begin() before rendering");
+            if (count == limit) flush();
+            int texture_slot;
+            if (texture == null) { texture_slot = SAMPLER_ARRAY_SIZE;
+            } else if (texture.hasBeenDisposed()) {
+                texture_slot = SAMPLER_ARRAY_SIZE;
+                color = Color.ERROR_BITS;
+            } else { texture_slot = samplers.assignSlot(texture);
+                if (texture_slot == SAMPLER_ARRAY_SIZE) { flush();
+                    texture_slot = samplers.assignSlot(texture);
+                }
+            }
+            int bits = 0;
+            {
+                bits |= texture_slot;
+                bits |= (pixel_art ? (0x01 << 4) : 0);
+                //bits |= ((z_layer & 0x0F) << 4);
+            }
+            float color_float = Color.intColorToFloat(color);
+            float bits_float = Float.intBitsToFloat(bits);
+
+            float wh = (x2 - x1) * 0.5f;
+            float hh = (y2 - y1) * 0.5f;
+            float cx = x1 + wh;
+            float cy = y1 + hh;
+            final float sin = Math.sin(rotation);
+            final float cos = Math.cos(rotation);
+            final float sin_wh = sin * wh;
+            final float sin_hh = sin * hh;
+            final float cos_wh = cos * wh;
+            final float cos_hh = cos * hh;
+            float v0x = -cos_wh - sin_hh + cx;
+            float v0y = -sin_wh + cos_hh + cy;
+            float v1x = -cos_wh + sin_hh + cx;
+            float v1y = -sin_wh - cos_hh + cy;
+            float v2x =  cos_wh + sin_hh + cx;
+            float v2y =  sin_wh - cos_hh + cy;
+            float v3x =  cos_wh - sin_hh + cx;
+            float v3y =  sin_wh + cos_hh + cy;
+            vertices.put(v0x).put(v0y).put(v1).put(v1).put(color_float).put(bits_float);
+            vertices.put(v1x).put(v1y).put(v1).put(v2).put(color_float).put(bits_float);
+            vertices.put(v2x).put(v2y).put(u2).put(v2).put(color_float).put(bits_float);
+            vertices.put(v3x).put(v3y).put(u2).put(v1).put(color_float).put(bits_float);
+            count++;
+        }
+    }
+
+    public void draw(Texture texture, float x1, float y1, float x2, float y2, float u1, float v1, float u2, float v2, int color) {
         if (!buffering) throw new IllegalStateException("call begin() before rendering");
         if (count == limit) flush();
         int texture_slot;
@@ -188,23 +245,27 @@ public class SpriteBatch implements Disposable {
                 texture_slot = samplers.assignSlot(texture);
             }
         }
-
         int bits = 0;
-
         {
             bits |= texture_slot;
-            bits |= ((z_layer & 0x0F) << 4);
+            bits |= (pixel_art ? (0x01 << 4) : 0);
+            //bits |= ((z_layer & 0x0F) << 4);
         }
-
         float color_float = Color.intColorToFloat(color);
         float bits_float = Float.intBitsToFloat(bits);
-
-
-        vertices.put(quad.minX).put(quad.maxY).put(uv.x).put(uv.y).put(color_float).put(bits_float);
-        vertices.put(quad.minX).put(quad.minY).put(uv.x).put(uv.w).put(color_float).put(bits_float);
-        vertices.put(quad.maxX).put(quad.minY).put(uv.z).put(uv.w).put(color_float).put(bits_float);
-        vertices.put(quad.maxX).put(quad.maxY).put(uv.z).put(uv.y).put(color_float).put(bits_float);
+        vertices.put(x1).put(y2).put(v1).put(v1).put(color_float).put(bits_float);
+        vertices.put(x1).put(y1).put(v1).put(v2).put(color_float).put(bits_float);
+        vertices.put(x2).put(y1).put(u2).put(v2).put(color_float).put(bits_float);
+        vertices.put(x2).put(y2).put(u2).put(v1).put(color_float).put(bits_float);
         count++;
+    }
+
+    public void draw(Texture texture, Rectanglef quad, Vector4f uv, int color) {
+        draw(texture,quad.minX,quad.minY,quad.maxX,quad.maxY,uv.x,uv.y,uv.z,uv.w,color);
+    }
+
+    public void draw(Texture texture, Rectanglef quad, Vector4f uv, float rotation, int color) {
+        draw(texture,quad.minX,quad.minY,quad.maxX,quad.maxY,uv.x,uv.y,uv.z,uv.w,rotation,color);
     }
 
     public int drawCalls() {

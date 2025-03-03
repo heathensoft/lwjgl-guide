@@ -86,7 +86,7 @@ public class TileMap implements Disposable {
                                 rect.setMin(x,y);
                                 rect.setMax(x+1,y+1);
                                 int uv_index = block_uv_map[getTileMask(tile_index)];
-                                batch.draw(block_texture,rect,block_uvs[uv_index],0xFF66BBEE,4);
+                                batch.draw(block_texture,rect,block_uvs[uv_index],0xFF66BBEE);
                                 if (--count == 0) break early_out;
                             }
                         }

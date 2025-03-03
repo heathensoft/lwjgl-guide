@@ -156,6 +156,10 @@ public class ECS implements Disposable {
         }
     }
 
+    public void addComponent(int entity, Object component) {
+        addComponent(entity,component,true);
+    }
+
     public void addComponent(int entity, Object component, boolean replace) {
         if (component != null && entity_handles.isActive(entity)) {
             int type = componentType(component.getClass());

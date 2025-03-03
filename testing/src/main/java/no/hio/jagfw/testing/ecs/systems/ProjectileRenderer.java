@@ -5,6 +5,7 @@ import io.github.heathensoft.jagfw.ecs.ECS;
 import io.github.heathensoft.jagfw.ecs.RenderSystem;
 import no.hio.jagfw.testing.ecs.Global;
 import no.hio.jagfw.testing.ecs.components.Projectile;
+import org.joml.Math;
 import org.joml.Vector4f;
 import org.joml.primitives.Rectanglef;
 
@@ -29,6 +30,7 @@ public class ProjectileRenderer extends RenderSystem {
         batch.begin(cam.camera);
     }
 
+
     protected void render(ECS ecs, int entity, float alpha) {
         Projectile projectile = ecs.getComponent(entity, Projectile.class);
         if (projectile != null) {
@@ -37,7 +39,7 @@ public class ProjectileRenderer extends RenderSystem {
             rect.maxX = projectile.position.x + projectile.radius;
             rect.minY = projectile.position.y - projectile.radius;
             rect.maxY = projectile.position.y + projectile.radius;
-            batch.draw(null,rect,uv,0xFF000000,0);
+            batch.draw(null,rect,uv,0xFF000000);
         }
     }
 
